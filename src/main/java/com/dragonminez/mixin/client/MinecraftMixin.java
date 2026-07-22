@@ -4,6 +4,7 @@ import com.dragonminez.client.animation.IPlayerAnimatable;
 import com.dragonminez.client.collision.CollisionHelper;
 import com.dragonminez.client.collision.TargetFinder;
 import com.dragonminez.client.events.DMZClientEvent;
+import com.dragonminez.client.render.camera.OverShoulderCamera;
 import com.dragonminez.common.combat.logic.player.PlayerAttackHelper;
 import com.dragonminez.common.combat.logic.player.PlayerAttackProperties;
 import com.dragonminez.common.combat.player.AttackHand;
@@ -13,6 +14,7 @@ import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.C2S.CombatAttackRequestC2S;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.player.LocalPlayer;
@@ -28,6 +30,7 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
@@ -60,6 +63,28 @@ public abstract class MinecraftMixin implements Minecraft_DMZ {
 	@Unique private int lastBlockMineTick = -100;
 
 	@Unique private static final double BLOCK_MINE_TARGET_BIAS = 0.25D;
+
+	// F5 cycle: first person -> third-person over-the-right-shoulder -> over-the-left-shoulder ->
+	// third-person front ("second person") -> back to first. Redirects vanilla's CameraType.cycle() so the
+	// F5 detection stays vanilla; only the resulting perspective + shoulder side change. The two shoulder
+	// states share THIRD_PERSON_BACK and differ by the side flag pushed into OverShoulderCamera.
+	@Redirect(method = "handleKeybinds", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/CameraType;cycle()Lnet/minecraft/client/CameraType;"))
+	private CameraType dragonminez$cyclePerspective(CameraType current) {
+		if (current.isFirstPerson()) {
+			OverShoulderCamera.setShoulderCycle(true, false); // right shoulder
+			return CameraType.THIRD_PERSON_BACK;
+		}
+		if (current == CameraType.THIRD_PERSON_BACK) {
+			if (!OverShoulderCamera.isShoulderLeft()) {
+				OverShoulderCamera.setShoulderCycle(true, true); // left shoulder
+				return CameraType.THIRD_PERSON_BACK;
+			}
+			OverShoulderCamera.setShoulderCycle(false, false); // front: no over-shoulder offset
+			return CameraType.THIRD_PERSON_FRONT;
+		}
+		OverShoulderCamera.setShoulderCycle(false, false); // front -> first person
+		return CameraType.FIRST_PERSON;
+	}
 
 	@Inject(method = "startAttack", at = @At("HEAD"), cancellable = true)
 	private void dragonminez$startAttack(CallbackInfoReturnable<Boolean> cir) {

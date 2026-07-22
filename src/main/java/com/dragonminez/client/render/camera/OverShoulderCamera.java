@@ -30,7 +30,22 @@ public final class OverShoulderCamera {
 	@Setter
 	private static boolean previewOverride;
 
+	// F5 camera cycle (set from MinecraftMixin): first -> 3rd-person right shoulder -> left shoulder -> front.
+	// f5ForceActive forces the over-shoulder offset on for the two shoulder states regardless of config mode;
+	// f5Left picks the side. The front state clears f5ForceActive and is handled by thirdPersonReverse.
+	private static boolean f5Left = false;
+	private static boolean f5ForceActive = false;
+
 	private OverShoulderCamera() {}
+
+	public static void setShoulderCycle(boolean active, boolean left) {
+		f5ForceActive = active;
+		f5Left = left;
+	}
+
+	public static boolean isShoulderLeft() {
+		return f5Left;
+	}
 
 	public static boolean isRunning() {
 		return active;
@@ -44,6 +59,7 @@ public final class OverShoulderCamera {
 		if (thirdPersonReverse || !(entity instanceof Player)) return false;
 		if (entity instanceof LivingEntity living && living.isSleeping()) return false;
 		if (previewOverride) return true;
+		if (f5ForceActive) return true;
 		int mode = ConfigManager.getUserConfig().getOverShoulderMode();
 		if (mode == MODE_ALWAYS) return true;
 		if (mode == MODE_LOCK_ON) return LockOnEvent.getLockedTarget() != null;
@@ -68,7 +84,8 @@ public final class OverShoulderCamera {
 		double ease = config.getOverShoulderSmoothing();
 		double targetBack = config.getOverShoulderBack();
 		double targetUp = config.getOverShoulderUp();
-		double targetRight = config.getOverShoulderSide() * (config.getOverShoulderLeft() ? -1.0 : 1.0);
+		boolean left = f5ForceActive ? f5Left : config.getOverShoulderLeft();
+		double targetRight = config.getOverShoulderSide() * (left ? -1.0 : 1.0);
 
 		curBack += (targetBack - curBack) * ease;
 		curUp += (targetUp - curUp) * ease;
