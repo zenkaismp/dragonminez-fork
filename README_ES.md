@@ -22,7 +22,7 @@
 
 ## Acerca de
 
-**DragonMine Z** es un mod inmersivo de **Minecraft Forge 1.20.1** en desarrollo, inspirado en la obra más famosa de Akira Toriyama: [Dragon Ball](https://en.dragon-ball-official.com/).
+**DragonMine Z** es un mod inmersivo de **Minecraft Forge 1.20.2** en desarrollo, inspirado en la obra más famosa de Akira Toriyama: [Dragon Ball](https://en.dragon-ball-official.com/).
 
 Nuestro objetivo es llevar la experiencia completa de Dragon Ball a Minecraft: personajes personalizados, razas, transformaciones, habilidades, estadísticas, contenido de historia, dimensiones, NPCs, estructuras y una experiencia de supervivencia renovada.
 
@@ -72,7 +72,7 @@ Puedes descargar DragonMine Z desde nuestras páginas oficiales:
 - [CurseForge](https://www.curseforge.com/minecraft/mc-mods/dragonminez)
 - [Modrinth](https://modrinth.com/mod/dragonminez)
 
-DragonMine Z está hecho para **Minecraft Forge 1.20.1**.
+DragonMine Z está hecho para **Minecraft Forge 1.20.2**.
 
 ---
 

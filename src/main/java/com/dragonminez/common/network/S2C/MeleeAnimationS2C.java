@@ -2,7 +2,7 @@ package com.dragonminez.common.network.S2C;
 
 import com.dragonminez.common.network.ClientPacketHandler;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.event.network.CustomPayloadEvent;
 
 import java.util.function.Supplier;
 
@@ -34,10 +34,10 @@ public class MeleeAnimationS2C {
 		buffer.writeFloat(this.speedMultiplier);
 	}
 
-	public void handle(Supplier<NetworkEvent.Context> ctx) {
-		ctx.get().enqueueWork(() -> {
+	public void handle(CustomPayloadEvent.Context ctx) {
+		ctx.enqueueWork(() -> {
 			ClientPacketHandler.handleMeleeAnimationPacket(this.entityId, this.animationName, this.isOffhand, this.speedMultiplier);
 		});
-		ctx.get().setPacketHandled(true);
+		ctx.setPacketHandled(true);
 	}
 }

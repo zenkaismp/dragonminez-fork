@@ -32,7 +32,7 @@ public class HairRenderer {
 	private static final float INERTIA_GAIN = 260.0f;
 	private static final float INERTIA_MAX = 75.0f;
 	private static final float KI_CHARGE_LIFT = 95.0f;
-	private static final ResourceLocation HAIR_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/hair.png");
+	private static final ResourceLocation HAIR_TEXTURE = new ResourceLocation(Reference.MOD_ID, "textures/entity/races/hair.png");
 	private static final HairFace[] FACES = HairFace.values();
 
 	public static void render(PoseStack poseStack, MultiBufferSource bufferSource, CustomHair hairFrom, CustomHair hairTo, float transitionFactor, Character character, StatsData stats, AbstractClientPlayer player, float[] rgbFrom, float[] rgbTo, boolean forceColorFrom, boolean forceColorTo, float partialTick, int packedLight, int packedOverlay, float baseAlpha, float physicsLodMultiplier, float chargeProgress) {

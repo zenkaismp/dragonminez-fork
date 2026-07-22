@@ -24,8 +24,8 @@ import java.util.List;
 @OnlyIn(Dist.CLIENT)
 public class WishesScreen extends ScaledScreen {
 
-	private static final ResourceLocation MENU_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/menu/menubig.png");
-	private static final ResourceLocation BUTTON_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/buttons/characterbuttons.png");
+	private static final ResourceLocation MENU_TEXTURE = new ResourceLocation(Reference.MOD_ID, "textures/gui/menu/menubig.png");
+	private static final ResourceLocation BUTTON_TEXTURE = new ResourceLocation(Reference.MOD_ID, "textures/gui/buttons/characterbuttons.png");
 
 	private static final int PANEL_WIDTH = 141;
 	private static final int PANEL_HEIGHT = 213;
@@ -46,7 +46,7 @@ public class WishesScreen extends ScaledScreen {
 	private TexturedTextButton confirmButton;
 
 	public WishesScreen(String dragonType, int wishCount) {
-		super(Component.literal("Wishes").withStyle(Style.EMPTY.withFont(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth"))));
+		super(Component.literal("Wishes").withStyle(Style.EMPTY.withFont(new ResourceLocation(Reference.MOD_ID, "smooth"))));
 		this.dragonType = dragonType;
 		this.maxWishesToSelect = wishCount;
 		this.availableWishes = WishManager.getClientWishes(dragonType);
@@ -79,7 +79,7 @@ public class WishesScreen extends ScaledScreen {
 
 	@Override
 	public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-		this.renderBackground(graphics);
+		this.renderBackground(graphics, mouseX, mouseY, partialTick);
 
 		int uiMouseX = (int) toUiX(mouseX);
 		int uiMouseY = (int) toUiY(mouseY);
@@ -224,12 +224,12 @@ public class WishesScreen extends ScaledScreen {
 	}
 
 	@Override
-	public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+	public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double delta) {
 		if (maxScroll > 0) {
 			targetScroll = (float) Mth.clamp(targetScroll - (Math.signum(delta) * ITEM_HEIGHT * 2), 0, maxScroll);
 			return true;
 		}
-		return super.mouseScrolled(mouseX, mouseY, delta);
+		return super.mouseScrolled(mouseX, mouseY, scrollX, delta);
 	}
 
 	@Override

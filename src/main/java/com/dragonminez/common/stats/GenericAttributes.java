@@ -18,10 +18,10 @@ public class GenericAttributes {
 
     @SubscribeEvent
     public static void onLoadComplete(FMLLoadCompleteEvent event) {
-        Attribute armorAttribute = ForgeRegistries.ATTRIBUTES.getValue(ResourceLocation.parse("minecraft:generic.armor"));
-        Attribute armorToughnessAttribute = ForgeRegistries.ATTRIBUTES.getValue(ResourceLocation.parse("minecraft:generic.armor_toughness"));
-        Attribute maxHealth = ForgeRegistries.ATTRIBUTES.getValue(ResourceLocation.parse("minecraft:generic.max_health"));
-        Attribute attackDamage = ForgeRegistries.ATTRIBUTES.getValue(ResourceLocation.parse("minecraft:generic.attack_damage"));
+        Attribute armorAttribute = ForgeRegistries.ATTRIBUTES.getValue(new ResourceLocation("minecraft:generic.armor"));
+        Attribute armorToughnessAttribute = ForgeRegistries.ATTRIBUTES.getValue(new ResourceLocation("minecraft:generic.armor_toughness"));
+        Attribute maxHealth = ForgeRegistries.ATTRIBUTES.getValue(new ResourceLocation("minecraft:generic.max_health"));
+        Attribute attackDamage = ForgeRegistries.ATTRIBUTES.getValue(new ResourceLocation("minecraft:generic.attack_damage"));
 
         if (armorAttribute instanceof RangedAttribute rangedAttribute) {
             ((RangedAttributeMixin) rangedAttribute).setMaxValue(Float.MAX_VALUE);

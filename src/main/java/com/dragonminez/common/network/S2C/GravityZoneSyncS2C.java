@@ -2,7 +2,7 @@ package com.dragonminez.common.network.S2C;
 
 import com.dragonminez.client.render.shader.ClientGravityState;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.event.network.CustomPayloadEvent;
 
 import java.util.function.Supplier;
 
@@ -64,10 +64,10 @@ public class GravityZoneSyncS2C {
 		buf.writeVarInt(zone);
 	}
 
-	public void handle(Supplier<NetworkEvent.Context> ctx) {
-		ctx.get().enqueueWork(() -> ClientGravityState.update(
+	public void handle(CustomPayloadEvent.Context ctx) {
+		ctx.enqueueWork(() -> ClientGravityState.update(
 				machineGravity, environmentalGravity, netGravity, statMult, tpGravityMult,
 				idealWeight, totalWeight, effectiveWeight, loadRatio, weightTpMult, zone));
-		ctx.get().setPacketHandled(true);
+		ctx.setPacketHandled(true);
 	}
 }

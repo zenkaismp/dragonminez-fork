@@ -10,7 +10,7 @@ import com.dragonminez.common.stats.extras.ActionMode;
 import com.dragonminez.common.util.TransformationsHelper;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.event.network.CustomPayloadEvent;
 
 import java.util.function.Supplier;
 
@@ -38,8 +38,8 @@ public class SelectFormC2S {
 		buffer.writeBoolean(stack);
 	}
 
-	public void handle(Supplier<NetworkEvent.Context> contextSupplier) {
-		NetworkEvent.Context context = contextSupplier.get();
+	public void handle(CustomPayloadEvent.Context contextSupplier) {
+		CustomPayloadEvent.Context context = contextSupplier;
 		context.enqueueWork(() -> {
 			ServerPlayer player = context.getSender();
 			if (player == null) return;

@@ -3,6 +3,7 @@ package com.dragonminez.common.datagen.builder;
 import com.dragonminez.common.init.MainRecipes;
 import com.google.gson.JsonObject;
 import net.minecraft.data.recipes.FinishedRecipe;
+import net.minecraft.data.recipes.RecipeOutput;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.crafting.RecipeSerializer;
@@ -57,7 +58,7 @@ public class KikonoRecipeBuilder {
 		return this;
 	}
 
-	public void save(Consumer<FinishedRecipe> consumer, ResourceLocation id) {
+	public void save(RecipeOutput consumer, ResourceLocation id) {
 		if (pattern == null || template == null) throw new IllegalStateException("Missing pattern or template");
 		consumer.accept(new Result(id, this));
 	}
@@ -81,16 +82,22 @@ public class KikonoRecipeBuilder {
 			tempObj.addProperty("item", ForgeRegistries.ITEMS.getKey(builder.template.asItem()).toString());
 			json.add("template", tempObj);
 
-			for(int i=0; i<9; i++) {
-				if(i < builder.inputs.size()) {
-					ItemLike inputItem = builder.inputs.get(i);
-					if (inputItem.asItem() != net.minecraft.world.item.Items.AIR) {
-						JsonObject inObj = new JsonObject();
-						inObj.addProperty("item", ForgeRegistries.ITEMS.getKey(inputItem.asItem()).toString());
-						json.add("slot_" + (i + 1), inObj);
-					}
+			// Position-preserving inputs array (restores 1.20.1 fidelity): AIR cells are written as
+			// empty ingredients "[]" so their grid slot index is kept. The naive port skipped AIR,
+			// collapsing gaps and shifting every later ingredient to a lower slot — which silently
+			// changed the Kikono armor crafting patterns (matches() is strictly positional). The
+			// codec's toNonNull() then places each ingredient back at its true slot; "[]" -> EMPTY.
+			com.google.gson.JsonArray inputsArr = new com.google.gson.JsonArray();
+			for (ItemLike inputItem : builder.inputs) {
+				if (inputItem.asItem() != net.minecraft.world.item.Items.AIR) {
+					JsonObject inObj = new JsonObject();
+					inObj.addProperty("item", ForgeRegistries.ITEMS.getKey(inputItem.asItem()).toString());
+					inputsArr.add(inObj);
+				} else {
+					inputsArr.add(new com.google.gson.JsonArray()); // [] = Ingredient.EMPTY, keeps the slot index
 				}
 			}
+			json.add("inputs", inputsArr);
 
 			JsonObject out = new JsonObject();
 			out.addProperty("item", ForgeRegistries.ITEMS.getKey(builder.result).toString());
@@ -102,12 +109,10 @@ public class KikonoRecipeBuilder {
 		}
 
 		@Override
-		public ResourceLocation getId() { return id; }
+		public ResourceLocation id() { return id; }
 		@Override
-		public RecipeSerializer<?> getType() { return MainRecipes.KIKONO_SERIALIZER.get(); }
+		public RecipeSerializer<?> type() { return MainRecipes.KIKONO_SERIALIZER.get(); }
 		@Override
-		public @Nullable JsonObject serializeAdvancement() { return null; }
-		@Override
-		public @Nullable ResourceLocation getAdvancementId() { return null; }
+		public @Nullable net.minecraft.advancements.AdvancementHolder advancement() { return null; }
 	}
 }

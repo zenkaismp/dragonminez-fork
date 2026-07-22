@@ -3,7 +3,7 @@ package com.dragonminez.common.network.C2S;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.event.network.CustomPayloadEvent;
 import top.theillusivec4.curios.api.CuriosApi;
 
 import java.util.function.Supplier;
@@ -31,8 +31,8 @@ public class DamageCurioC2S {
 		buf.writeInt(this.damageAmount);
 	}
 
-	public boolean handle(Supplier<NetworkEvent.Context> supplier) {
-		NetworkEvent.Context context = supplier.get();
+	public boolean handle(CustomPayloadEvent.Context supplier) {
+		CustomPayloadEvent.Context context = supplier;
 		context.enqueueWork(() -> {
 			ServerPlayer player = context.getSender();
 			if (player == null || slotId.isEmpty()) return;

@@ -12,7 +12,7 @@ import com.dragonminez.common.stats.techniques.PredefinedTechniques;
 import com.dragonminez.common.stats.techniques.StrikeAttackData;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.event.network.CustomPayloadEvent;
 
 import java.util.function.Supplier;
 
@@ -44,9 +44,9 @@ public class UpdateSkillC2S {
 		buf.writeInt(this.cost);
 	}
 
-	public void handle(Supplier<NetworkEvent.Context> ctx) {
-		ctx.get().enqueueWork(() -> {
-			ServerPlayer player = ctx.get().getSender();
+	public void handle(CustomPayloadEvent.Context ctx) {
+		ctx.enqueueWork(() -> {
+			ServerPlayer player = ctx.getSender();
 			if (player != null) {
 				StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 					Skill skill = data.getSkills().getSkill(skillName);
@@ -99,7 +99,7 @@ public class UpdateSkillC2S {
 				});
 			}
 		});
-		ctx.get().setPacketHandled(true);
+		ctx.setPacketHandled(true);
 	}
 
 	private static int computeTpCost(StatsData data, String skillName, int currentLevel) {

@@ -12,7 +12,7 @@ import net.minecraft.world.entity.player.Inventory;
 
 public class KikonoStationScreen extends AbstractContainerScreen<KikonoStationMenu> {
 	private static final ResourceLocation TEXTURE =
-			ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/screen/kikono_station_gui.png");
+			new ResourceLocation(Reference.MOD_ID, "textures/gui/screen/kikono_station_gui.png");
 
 	public KikonoStationScreen(KikonoStationMenu pMenu, Inventory pPlayerInventory, Component pTitle) {
 		super(pMenu, pPlayerInventory, pTitle);
@@ -43,7 +43,7 @@ public class KikonoStationScreen extends AbstractContainerScreen<KikonoStationMe
 
 	@Override
 	public void render(GuiGraphics guiGraphics, int pMouseX, int pMouseY, float delta) {
-		renderBackground(guiGraphics);
+		renderBackground(guiGraphics, pMouseX, pMouseY, delta);
 		super.render(guiGraphics, pMouseX, pMouseY, delta);
 		renderTooltip(guiGraphics, pMouseX, pMouseY);
 	}

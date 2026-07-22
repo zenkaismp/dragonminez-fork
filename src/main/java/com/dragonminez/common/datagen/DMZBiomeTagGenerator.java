@@ -124,6 +124,6 @@ public class DMZBiomeTagGenerator extends BiomeTagsProvider {
 	}
 
 	private static ResourceLocation forge(String path) {
-		return ResourceLocation.fromNamespaceAndPath("forge", path);
+		return new ResourceLocation("forge", path);
 	}
 }

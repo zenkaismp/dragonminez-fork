@@ -61,7 +61,7 @@ public class NamekWarriorEntity extends PathfinderMob implements GeoEntity {
 
     static {
         for (int i = 0; i < VARIANT_COUNT; i++) {
-            TEXTURES[i] = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/enemies/namek_warrior_" + i + ".png");
+            TEXTURES[i] = new ResourceLocation(Reference.MOD_ID, "textures/entity/enemies/namek_warrior_" + i + ".png");
         }
     }
 

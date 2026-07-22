@@ -21,10 +21,10 @@ public class DBSagaModel<T extends DBSagasEntity> extends GeoModel<T> {
 
     @Override
     public ResourceLocation getModelResource(T animatable) {
-        ResourceLocation original = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/sagas/" + animatable.getGeckolibModelName() + ".geo.json");
+        ResourceLocation original = new ResourceLocation(Reference.MOD_ID, "geo/entity/sagas/" + animatable.getGeckolibModelName() + ".geo.json");
 
         boolean exists = RESOURCE_CACHE.computeIfAbsent(original, this::resourceExists);
-        return exists ? original : ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/enemies/robotxv.geo.json");
+        return exists ? original : new ResourceLocation(Reference.MOD_ID, "geo/entity/enemies/robotxv.geo.json");
     }
 
     @Override
@@ -33,7 +33,7 @@ public class DBSagaModel<T extends DBSagasEntity> extends GeoModel<T> {
         int variant = animatable.getTextureVariant();
 
         String variantSuffix = (variant == 0) ? "" : "_" + variant;
-        ResourceLocation variantTexture = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/sagas/" + name + variantSuffix + ".png");
+        ResourceLocation variantTexture = new ResourceLocation(Reference.MOD_ID, "textures/entity/sagas/" + name + variantSuffix + ".png");
 
         boolean variantExists = RESOURCE_CACHE.computeIfAbsent(variantTexture, this::resourceExists);
         if (variantExists) {
@@ -41,19 +41,19 @@ public class DBSagaModel<T extends DBSagasEntity> extends GeoModel<T> {
         }
 
         if (variant > 0) {
-            ResourceLocation baseTexture = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/sagas/" + name + ".png");
+            ResourceLocation baseTexture = new ResourceLocation(Reference.MOD_ID, "textures/entity/sagas/" + name + ".png");
             boolean baseExists = RESOURCE_CACHE.computeIfAbsent(baseTexture, this::resourceExists);
             if (baseExists) {
                 return baseTexture;
             }
         }
 
-        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/enemies/robotxv.png");
+        return new ResourceLocation(Reference.MOD_ID, "textures/entity/enemies/robotxv.png");
     }
 
     @Override
     public ResourceLocation getAnimationResource(T animatable) {
-        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "animations/entity/sagas/saga_base.animation.json");
+        return new ResourceLocation(Reference.MOD_ID, "animations/entity/sagas/saga_base.animation.json");
     }
 
     @Override

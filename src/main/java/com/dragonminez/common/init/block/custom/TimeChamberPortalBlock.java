@@ -34,7 +34,7 @@ import java.util.function.Function;
 public class TimeChamberPortalBlock extends BaseEntityBlock {
 
 	public TimeChamberPortalBlock() {
-		super(BlockBehaviour.Properties.copy(Blocks.QUARTZ_BLOCK).noLootTable().noParticlesOnBreak().strength(-1.0F, 3600000.0F));
+		super(BlockBehaviour.Properties.copy(Blocks.QUARTZ_BLOCK).noLootTable().noTerrainParticles().strength(-1.0F, 3600000.0F));
 	}
 
     @Override

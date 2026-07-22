@@ -33,7 +33,7 @@ import com.google.gson.JsonParser;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.event.network.CustomPayloadEvent;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -69,11 +69,11 @@ public class SyncQuestRegistryS2C {
 		buf.writeUtf(questsJson, 1048576);
 	}
 
-	public void handle(Supplier<NetworkEvent.Context> ctx) {
-		ctx.get().enqueueWork(() ->
+	public void handle(CustomPayloadEvent.Context ctx) {
+		ctx.enqueueWork(() ->
 				DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> this::handleOnClient)
 		);
-		ctx.get().setPacketHandled(true);
+		ctx.setPacketHandled(true);
 	}
 
 	private void handleOnClient() {

@@ -36,7 +36,7 @@ import java.util.Optional;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
 public class LockOnEvent {
-	private static final ResourceLocation LOCK_ICON = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/lock_on.png");
+	private static final ResourceLocation LOCK_ICON = new ResourceLocation(Reference.MOD_ID, "textures/gui/lock_on.png");
 	@Getter
 	private static LivingEntity lockedTarget = null;
 	private static int scanTickCounter = 0;

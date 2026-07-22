@@ -2,7 +2,7 @@ package com.dragonminez.common.network.S2C;
 
 import com.dragonminez.client.systems.taiyoken.TaiyokenBlindState;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.event.network.CustomPayloadEvent;
 
 import java.util.function.Supplier;
 
@@ -22,8 +22,8 @@ public class TaiyokenBlindS2C {
 		buf.writeInt(durationTicks);
 	}
 
-	public void handle(Supplier<NetworkEvent.Context> ctx) {
-		ctx.get().enqueueWork(() -> TaiyokenBlindState.startBlind(durationTicks));
-		ctx.get().setPacketHandled(true);
+	public void handle(CustomPayloadEvent.Context ctx) {
+		ctx.enqueueWork(() -> TaiyokenBlindState.startBlind(durationTicks));
+		ctx.setPacketHandled(true);
 	}
 }

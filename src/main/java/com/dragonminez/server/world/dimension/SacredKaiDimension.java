@@ -13,8 +13,8 @@ import net.minecraft.world.level.dimension.DimensionType;
 import java.util.OptionalLong;
 
 public class SacredKaiDimension {
-	public static final ResourceKey<Level> SACREDKAI_KEY = ResourceKey.create(Registries.DIMENSION, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "sacredkaiplanet"));
-	public static final ResourceKey<DimensionType> SACREDKAI_TYPE = ResourceKey.create(Registries.DIMENSION_TYPE, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "sacredkaiplanet"));
+	public static final ResourceKey<Level> SACREDKAI_KEY = ResourceKey.create(Registries.DIMENSION, new ResourceLocation(Reference.MOD_ID, "sacredkaiplanet"));
+	public static final ResourceKey<DimensionType> SACREDKAI_TYPE = ResourceKey.create(Registries.DIMENSION_TYPE, new ResourceLocation(Reference.MOD_ID, "sacredkaiplanet"));
 
 	public static void bootstrap(BootstapContext<DimensionType> context) {
 		context.register(SACREDKAI_TYPE, new DimensionType(

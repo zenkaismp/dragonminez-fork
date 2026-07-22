@@ -20,6 +20,6 @@ public class DMZProcessorLists {
 	}
 
 	private static ResourceKey<StructureProcessorList> createKey(String name) {
-		return ResourceKey.create(Registries.PROCESSOR_LIST, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, name));
+		return ResourceKey.create(Registries.PROCESSOR_LIST, new ResourceLocation(Reference.MOD_ID, name));
 	}
 }

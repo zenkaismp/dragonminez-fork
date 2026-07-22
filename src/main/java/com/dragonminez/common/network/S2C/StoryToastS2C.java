@@ -5,7 +5,7 @@ import lombok.Getter;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.event.network.CustomPayloadEvent;
 
 import java.util.function.Supplier;
 
@@ -67,10 +67,10 @@ public class StoryToastS2C {
 		);
 	}
 
-	public static void handle(StoryToastS2C msg, Supplier<NetworkEvent.Context> ctx) {
-		ctx.get().enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
+	public static void handle(StoryToastS2C msg, CustomPayloadEvent.Context ctx) {
+		ctx.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
 				() -> () -> ClientPacketHandler.handleStoryToastPacket(msg)));
-		ctx.get().setPacketHandled(true);
+		ctx.setPacketHandled(true);
 	}
 }
 

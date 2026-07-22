@@ -12,7 +12,7 @@ import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.event.network.CustomPayloadEvent;
 
 import java.util.function.Supplier;
 
@@ -39,9 +39,9 @@ public class KiBlastC2S {
 		buffer.writeInt(colorBorder);
 	}
 
-	public static void handle(KiBlastC2S msg, Supplier<NetworkEvent.Context> ctx) {
-		ctx.get().enqueueWork(() -> {
-			ServerPlayer player = ctx.get().getSender();
+	public static void handle(KiBlastC2S msg, CustomPayloadEvent.Context ctx) {
+		ctx.enqueueWork(() -> {
+			ServerPlayer player = ctx.getSender();
 			if (player == null) return;
 
 			if (msg.isShooting) {
@@ -84,6 +84,6 @@ public class KiBlastC2S {
 			}
 		});
 
-		ctx.get().setPacketHandled(true);
+		ctx.setPacketHandled(true);
 	}
 }

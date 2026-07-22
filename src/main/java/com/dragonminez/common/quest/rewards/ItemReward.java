@@ -28,7 +28,7 @@ public class ItemReward extends QuestReward {
 
 	@Override
 	public void giveReward(ServerPlayer player, double rewardMultiplier) {
-		Item item = ForgeRegistries.ITEMS.getValue(ResourceLocation.parse(itemId));
+		Item item = ForgeRegistries.ITEMS.getValue(new ResourceLocation(itemId));
 		if (item == null) return;
 		int scaledCount = scaledCount(rewardMultiplier);
 		if (scaledCount <= 0) return;
@@ -60,7 +60,7 @@ public class ItemReward extends QuestReward {
 				"gui.dragonminez.quests.rewards.item",
 				shownCount,
 				Component.translatable(
-						"item." + ResourceLocation.parse(itemId).toLanguageKey()
+						"item." + new ResourceLocation(itemId).toLanguageKey()
 				)
 		);
 	}

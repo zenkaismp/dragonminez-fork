@@ -303,7 +303,7 @@ public class QuestEvents {
 			if (objective instanceof InteractObjective interactObjective) {
 				String targetStr = interactObjective.getEntityTypeId();
 				EntityType<?> requiredType = targetStr != null
-						? BuiltInRegistries.ENTITY_TYPE.get(ResourceLocation.parse(targetStr))
+						? BuiltInRegistries.ENTITY_TYPE.get(new ResourceLocation(targetStr))
 						: null;
 				if (requiredType == null || event.getTarget().getType().equals(requiredType)) {
 					updateProgress(player, pqd, questKey, quest, i, currentProgress + 1);
@@ -400,7 +400,7 @@ public class QuestEvents {
 
 	private static int countItems(ServerPlayer player, String itemId) {
 		try {
-			Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(itemId));
+			Item item = BuiltInRegistries.ITEM.get(new ResourceLocation(itemId));
 			int count = 0;
 			for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
 				ItemStack stack = player.getInventory().getItem(i);

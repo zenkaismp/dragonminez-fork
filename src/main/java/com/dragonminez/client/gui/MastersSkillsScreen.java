@@ -40,13 +40,13 @@ import java.util.Map;
 @OnlyIn(Dist.CLIENT)
 public class MastersSkillsScreen extends BaseMenuScreen {
 
-	private static final ResourceLocation MENU_BIG = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
+	private static final ResourceLocation MENU_BIG = new ResourceLocation(Reference.MOD_ID,
 			"textures/gui/menu/menubig.png");
-	private static final ResourceLocation MENU_SMALL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
+	private static final ResourceLocation MENU_SMALL = new ResourceLocation(Reference.MOD_ID,
 			"textures/gui/menu/menusmall.png");
-	private static final ResourceLocation BUTTONS_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
+	private static final ResourceLocation BUTTONS_TEXTURE = new ResourceLocation(Reference.MOD_ID,
 			"textures/gui/buttons/characterbuttons.png");
-	private static final ResourceLocation DMZ_FONT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth");
+	private static final ResourceLocation DMZ_FONT = new ResourceLocation(Reference.MOD_ID, "smooth");
 
 	private static final int SKILL_ITEM_HEIGHT = 20;
 	private static final int MAX_VISIBLE_SKILLS = 8;
@@ -79,7 +79,7 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 	private final LivingEntity masterEntity;
 
 	public MastersSkillsScreen(String masterName, LivingEntity masterEntity) {
-		super(Component.literal(masterName).withStyle(Style.EMPTY.withFont(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth"))));
+		super(Component.literal(masterName).withStyle(Style.EMPTY.withFont(new ResourceLocation(Reference.MOD_ID, "smooth"))));
 		this.masterName = masterName;
 		this.masterEntity = masterEntity;
 	}
@@ -248,7 +248,7 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 					.message(tr("gui.dragonminez.skills.purchase"))
 					.onPress(btn -> {
 						if (canAfford) {
-							NetworkHandler.INSTANCE.sendToServer(new UpdateSkillC2S(UpdateSkillC2S.SkillAction.PURCHASE, selectedSkill, cost));
+							NetworkHandler.sendToServer(new UpdateSkillC2S(UpdateSkillC2S.SkillAction.PURCHASE, selectedSkill, cost));
 							updateStatsData();
 						}
 					})
@@ -285,7 +285,7 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 
 	@Override
 	public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-		if (isNotAnimating()) this.renderBackground(graphics);
+		if (isNotAnimating()) this.renderBackground(graphics, mouseX, mouseY, partialTick);
 
 		int uiMouseX = (int) Math.round(toUiX(mouseX));
 		int uiMouseY = (int) Math.round(toUiY(mouseY));
@@ -570,7 +570,7 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 	}
 
 	@Override
-	public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+	public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double delta) {
 		double uiMouseX = toUiX(mouseX);
 		double uiMouseY = toUiY(mouseY);
 		int leftPanelX = 12;
@@ -594,7 +594,7 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 			return true;
 		}
 
-		return super.mouseScrolled(mouseX, mouseY, delta);
+		return super.mouseScrolled(mouseX, mouseY, scrollX, delta);
 	}
 
 	private float calculateScrollPercent(double uiMouseY, int startY, int scrollBarHeight) {
@@ -704,7 +704,7 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 
 		graphics.pose().pushPose();
 		graphics.pose().translate(0.0D, 0.0D, 150.0D);
-		InventoryScreen.renderEntityInInventory(graphics, x, y, 100, pose, cameraOrientation, masterEntity);
+		InventoryScreen.renderEntityInInventory(graphics, x, y, 100, new org.joml.Vector3f(), pose, cameraOrientation, masterEntity);
 		graphics.pose().popPose();
 
 		masterEntity.yBodyRot = yBodyRotO;

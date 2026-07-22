@@ -25,10 +25,10 @@ import net.minecraft.util.RandomSource;
 import org.joml.Matrix4f;
 
 public class KiProjectileRenderer extends EntityRenderer<AbstractKiProjectile> {
-    private static final ResourceLocation TEXTURE_KI = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/kiblast.png");
-    private static final ResourceLocation TEXTURE_KI_SPARKS = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/kiblast_sparkle1.png");
-    private static final ResourceLocation TEXTURE_KI_SPARKS2 = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/kiblast_sparkle2.png");
-    private static final ResourceLocation TEXTURE_CORE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/ki_laser.png");
+    private static final ResourceLocation TEXTURE_KI = new ResourceLocation(Reference.MOD_ID, "textures/entity/ki/kiblast.png");
+    private static final ResourceLocation TEXTURE_KI_SPARKS = new ResourceLocation(Reference.MOD_ID, "textures/entity/ki/kiblast_sparkle1.png");
+    private static final ResourceLocation TEXTURE_KI_SPARKS2 = new ResourceLocation(Reference.MOD_ID, "textures/entity/ki/kiblast_sparkle2.png");
+    private static final ResourceLocation TEXTURE_CORE = new ResourceLocation(Reference.MOD_ID, "textures/entity/ki/ki_laser.png");
     private static final float HALF_SQRT_3 = (float)(Math.sqrt(3.0D) / 2.0D);
 
     public KiProjectileRenderer(EntityRendererProvider.Context pContext) {

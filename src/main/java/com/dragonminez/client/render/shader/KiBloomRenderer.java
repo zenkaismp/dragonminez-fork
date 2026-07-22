@@ -13,7 +13,7 @@ import org.joml.Matrix4f;
 import java.util.List;
 
 public final class KiBloomRenderer {
-	private static final ResourceLocation KI_BLOOM_EFFECT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "shaders/post/ki_bloom.json");
+	private static final ResourceLocation KI_BLOOM_EFFECT = new ResourceLocation(Reference.MOD_ID, "shaders/post/ki_bloom.json");
 	private static final String KI_SCENE_TARGET = "ki_scene";
 
 	private static PostChain chain;

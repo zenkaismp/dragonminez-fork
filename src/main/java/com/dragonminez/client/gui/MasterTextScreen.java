@@ -33,11 +33,11 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 
 public class MasterTextScreen extends Screen {
-	private static final ResourceLocation BUTTONS_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
+	private static final ResourceLocation BUTTONS_TEXTURE = new ResourceLocation(Reference.MOD_ID,
 			"textures/gui/buttons/characterbuttons.png");
-	private static final ResourceLocation MENU_TEXT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
+	private static final ResourceLocation MENU_TEXT = new ResourceLocation(Reference.MOD_ID,
 			"textures/gui/menu/textmenu.png");
-	private static final ResourceLocation DMZ_FONT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth");
+	private static final ResourceLocation DMZ_FONT = new ResourceLocation(Reference.MOD_ID, "smooth");
 
 	private final String masterName;
 	private Component currentDialogue;
@@ -46,7 +46,7 @@ public class MasterTextScreen extends Screen {
 	private EditBox weightBox;
 
 	public MasterTextScreen(String masterName) {
-		super(Component.literal(masterName).withStyle(Style.EMPTY.withFont(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth"))));
+		super(Component.literal(masterName).withStyle(Style.EMPTY.withFont(new ResourceLocation(Reference.MOD_ID, "smooth"))));
 		this.masterName = masterName;
 		this.currentDialogue = tr("gui.dragonminez.lines." + masterName + ".main", Minecraft.getInstance().player.getName());
 	}

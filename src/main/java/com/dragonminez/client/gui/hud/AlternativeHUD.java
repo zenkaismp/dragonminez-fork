@@ -22,9 +22,9 @@ import java.util.List;
 import java.util.Locale;
 
 public class AlternativeHUD {
-	private static final ResourceLocation hud = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/hud/alternativehud.png");
-	private static final ResourceLocation xvhud = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/hud/xenoversehud.png");
-	private static final ResourceLocation racialIcons = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/hud/racial_icons.png");
+	private static final ResourceLocation hud = new ResourceLocation(Reference.MOD_ID, "textures/gui/hud/alternativehud.png");
+	private static final ResourceLocation xvhud = new ResourceLocation(Reference.MOD_ID, "textures/gui/hud/xenoversehud.png");
+	private static final ResourceLocation racialIcons = new ResourceLocation(Reference.MOD_ID, "textures/gui/hud/racial_icons.png");
 
 	private static final HudBarAnimator HP_BAR = new HudBarAnimator();
 	private static final HudBarAnimator KI_BAR = new HudBarAnimator();
@@ -43,7 +43,7 @@ public class AlternativeHUD {
 
 	public static final IGuiOverlay HUD_ALTERNATIVE = (forgeGui, guiGraphics, partialTicks, width, height) -> {
 		Minecraft mc = Minecraft.getInstance();
-		if (mc.options.renderDebug || mc.player == null) return;
+		if (mc.getDebugOverlay().showDebugScreen() || mc.player == null) return;
 		if (!ConfigManager.getUserConfig().getAlternativeHud()) return;
 
 		StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> {

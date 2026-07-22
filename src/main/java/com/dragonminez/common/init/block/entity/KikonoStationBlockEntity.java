@@ -6,6 +6,7 @@ import com.dragonminez.common.init.MainBlockEntities;
 import com.dragonminez.common.init.menu.menutypes.KikonoStationMenu;
 import com.dragonminez.server.energy.StarEnergyStorage;
 import com.dragonminez.server.recipes.KikonoRecipe;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import dev.shadowsoffire.apotheosis.adventure.affix.AffixHelper;
 import dev.shadowsoffire.apotheosis.adventure.socket.SocketHelper;
 import net.minecraft.core.BlockPos;
@@ -144,7 +145,7 @@ public class KikonoStationBlockEntity extends BlockEntity implements MenuProvide
 	private Optional<KikonoRecipe> getCurrentRecipe() {
 		SimpleContainer inventory = new SimpleContainer(itemHandler.getSlots());
 		for (int i = 0; i < itemHandler.getSlots(); i++) inventory.setItem(i, itemHandler.getStackInSlot(i));
-		return level.getRecipeManager().getRecipeFor(MainRecipes.KIKONO_TYPE.get(), inventory, level);
+		return level.getRecipeManager().getRecipeFor(MainRecipes.KIKONO_TYPE.get(), inventory, level).map(RecipeHolder::value);
 	}
 
 	private boolean canOutput(KikonoRecipe recipe) {

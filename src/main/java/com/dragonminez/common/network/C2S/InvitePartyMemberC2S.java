@@ -5,7 +5,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.event.network.CustomPayloadEvent;
 
 import java.util.Map;
 import java.util.UUID;
@@ -30,8 +30,8 @@ public class InvitePartyMemberC2S {
         buffer.writeUUID(targetPlayerId);
     }
 
-    public void handle(Supplier<NetworkEvent.Context> contextSupplier) {
-        NetworkEvent.Context context = contextSupplier.get();
+    public void handle(CustomPayloadEvent.Context contextSupplier) {
+        CustomPayloadEvent.Context context = contextSupplier;
         context.enqueueWork(() -> {
             ServerPlayer inviter = context.getSender();
             if (inviter == null) return;

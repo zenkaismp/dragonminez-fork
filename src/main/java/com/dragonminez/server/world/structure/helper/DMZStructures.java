@@ -244,6 +244,6 @@ public class DMZStructures {
 	}
 
 	private static ResourceKey<Structure> createKey(String name) {
-		return ResourceKey.create(Registries.STRUCTURE, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, name));
+		return ResourceKey.create(Registries.STRUCTURE, new ResourceLocation(Reference.MOD_ID, name));
 	}
 }

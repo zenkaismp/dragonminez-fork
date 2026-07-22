@@ -22,8 +22,8 @@ import java.util.List;
 import java.util.Locale;
 
 public class XenoverseHUD {
-	private static final ResourceLocation hud = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/hud/xenoversehud.png");
-	private static final ResourceLocation racialIcons = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/hud/racial_icons.png");
+	private static final ResourceLocation hud = new ResourceLocation(Reference.MOD_ID, "textures/gui/hud/xenoversehud.png");
+	private static final ResourceLocation racialIcons = new ResourceLocation(Reference.MOD_ID, "textures/gui/hud/racial_icons.png");
 
 	private static final HudBarAnimator HP_BAR = new HudBarAnimator();
 	private static final HudBarAnimator KI_BAR = new HudBarAnimator();
@@ -44,7 +44,7 @@ public class XenoverseHUD {
 
 	public static final IGuiOverlay HUD_XENOVERSE = (forgeGui, guiGraphics, partialTicks, width, height) -> {
 		Minecraft mc = Minecraft.getInstance();
-		if (mc.options.renderDebug || mc.player == null) return;
+		if (mc.getDebugOverlay().showDebugScreen() || mc.player == null) return;
 		if (ConfigManager.getUserConfig().getAlternativeHud()) return;
 
 		StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> {

@@ -71,7 +71,7 @@ public class SkinGathererProvider {
 	private static final float[] DEFAULT_STINGER_COLOR = ColorUtils.hexToRgb("#D9B28D");
 
 	public static ResourceLocation getCachedTexture(String path) {
-		return TEXTURE_CACHE.computeIfAbsent(path, p -> ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, p));
+		return TEXTURE_CACHE.computeIfAbsent(path, p -> new ResourceLocation(Reference.MOD_ID, p));
 	}
 
 	private void emitFadingLayer(BiConsumer<ResourceLocation, float[]> consumer, String layerId, ResourceLocation texture, float[] color) {
@@ -178,7 +178,7 @@ public class SkinGathererProvider {
 				|| logicKey.contains("ssj4gt") || logicKey.equals("buffed") || logicKey.equals("4arms");
 
 		if (isHumanoid && bodyType == 0) {
-			consumer.accept(player.getSkinTextureLocation(), WHITE_COLOR);
+			consumer.accept(player.getSkin().texture(), WHITE_COLOR);
 		} else if (isHumanoid) {
 			resolveBodyHumanSaiyan(character, logicKey, b1, b2, b3, consumer);
 		} else {
@@ -192,7 +192,7 @@ public class SkinGathererProvider {
 					String genSuffix = hasGender ? (character.getGender().equals(Character.GENDER_FEMALE) ? "_female" : "_male") : "";
 
 					if (Boolean.TRUE.equals(raceConfig.getUseVanillaSkin()) && bodyType == 0) {
-						consumer.accept(player.getSkinTextureLocation(), WHITE_COLOR);
+						consumer.accept(player.getSkin().texture(), WHITE_COLOR);
 						break;
 					}
 

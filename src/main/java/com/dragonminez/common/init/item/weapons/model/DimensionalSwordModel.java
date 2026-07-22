@@ -9,12 +9,12 @@ import software.bernie.geckolib.model.GeoModel;
 public class DimensionalSwordModel extends GeoModel<DimensionalSwordItem> {
 	@Override
 	public ResourceLocation getModelResource(DimensionalSwordItem animatable) {
-		return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/weapons/dimensional_sword.geo.json");
+		return new ResourceLocation(Reference.MOD_ID, "geo/weapons/dimensional_sword.geo.json");
 	}
 
 	@Override
 	public ResourceLocation getTextureResource(DimensionalSwordItem animatable) {
-		return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/item/weapons/dimensional_sword.png");
+		return new ResourceLocation(Reference.MOD_ID, "textures/item/weapons/dimensional_sword.png");
 	}
 
 	@Override

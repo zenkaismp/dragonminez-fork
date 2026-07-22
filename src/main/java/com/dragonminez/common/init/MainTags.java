@@ -18,7 +18,7 @@ public class MainTags {
 		public static final TagKey<Structure> KI_GRIEFING_PROTECTED = create("ki_griefing_protected");
 
 		private static TagKey<Structure> create(String name) {
-			return TagKey.create(Registries.STRUCTURE, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, name));
+			return TagKey.create(Registries.STRUCTURE, new ResourceLocation(Reference.MOD_ID, name));
 		}
 	}
 
@@ -28,7 +28,7 @@ public class MainTags {
 		public static final TagKey<EntityType<?>> RED_RIBBON_ROBOTS = create("red_ribbon_robots");
 
 		private static TagKey<EntityType<?>> create(String name) {
-			return TagKey.create(Registries.ENTITY_TYPE, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, name));
+			return TagKey.create(Registries.ENTITY_TYPE, new ResourceLocation(Reference.MOD_ID, name));
 		}
 	}
 
@@ -40,7 +40,7 @@ public class MainTags {
 		IS_MOUNTAINLIKE = create("is_mountainlike"), IS_PLAINSLIKE = create("is_plainslike"), IS_DESERTLIKE = create("is_desertlike");
 
 		private static TagKey<Biome> create(String name) {
-			return TagKey.create(Registries.BIOME, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, name));
+			return TagKey.create(Registries.BIOME, new ResourceLocation(Reference.MOD_ID, name));
 		}
 	}
 
@@ -49,7 +49,7 @@ public class MainTags {
 		NAMEKSTONE_REPLACEABLES = create("namek_stone_ore_replaceables"), NEEDS_GETE_TOOL = create("needs_gete_tool");
 
 		private static TagKey<Block> create(String name) {
-		    return TagKey.create(Registries.BLOCK, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, name));
+		    return TagKey.create(Registries.BLOCK, new ResourceLocation(Reference.MOD_ID, name));
 		}
 	}
 
@@ -58,7 +58,7 @@ public class MainTags {
 		WEIGHTED_ITEMS = create("weighted_items");
 
 		private static TagKey<Item> create(String name) {
-		    return TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, name));
+		    return TagKey.create(Registries.ITEM, new ResourceLocation(Reference.MOD_ID, name));
 		}
 	}
 }

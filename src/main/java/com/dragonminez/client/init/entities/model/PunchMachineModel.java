@@ -10,17 +10,17 @@ public class PunchMachineModel<T extends PunchMachineEntity> extends GeoModel<T>
 
     @Override
     public ResourceLocation getModelResource(T animatable) {
-        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/punchstation.geo.json");
+        return new ResourceLocation(Reference.MOD_ID, "geo/entity/punchstation.geo.json");
     }
 
     @Override
     public ResourceLocation getTextureResource(T animatable) {
-        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/punchmachine.png");
+        return new ResourceLocation(Reference.MOD_ID, "textures/entity/punchmachine.png");
     }
 
     @Override
     public ResourceLocation getAnimationResource(T animatable) {
-        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "animations/entity/punchmachine.animation.json");
+        return new ResourceLocation(Reference.MOD_ID, "animations/entity/punchmachine.animation.json");
     }
 
 }

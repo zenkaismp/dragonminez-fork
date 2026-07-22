@@ -45,7 +45,7 @@ import java.util.Set;
 @OnlyIn(Dist.CLIENT)
 public class QuestEnemyPreview {
 
-	private static final ResourceLocation DMZ_FONT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth");
+	private static final ResourceLocation DMZ_FONT = new ResourceLocation(Reference.MOD_ID, "smooth");
 
 	private static final float YAW_DEG_PER_SEC = 55.0f;
 	private static final int CYCLE_TICKS = 110; // ~5.5s per target before advancing
@@ -236,7 +236,7 @@ public class QuestEnemyPreview {
 
 		graphics.pose().pushPose();
 		graphics.pose().translate(0.0D, 0.0D, 150.0D);
-		InventoryScreen.renderEntityInInventory(graphics, x, y, scale, pose, cameraOrientation, entity);
+		InventoryScreen.renderEntityInInventory(graphics, x, y, scale, new org.joml.Vector3f(), pose, cameraOrientation, entity);
 		graphics.pose().popPose();
 	}
 

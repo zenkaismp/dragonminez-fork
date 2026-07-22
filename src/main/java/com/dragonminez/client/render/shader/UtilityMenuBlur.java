@@ -7,7 +7,7 @@ import net.minecraft.resources.ResourceLocation;
 
 public final class UtilityMenuBlur {
 	public static boolean ENABLED = true;
-	private static final ResourceLocation EFFECT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "shaders/post/utility_blur.json");
+	private static final ResourceLocation EFFECT = new ResourceLocation(Reference.MOD_ID, "shaders/post/utility_blur.json");
 	private static boolean loadedByUs = false;
 
 	private UtilityMenuBlur() {}

@@ -8,7 +8,6 @@ import com.dragonminez.client.render.shader.TransformationPostShaderManager;
 import com.dragonminez.client.render.shader.TransformationMaskBufferSource;
 import com.dragonminez.client.render.util.IrisCompat;
 import com.dragonminez.client.util.BoneVisibilityHandler;
-import com.dragonminez.mixin.client.GeoModelAccessor;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
@@ -77,7 +76,8 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 			return;
 		}
 
-		((GeoModelAccessor) (Object) getGeoModel()).dmz$setLastRenderedInstance(-1L);
+		// ponytail: GeckoLib 4.3.1's GeoModel has no lastRenderedInstance cache (a 4.4+ addition),
+		// so the per-frame reset is unnecessary here; upstream's GeoModelAccessor mixin drops away.
 
 		var statsCap = StatsProvider.get(StatsCapability.INSTANCE, entity);
 		var stats = statsCap.orElse(new StatsData(entity));

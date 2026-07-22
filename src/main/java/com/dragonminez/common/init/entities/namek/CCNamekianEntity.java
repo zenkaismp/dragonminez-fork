@@ -24,7 +24,7 @@ public class CCNamekianEntity extends NamekTraderEntity {
 	private static final int MAP_MAX_USES = 8;
 
 	private static final ResourceLocation TEXTURE =
-			ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/enemies/cc_namekian.png");
+			new ResourceLocation(Reference.MOD_ID, "textures/entity/enemies/cc_namekian.png");
 
 	public CCNamekianEntity(EntityType<? extends Villager> pEntityType, Level pLevel) {
 		super(pEntityType, pLevel);

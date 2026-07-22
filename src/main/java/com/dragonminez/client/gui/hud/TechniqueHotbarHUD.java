@@ -18,7 +18,7 @@ import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 import net.minecraftforge.client.settings.KeyModifier;
 
 public class TechniqueHotbarHUD {
-	private static final ResourceLocation DMZ_FONT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth");
+	private static final ResourceLocation DMZ_FONT = new ResourceLocation(Reference.MOD_ID, "smooth");
 
 	private static final int SLOTS = Techniques.SLOT_COUNT;
 	private static final int BAR_SLOTS = 4;
@@ -41,7 +41,7 @@ public class TechniqueHotbarHUD {
 
 	public static final IGuiOverlay HUD_TECHNIQUES = (forgeGui, guiGraphics, partialTicks, width, height) -> {
 		Minecraft mc = Minecraft.getInstance();
-		if (mc.options.renderDebug || mc.player == null) return;
+		if (mc.getDebugOverlay().showDebugScreen() || mc.player == null) return;
 
 		KeyModifier bar1Mod = KeyBinds.TECHNIQUE_SLOTS[0].getKeyModifier();
 		KeyModifier bar2Mod = KeyBinds.TECHNIQUE_SLOTS[BAR_SLOTS].getKeyModifier();

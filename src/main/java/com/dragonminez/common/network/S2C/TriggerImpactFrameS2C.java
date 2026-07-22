@@ -4,7 +4,7 @@ import com.dragonminez.client.systems.impactframes.ImpactFrame;
 import com.dragonminez.client.systems.impactframes.ImpactFramesHandler;
 import com.dragonminez.common.config.ConfigManager;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.event.network.CustomPayloadEvent;
 
 import java.util.function.Supplier;
 
@@ -36,12 +36,12 @@ public class TriggerImpactFrameS2C {
 		buf.writeBoolean(invert);
 	}
 
-	public void handle(Supplier<NetworkEvent.Context> ctx) {
-		ctx.get().enqueueWork(() -> {
+	public void handle(CustomPayloadEvent.Context ctx) {
+		ctx.enqueueWork(() -> {
 			if (ConfigManager.getUserConfig().isImpactFramesEnabled()) {
 				ImpactFramesHandler.addImpactFrame(new ImpactFrame(threshold, lerp, duration, invert));
 			}
 		});
-		ctx.get().setPacketHandled(true);
+		ctx.setPacketHandled(true);
 	}
 }

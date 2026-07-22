@@ -149,7 +149,7 @@ public class DragonBallBlock extends BaseEntityBlock implements EntityBlock {
 	}
 
 	private boolean summonDragon(ServerLevel serverLevel, BlockPos pos, Player player, DragonDefinition dragonDefinition) {
-		EntityType<?> entityType = ForgeRegistries.ENTITY_TYPES.getValue(ResourceLocation.fromNamespaceAndPath("dragonminez", dragonDefinition.getId()));
+		EntityType<?> entityType = ForgeRegistries.ENTITY_TYPES.getValue(new ResourceLocation("dragonminez", dragonDefinition.getId()));
 		if (entityType == null) {
 			return false;
 		}

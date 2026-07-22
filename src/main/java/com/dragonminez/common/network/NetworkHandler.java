@@ -6,10 +6,10 @@ import com.dragonminez.common.network.S2C.*;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
+import net.minecraftforge.network.ChannelBuilder;
 import net.minecraftforge.network.NetworkDirection;
-import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.PacketDistributor;
-import net.minecraftforge.network.simple.SimpleChannel;
+import net.minecraftforge.network.SimpleChannel;
 
 public class NetworkHandler {
 
@@ -21,11 +21,11 @@ public class NetworkHandler {
 	}
 
 	public static void register() {
-		SimpleChannel net = NetworkRegistry.ChannelBuilder
-				.named(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "network"))
-				.networkProtocolVersion(() -> "1.0")
-				.clientAcceptedVersions(s -> true)
-				.serverAcceptedVersions(s -> true)
+		SimpleChannel net = ChannelBuilder
+				.named(new ResourceLocation(Reference.MOD_ID, "network"))
+				.networkProtocolVersion(1)
+				.clientAcceptedVersions((status, version) -> true)
+				.serverAcceptedVersions((status, version) -> true)
 				.simpleChannel();
 
 		INSTANCE = net;
@@ -518,22 +518,22 @@ public class NetworkHandler {
 	}
 
 	public static <MSG> void sendToServer(MSG message) {
-		INSTANCE.sendToServer(message);
+		INSTANCE.send(message, PacketDistributor.SERVER.noArg());
 	}
 
 	public static <MSG> void sendToPlayer(MSG message, ServerPlayer player) {
-		INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), message);
+		INSTANCE.send(message, PacketDistributor.PLAYER.with(player));
 	}
 
 	public static <MSG> void sendToAllPlayers(MSG message) {
-		INSTANCE.send(PacketDistributor.ALL.noArg(), message);
+		INSTANCE.send(message, PacketDistributor.ALL.noArg());
 	}
 
 	public static <MSG> void sendToTrackingEntityAndSelf(MSG message, Entity entity) {
-		INSTANCE.send(PacketDistributor.TRACKING_ENTITY_AND_SELF.with(() -> entity), message);
+		INSTANCE.send(message, PacketDistributor.TRACKING_ENTITY_AND_SELF.with(entity));
 	}
 
 	public static <MSG> void sendToTrackingEntity(MSG message, Entity entity) {
-		INSTANCE.send(PacketDistributor.TRACKING_ENTITY.with(() -> entity), message);
+		INSTANCE.send(message, PacketDistributor.TRACKING_ENTITY.with(entity));
 	}
 }

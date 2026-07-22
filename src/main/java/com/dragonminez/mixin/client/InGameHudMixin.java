@@ -17,7 +17,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(Gui.class)
 public abstract class InGameHudMixin {
-	private static final ResourceLocation DMZ$BLOCK_SHIELD = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/hud/block_shield.png");
+	private static final ResourceLocation DMZ$BLOCK_SHIELD = new ResourceLocation(Reference.MOD_ID, "textures/gui/hud/block_shield.png");
 	private static final int DMZ$SHIELD_SIZE = 18;
 
 	@Inject(method = "renderCrosshair", at = @At("HEAD"), cancellable = true)

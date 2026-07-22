@@ -5,7 +5,7 @@ import com.dragonminez.common.network.ITTargetEntry;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.event.network.CustomPayloadEvent;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,8 +30,8 @@ public class OpenITMenuS2C {
 		for (ITTargetEntry entry : entries) entry.write(buf);
 	}
 
-	public void handle(Supplier<NetworkEvent.Context> ctx) {
-		NetworkEvent.Context context = ctx.get();
+	public void handle(CustomPayloadEvent.Context ctx) {
+		CustomPayloadEvent.Context context = ctx;
 		context.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
 				() -> () -> ClientPacketHandler.handleOpenITMenu(entries)));
 		context.setPacketHandled(true);

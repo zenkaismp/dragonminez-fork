@@ -4,7 +4,7 @@ import com.dragonminez.common.init.entities.ki.KiBlastEntity;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.phys.AABB;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.event.network.CustomPayloadEvent;
 
 import java.util.List;
 import java.util.function.Supplier;
@@ -20,9 +20,9 @@ public class SokidanControlC2S {
     public void toBytes(FriendlyByteBuf buf) {
     }
 
-    public void handle(Supplier<NetworkEvent.Context> ctx) {
-        ctx.get().enqueueWork(() -> {
-            ServerPlayer player = ctx.get().getSender();
+    public void handle(CustomPayloadEvent.Context ctx) {
+        ctx.enqueueWork(() -> {
+            ServerPlayer player = ctx.getSender();
             if (player != null && player.level() != null) {
                 double searchRadius = 64.0;
                 AABB searchBox = player.getBoundingBox().inflate(searchRadius);
@@ -36,6 +36,6 @@ public class SokidanControlC2S {
                 }
             }
         });
-        ctx.get().setPacketHandled(true);
+        ctx.setPacketHandled(true);
     }
 }

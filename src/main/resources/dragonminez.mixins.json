@@ -28,7 +28,6 @@
     "client.EntityRenderDispatcherMixin",
     "client.CameraMixin",
     "client.GameRendererMixin",
-    "client.GeoModelAccessor",
     "client.GuiGraphicsInvoker",
     "client.GuiGraphicsMixin",
     "client.HeldItemRendererMixin",

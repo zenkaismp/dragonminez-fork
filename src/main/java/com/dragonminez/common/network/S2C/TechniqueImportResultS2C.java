@@ -4,7 +4,7 @@ import com.dragonminez.client.gui.character.SkillsMenuScreen;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.event.network.CustomPayloadEvent;
 
 import java.util.function.Supplier;
 
@@ -33,8 +33,8 @@ public class TechniqueImportResultS2C {
 		buf.writeInt(value);
 	}
 
-	public void handle(Supplier<NetworkEvent.Context> ctx) {
-		ctx.get().enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> SkillsMenuScreen.handleTechniqueImportResult(status, value)));
-		ctx.get().setPacketHandled(true);
+	public void handle(CustomPayloadEvent.Context ctx) {
+		ctx.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> SkillsMenuScreen.handleTechniqueImportResult(status, value)));
+		ctx.setPacketHandled(true);
 	}
 }

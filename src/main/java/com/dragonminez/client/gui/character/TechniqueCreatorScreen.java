@@ -27,8 +27,8 @@ import java.util.List;
 import java.util.Locale;
 
 public class TechniqueCreatorScreen extends ScaledScreen {
-	private static final ResourceLocation MENU_NPC = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/menu/menunpc.png");
-	private static final ResourceLocation BUTTONS_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/buttons/characterbuttons.png");
+	private static final ResourceLocation MENU_NPC = new ResourceLocation(Reference.MOD_ID, "textures/gui/menu/menunpc.png");
+	private static final ResourceLocation BUTTONS_TEXTURE = new ResourceLocation(Reference.MOD_ID, "textures/gui/buttons/characterbuttons.png");
 	private static final NumberFormat COST_NUMBER_FORMAT = NumberFormat.getIntegerInstance(new Locale("es", "ES"));
 
 	private static final int PANEL_W = 345;
@@ -560,7 +560,7 @@ public class TechniqueCreatorScreen extends ScaledScreen {
 			}
 		}
 
-		NetworkHandler.INSTANCE.sendToServer(new CreateTechniqueC2S(
+		NetworkHandler.sendToServer(new CreateTechniqueC2S(
 				finalName,
 				creatorType.name(),
 				creatorUtility.name(),
@@ -583,7 +583,7 @@ public class TechniqueCreatorScreen extends ScaledScreen {
 
 	@Override
 	public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-		renderBackground(graphics);
+		renderBackground(graphics, mouseX, mouseY, partialTick);
 		int uiMouseX = (int) Math.round(toUiX(mouseX));
 		int uiMouseY = (int) Math.round(toUiY(mouseY));
 		beginUiScale(graphics);

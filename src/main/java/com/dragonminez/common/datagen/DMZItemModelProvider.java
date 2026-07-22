@@ -32,7 +32,7 @@ public class DMZItemModelProvider extends ItemModelProvider {
 			DragonRadarAssetDefinition assets = radarDefinition.resolveAssetDefinition();
 			RegistryObject<Item> item = MainItems.getDragonRadarItemOrThrow(radarDefinition.getId());
 			if (assets != null && assets.getItemTexturePath().isPresent()) {
-				withExistingParent(item.getId().getPath(), mcLoc("item/generated")).texture("layer0", ResourceLocation.parse(assets.getItemTexturePath().get()));
+				withExistingParent(item.getId().getPath(), mcLoc("item/generated")).texture("layer0", new ResourceLocation(assets.getItemTexturePath().get()));
 			} else {
 				simpleItem(item);
 			}
@@ -63,7 +63,7 @@ public class DMZItemModelProvider extends ItemModelProvider {
 				int star = entry.getKey();
 				RegistryObject<Item> item = entry.getValue();
 				if (assets != null && assets.getInventoryTexturePathForStar(star).isPresent()) {
-					withExistingParent(item.getId().getPath(), mcLoc("item/generated")).texture("layer0", ResourceLocation.parse(assets.getInventoryTexturePathForStar(star).get()));
+					withExistingParent(item.getId().getPath(), mcLoc("item/generated")).texture("layer0", new ResourceLocation(assets.getInventoryTexturePathForStar(star).get()));
 				} else {
 					simpleItem(item);
 				}
@@ -409,28 +409,28 @@ public class DMZItemModelProvider extends ItemModelProvider {
 
 	private void simpleItem(RegistryObject<Item> item) {
 		withExistingParent(item.getId().getPath(),
-				ResourceLocation.parse("item/generated")).texture("layer0",
-				ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "item/" + item.getId().getPath()));
+				new ResourceLocation("item/generated")).texture("layer0",
+				new ResourceLocation(Reference.MOD_ID, "item/" + item.getId().getPath()));
 	}
 	private void armorItem(RegistryObject<Item> item) {
 		withExistingParent(item.getId().getPath(),
-				ResourceLocation.parse("item/generated")).texture("layer0",
-				ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "item/armors/" + item.getId().getPath()));
+				new ResourceLocation("item/generated")).texture("layer0",
+				new ResourceLocation(Reference.MOD_ID, "item/armors/" + item.getId().getPath()));
 	}
 	private void patternItem(RegistryObject<Item> item) {
 		withExistingParent(item.getId().getPath(),
-				ResourceLocation.parse("item/generated")).texture("layer0",
-				ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "item/patterns/" + item.getId().getPath()));
+				new ResourceLocation("item/generated")).texture("layer0",
+				new ResourceLocation(Reference.MOD_ID, "item/patterns/" + item.getId().getPath()));
 	}
 	private void blockItem(RegistryObject<Block> item) {
 		withExistingParent(item.getId().getPath(),
-				ResourceLocation.parse("item/generated")).texture("layer0",
-				ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "block/" + item.getId().getPath()));
+				new ResourceLocation("item/generated")).texture("layer0",
+				new ResourceLocation(Reference.MOD_ID, "block/" + item.getId().getPath()));
 	}
 	private void blockAsItem(RegistryObject<Block> item) {
 		withExistingParent(item.getId().getPath(),
-				ResourceLocation.parse("item/generated")).texture("layer0",
-				ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "item/" + item.getId().getPath()));
+				new ResourceLocation("item/generated")).texture("layer0",
+				new ResourceLocation(Reference.MOD_ID, "item/" + item.getId().getPath()));
 	}
 	public void simpleBlockItem(RegistryObject<Block> block) {
 		this.withExistingParent(Reference.MOD_ID + ":" + ForgeRegistries.BLOCKS.getKey(block.get()).getPath(),
@@ -443,21 +443,21 @@ public class DMZItemModelProvider extends ItemModelProvider {
 
 	public void fenceItem(RegistryObject<Block> block, RegistryObject<Block> baseBlock) {
 		this.withExistingParent(ForgeRegistries.BLOCKS.getKey(block.get()).getPath(), mcLoc("block/fence_inventory"))
-				.texture("texture",  ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "block/" + ForgeRegistries.BLOCKS.getKey(baseBlock.get()).getPath()));
+				.texture("texture",  new ResourceLocation(Reference.MOD_ID, "block/" + ForgeRegistries.BLOCKS.getKey(baseBlock.get()).getPath()));
 	}
 
 	public void buttonItem(RegistryObject<Block> block, RegistryObject<Block> baseBlock) {
 		this.withExistingParent(ForgeRegistries.BLOCKS.getKey(block.get()).getPath(), mcLoc("block/button_inventory"))
-				.texture("texture",  ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "block/" + ForgeRegistries.BLOCKS.getKey(baseBlock.get()).getPath()));
+				.texture("texture",  new ResourceLocation(Reference.MOD_ID, "block/" + ForgeRegistries.BLOCKS.getKey(baseBlock.get()).getPath()));
 	}
 	public void wallItem(RegistryObject<Block> block, RegistryObject<Block> baseBlock) {
 		this.withExistingParent(ForgeRegistries.BLOCKS.getKey(block.get()).getPath(), mcLoc("block/wall_inventory"))
-				.texture("wall",  ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "block/" + ForgeRegistries.BLOCKS.getKey(baseBlock.get()).getPath()));
+				.texture("wall",  new ResourceLocation(Reference.MOD_ID, "block/" + ForgeRegistries.BLOCKS.getKey(baseBlock.get()).getPath()));
 	}
 	private void saplingItem(RegistryObject<Block> item) {
 		withExistingParent(item.getId().getPath(),
-				ResourceLocation.parse("item/generated")).texture("layer0",
-				ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "block/" + item.getId().getPath()));
+				new ResourceLocation("item/generated")).texture("layer0",
+				new ResourceLocation(Reference.MOD_ID, "block/" + item.getId().getPath()));
 	}
 	private void generateArmorSetModels(Map<ArmorItem.Type, RegistryObject<Item>> armorSet) {
 		for (RegistryObject<Item> piece : armorSet.values()) {
@@ -466,7 +466,7 @@ public class DMZItemModelProvider extends ItemModelProvider {
 	}
 	private void handheldItem(RegistryObject<Item> item) {
 		withExistingParent(item.getId().getPath(),
-				ResourceLocation.parse("item/handheld")).texture("layer0",
-				ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "item/" + item.getId().getPath()));
+				new ResourceLocation("item/handheld")).texture("layer0",
+				new ResourceLocation(Reference.MOD_ID, "item/" + item.getId().getPath()));
 	}
 }

@@ -10,7 +10,7 @@ import com.dragonminez.common.stats.techniques.TechniqueDispatcher;
 import com.dragonminez.common.stats.techniques.Techniques;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.event.network.CustomPayloadEvent;
 
 import java.util.function.Supplier;
 
@@ -51,9 +51,9 @@ public class TechniqueChargeC2S {
 		buf.writeInt(this.targetId);
 	}
 
-	public static void handle(TechniqueChargeC2S msg, Supplier<NetworkEvent.Context> ctx) {
-		ctx.get().enqueueWork(() -> {
-			ServerPlayer player = ctx.get().getSender();
+	public static void handle(TechniqueChargeC2S msg, CustomPayloadEvent.Context ctx) {
+		ctx.enqueueWork(() -> {
+			ServerPlayer player = ctx.getSender();
 			if (player == null) return;
 
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
@@ -106,6 +106,6 @@ public class TechniqueChargeC2S {
 			});
 		});
 
-		ctx.get().setPacketHandled(true);
+		ctx.setPacketHandled(true);
 	}
 }

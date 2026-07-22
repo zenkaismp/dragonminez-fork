@@ -21,7 +21,7 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.Enchantments;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.event.network.CustomPayloadEvent;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import net.minecraft.world.entity.ai.attributes.Attribute;
@@ -71,9 +71,9 @@ public class CombatAttackRequestC2S {
 		}
 	}
 
-	public void handle(Supplier<NetworkEvent.Context> ctx) {
-		ctx.get().enqueueWork(() -> {
-			ServerPlayer player = ctx.get().getSender();
+	public void handle(CustomPayloadEvent.Context ctx) {
+		ctx.enqueueWork(() -> {
+			ServerPlayer player = ctx.getSender();
 			if (player != null) {
 				StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
 					if (stats.getStatus().isStunned()) return;
@@ -82,7 +82,7 @@ public class CombatAttackRequestC2S {
 			}
 		});
 
-		ctx.get().setPacketHandled(true);
+		ctx.setPacketHandled(true);
 	}
 
     private static final UUID SWEEPING_MODIFIER_UUID = UUID.fromString("99435a26-9fa8-48b4-a8eb-8438bf228eb3");

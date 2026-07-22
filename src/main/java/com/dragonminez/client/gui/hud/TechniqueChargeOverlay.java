@@ -17,13 +17,13 @@ import net.minecraft.util.Mth;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 
 public class TechniqueChargeOverlay {
-	private static final ResourceLocation CHARGE_HUD_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/hud/kicharge_hud.png");
-	private static final ResourceLocation DMZ_FONT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth");
+	private static final ResourceLocation CHARGE_HUD_TEXTURE = new ResourceLocation(Reference.MOD_ID, "textures/gui/hud/kicharge_hud.png");
+	private static final ResourceLocation DMZ_FONT = new ResourceLocation(Reference.MOD_ID, "smooth");
 	private static volatile float currentChargePercent = 0.0f;
 
 	public static final IGuiOverlay HUD_TECHNIQUE_CHARGE = (forgeGui, guiGraphics, partialTicks, width, height) -> {
 		Minecraft mc = Minecraft.getInstance();
-		if (mc.options.renderDebug || mc.player == null) return;
+		if (mc.getDebugOverlay().showDebugScreen() || mc.player == null) return;
 
 		StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> {
 			if (!data.getStatus().isHasCreatedCharacter()) return;

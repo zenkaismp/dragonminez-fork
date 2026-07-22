@@ -4,7 +4,7 @@ import com.dragonminez.common.network.ClientPacketHandler;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.event.network.CustomPayloadEvent;
 
 import java.util.function.Supplier;
 
@@ -23,8 +23,8 @@ public class PartyInviteToastS2C {
         buf.writeUtf(inviterName);
     }
 
-    public void handle(Supplier<NetworkEvent.Context> contextSupplier) {
-        NetworkEvent.Context context = contextSupplier.get();
+    public void handle(CustomPayloadEvent.Context contextSupplier) {
+        CustomPayloadEvent.Context context = contextSupplier;
         context.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
                 () -> () -> ClientPacketHandler.handlePartyInviteToastPacket(inviterName)));
         context.setPacketHandled(true);

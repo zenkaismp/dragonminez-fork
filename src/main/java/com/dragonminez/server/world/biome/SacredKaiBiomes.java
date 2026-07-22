@@ -12,9 +12,9 @@ import net.minecraft.world.level.biome.*;
 import net.minecraft.world.level.levelgen.GenerationStep;
 
 public class SacredKaiBiomes {
-	public static final ResourceKey<Biome> SACREDKAI_PLAINS = ResourceKey.create(Registries.BIOME, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "sacredkai_plains"));
-	public static final ResourceKey<Biome> SACREDKAI_HILLS = ResourceKey.create(Registries.BIOME, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "sacredkai_hills"));
-	public static final ResourceKey<Biome> SACREDKAI_RIVERS = ResourceKey.create(Registries.BIOME, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "sacredkai_rivers"));
+	public static final ResourceKey<Biome> SACREDKAI_PLAINS = ResourceKey.create(Registries.BIOME, new ResourceLocation(Reference.MOD_ID, "sacredkai_plains"));
+	public static final ResourceKey<Biome> SACREDKAI_HILLS = ResourceKey.create(Registries.BIOME, new ResourceLocation(Reference.MOD_ID, "sacredkai_hills"));
+	public static final ResourceKey<Biome> SACREDKAI_RIVERS = ResourceKey.create(Registries.BIOME, new ResourceLocation(Reference.MOD_ID, "sacredkai_rivers"));
 
 	public static void bootstrap(BootstapContext<Biome> context) {
 		context.register(SACREDKAI_PLAINS, plains(context));

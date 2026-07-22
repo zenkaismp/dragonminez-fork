@@ -5,7 +5,7 @@ import lombok.Getter;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.event.network.CustomPayloadEvent;
 
 import java.util.function.Supplier;
 
@@ -56,9 +56,9 @@ public class BeamClashStateS2C {
 		);
 	}
 
-	public static void handle(BeamClashStateS2C msg, Supplier<NetworkEvent.Context> ctx) {
-		ctx.get().enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
+	public static void handle(BeamClashStateS2C msg, CustomPayloadEvent.Context ctx) {
+		ctx.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
 				() -> () -> ClientPacketHandler.handleBeamClashState(msg)));
-		ctx.get().setPacketHandled(true);
+		ctx.setPacketHandled(true);
 	}
 }

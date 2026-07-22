@@ -6,6 +6,7 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.Level;
+import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.storage.DimensionDataStorage;
 
@@ -24,7 +25,7 @@ public class MutantSavedData extends SavedData {
 
 	public static MutantSavedData get(MinecraftServer server) {
 		DimensionDataStorage storage = server.getLevel(Level.OVERWORLD).getDataStorage();
-		return storage.computeIfAbsent(MutantSavedData::load, MutantSavedData::new, FILE_NAME);
+		return storage.computeIfAbsent(new SavedData.Factory<>(MutantSavedData::new, MutantSavedData::load, DataFixTypes.SAVED_DATA_MAP_INDEX), FILE_NAME);
 	}
 
 	public static MutantSavedData load(CompoundTag tag) {

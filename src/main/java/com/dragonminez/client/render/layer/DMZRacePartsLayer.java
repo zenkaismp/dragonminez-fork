@@ -35,19 +35,19 @@ import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 import top.theillusivec4.curios.api.CuriosApi;
 
 public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> extends GeoRenderLayer<T> {
-	private static final ResourceLocation RACES_PARTS_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/raceparts.geo.json");
-	private static final ResourceLocation RACES_PARTS_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/raceparts.png");
+	private static final ResourceLocation RACES_PARTS_MODEL = new ResourceLocation(Reference.MOD_ID, "geo/entity/raceparts.geo.json");
+	private static final ResourceLocation RACES_PARTS_TEXTURE = new ResourceLocation(Reference.MOD_ID, "textures/entity/races/raceparts.png");
 
-	private static final ResourceLocation ACCESORIES_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/accesories.geo.json");
-	private static final ResourceLocation SCOUTER_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/scouter.geo.json");
+	private static final ResourceLocation ACCESORIES_MODEL = new ResourceLocation(Reference.MOD_ID, "geo/entity/races/accesories.geo.json");
+	private static final ResourceLocation SCOUTER_MODEL = new ResourceLocation(Reference.MOD_ID, "geo/entity/scouter.geo.json");
 
-	private static final ResourceLocation YAJIROBE_SWORD_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/weapons/yajirobe_katana.geo.json");
-	private static final ResourceLocation YAJIROBE_SWORD_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/item/weapons/yajirobe_katana.png");
-	private static final ResourceLocation Z_SWORD_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/weapons/z_sword.geo.json");
-	private static final ResourceLocation Z_SWORD_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/item/weapons/z_sword.png");
-	private static final ResourceLocation BRAVE_SWORD_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/weapons/brave_sword.geo.json");
-	private static final ResourceLocation BRAVE_SWORD_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/item/weapons/brave_sword.png");
-	private static final ResourceLocation POWER_POLE_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/weapons/power_pole.geo.json");
+	private static final ResourceLocation YAJIROBE_SWORD_MODEL = new ResourceLocation(Reference.MOD_ID, "geo/weapons/yajirobe_katana.geo.json");
+	private static final ResourceLocation YAJIROBE_SWORD_TEXTURE = new ResourceLocation(Reference.MOD_ID, "textures/item/weapons/yajirobe_katana.png");
+	private static final ResourceLocation Z_SWORD_MODEL = new ResourceLocation(Reference.MOD_ID, "geo/weapons/z_sword.geo.json");
+	private static final ResourceLocation Z_SWORD_TEXTURE = new ResourceLocation(Reference.MOD_ID, "textures/item/weapons/z_sword.png");
+	private static final ResourceLocation BRAVE_SWORD_MODEL = new ResourceLocation(Reference.MOD_ID, "geo/weapons/brave_sword.geo.json");
+	private static final ResourceLocation BRAVE_SWORD_TEXTURE = new ResourceLocation(Reference.MOD_ID, "textures/item/weapons/brave_sword.png");
+	private static final ResourceLocation POWER_POLE_MODEL = new ResourceLocation(Reference.MOD_ID, "geo/weapons/power_pole.geo.json");
 
 	private static  float BRAVE_BACK_X = 0.7F;
 	private static  float BRAVE_BACK_Y = 2.0F;
@@ -56,10 +56,10 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 	private static  float BRAVE_BACK_ROT_Y = 0.0F;
 	private static  float BRAVE_BACK_ROT_Z = 135.0f;
 	private static  float BRAVE_BACK_SCALE = 0.9F;
-	private static final ResourceLocation POWER_POLE_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/item/weapons/power_pole.png");
+	private static final ResourceLocation POWER_POLE_TEXTURE = new ResourceLocation(Reference.MOD_ID, "textures/item/weapons/power_pole.png");
 
-	private static final ResourceLocation WEIGHTED_ITEMS_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/weighted_items.geo.json");
-	private static final ResourceLocation WEIGHTED_ITEMS_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/weighted_items.png");
+	private static final ResourceLocation WEIGHTED_ITEMS_MODEL = new ResourceLocation(Reference.MOD_ID, "geo/entity/races/weighted_items.geo.json");
+	private static final ResourceLocation WEIGHTED_ITEMS_TEXTURE = new ResourceLocation(Reference.MOD_ID, "textures/entity/races/weighted_items.png");
 
 	public DMZRacePartsLayer(GeoRenderer<T> entityRendererIn) {
 		super(entityRendererIn);
@@ -450,7 +450,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 		if (accModel == null) return;
 
 		String pothalaColor = stats.getStatus().getPothalaColor().contains("green") ? "green" : "yellow";
-		RenderType accRenderType = RenderType.entityCutoutNoCull(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/" + pothalaColor + "pothala.png"));
+		RenderType accRenderType = RenderType.entityCutoutNoCull(new ResourceLocation(Reference.MOD_ID, "textures/entity/races/" + pothalaColor + "pothala.png"));
 
 		if (hasPothalaRight || isFused) {
 			accModel.getBone("pothala_right").ifPresent(bone -> {
@@ -484,7 +484,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 		BakedGeoModel accModel = getGeoModel().getBakedModel(SCOUTER_MODEL);
 		if (accModel == null) return;
 
-		RenderType accRenderType = ModRenderTypes.scouterLens(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/" + color + "_scouter.png"));
+		RenderType accRenderType = ModRenderTypes.scouterLens(new ResourceLocation(Reference.MOD_ID, "textures/entity/races/" + color + "_scouter.png"));
 
 		accModel.getBone("radar").ifPresent(bone -> {
 			syncTargetBoneAndParents(bone, playerModel);

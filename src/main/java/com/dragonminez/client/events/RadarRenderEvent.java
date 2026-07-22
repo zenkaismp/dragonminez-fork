@@ -29,7 +29,7 @@ import java.util.Map;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class RadarRenderEvent {
-	private static final ResourceLocation RADAR_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/radar.png");
+	private static final ResourceLocation RADAR_TEXTURE = new ResourceLocation(Reference.MOD_ID, "textures/gui/radar.png");
 
 	private static List<BlockPos> clientEarthPositions = new ArrayList<>();
 	private static List<BlockPos> clientNamekPositions = new ArrayList<>();

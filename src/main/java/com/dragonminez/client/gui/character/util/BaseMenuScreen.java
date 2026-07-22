@@ -37,7 +37,7 @@ public abstract class BaseMenuScreen extends ScaledScreen {
 
 	protected static boolean GLOBAL_SWITCHING = false;
 	protected boolean isSwitchingMenu = false;
-	private static final ResourceLocation SCREEN_BUTTONS = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/buttons/menubuttons.png");
+	private static final ResourceLocation SCREEN_BUTTONS = new ResourceLocation(Reference.MOD_ID, "textures/gui/buttons/menubuttons.png");
 	private static final long OPEN_ANIMATION_DURATION = 200;
 	private static final long PANEL_ENTER_ANIMATION_DURATION = 520;
 	private static final long PANEL_EXIT_ANIMATION_DURATION = 140;
@@ -305,7 +305,7 @@ public abstract class BaseMenuScreen extends ScaledScreen {
 	}
 
 	@Override
-	public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+	public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double delta) {
 		if (panelSwitchState == PanelSwitchState.EXITING) return true;
 
 		if (Screen.hasAltDown()) {
@@ -314,7 +314,7 @@ public abstract class BaseMenuScreen extends ScaledScreen {
 			return true;
 		}
 
-		return super.mouseScrolled(mouseX, mouseY, delta);
+		return super.mouseScrolled(mouseX, mouseY, scrollX, delta);
 	}
 
 	private void startPanelEnterTransition() {

@@ -10,7 +10,7 @@ import software.bernie.geckolib.model.GeoModel;
 public class FuelGeneratorBlockModel extends GeoModel<FuelGeneratorBlockEntity> {
 	@Override
 	public ResourceLocation getModelResource(FuelGeneratorBlockEntity fuelGeneratorBlockEntity) {
-		return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/block/fuel_generator.geo.json");
+		return new ResourceLocation(Reference.MOD_ID, "geo/block/fuel_generator.geo.json");
 	}
 
 	@Override
@@ -18,11 +18,11 @@ public class FuelGeneratorBlockModel extends GeoModel<FuelGeneratorBlockEntity> 
 		BlockState state = fuelGeneratorBlockEntity.getBlockState();
 		boolean isLit = state.hasProperty(FuelGeneratorBlock.LIT) && state.getValue(FuelGeneratorBlock.LIT);
 		String textureState = isLit ? "_on" : "_off";
-		return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/block/custom/fuel_generator" + textureState + ".png");
+		return new ResourceLocation(Reference.MOD_ID, "textures/block/custom/fuel_generator" + textureState + ".png");
 	}
 
 	@Override
 	public ResourceLocation getAnimationResource(FuelGeneratorBlockEntity fuelGeneratorBlockEntity) {
-		return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "animations/block/fuel_generator.animation.json");
+		return new ResourceLocation(Reference.MOD_ID, "animations/block/fuel_generator.animation.json");
 	}
 }

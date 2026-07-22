@@ -121,7 +121,7 @@ public class DragonRadarDefinition {
 		String id = root.get("id").getAsString();
 		String itemRegistryName = root.get("item_registry_name").getAsString();
 		Set<ResourceLocation> dimensions = new LinkedHashSet<>();
-		for (JsonElement element : root.getAsJsonArray("dimensions")) dimensions.add(ResourceLocation.parse(element.getAsString()));
+		for (JsonElement element : root.getAsJsonArray("dimensions")) dimensions.add(new ResourceLocation(element.getAsString()));
 
 		String ballSetId = root.get("ball_set").getAsString();
 

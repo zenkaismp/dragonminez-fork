@@ -31,8 +31,8 @@ import java.util.UUID;
 @OnlyIn(Dist.CLIENT)
 public class PartyMenuScreen extends BaseMenuScreen {
 
-	private static final ResourceLocation MENU_BIG = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/menu/menubig.png");
-	private static final ResourceLocation BUTTONS_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/buttons/characterbuttons.png");
+	private static final ResourceLocation MENU_BIG = new ResourceLocation(Reference.MOD_ID, "textures/gui/menu/menubig.png");
+	private static final ResourceLocation BUTTONS_TEXTURE = new ResourceLocation(Reference.MOD_ID, "textures/gui/buttons/characterbuttons.png");
 	private static final int ITEM_HEIGHT = 16;
 	private static final int MAX_VISIBLE_ITEMS = 10;
 
@@ -224,7 +224,7 @@ public class PartyMenuScreen extends BaseMenuScreen {
 
 	@Override
 	public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-		if (isNotAnimating()) this.renderBackground(graphics);
+		if (isNotAnimating()) this.renderBackground(graphics, mouseX, mouseY, partialTick);
 
 		int uiMouseX = (int) Math.round(toUiX(mouseX));
 		int uiMouseY = (int) Math.round(toUiY(mouseY));
@@ -425,7 +425,7 @@ public class PartyMenuScreen extends BaseMenuScreen {
 
 		graphics.pose().pushPose();
 		graphics.pose().translate(0.0D, 0.0D, 150.0D);
-		InventoryScreen.renderEntityInInventory(graphics, x, y, adjustedScale, pose, cameraOrientation, renderEntity);
+		InventoryScreen.renderEntityInInventory(graphics, x, y, adjustedScale, new org.joml.Vector3f(), pose, cameraOrientation, renderEntity);
 		graphics.pose().popPose();
 
 		renderEntity.yBodyRot = yBodyRotO;
@@ -436,12 +436,12 @@ public class PartyMenuScreen extends BaseMenuScreen {
 	}
 
 	@Override
-	public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+	public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double delta) {
 		if (maxScroll > 0) {
 			targetScroll = Mth.clamp(targetScroll - ((float) Math.signum(delta) * ITEM_HEIGHT * 2), 0, maxScroll);
 			return true;
 		}
-		return super.mouseScrolled(mouseX, mouseY, delta);
+		return super.mouseScrolled(mouseX, mouseY, scrollX, delta);
 	}
 
 	@Override

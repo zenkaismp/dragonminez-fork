@@ -12,7 +12,7 @@ import com.dragonminez.common.stats.character.MasterLocation;
 import com.dragonminez.common.util.TransformationsHelper;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.event.network.CustomPayloadEvent;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -33,9 +33,9 @@ public class RequestITTargetsC2S {
 
 	public void encode(FriendlyByteBuf ignored) {}
 
-	public void handle(Supplier<NetworkEvent.Context> ctx) {
-		ctx.get().enqueueWork(() -> {
-			ServerPlayer player = ctx.get().getSender();
+	public void handle(CustomPayloadEvent.Context ctx) {
+		ctx.enqueueWork(() -> {
+			ServerPlayer player = ctx.getSender();
 			if (player == null) return;
 
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
@@ -81,7 +81,7 @@ public class RequestITTargetsC2S {
 				NetworkHandler.sendToPlayer(new OpenITMenuS2C(entries), player);
 			});
 		});
-		ctx.get().setPacketHandled(true);
+		ctx.setPacketHandled(true);
 	}
 
 	public static boolean isValidExternalTarget(ServerPlayer self, StatsData selfData, double selfBp, ServerPlayer target, StatsData targetData, double maxRange) {

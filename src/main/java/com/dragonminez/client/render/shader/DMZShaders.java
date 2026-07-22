@@ -23,27 +23,27 @@ public class DMZShaders {
 	public static void onRegisterShaders(RegisterShadersEvent event) throws IOException {
 
 		event.registerShader(new ShaderInstance(event.getResourceProvider(),
-						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "aura"),
+						new ResourceLocation(Reference.MOD_ID, "aura"),
 						DefaultVertexFormat.POSITION_TEX),
 				shaderInstance -> auraShader = shaderInstance);
 
 		event.registerShader(new ShaderInstance(event.getResourceProvider(),
-						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "lightning"),
+						new ResourceLocation(Reference.MOD_ID, "lightning"),
 						DefaultVertexFormat.POSITION_COLOR_NORMAL),
 				shaderInstance -> lightningShader = shaderInstance);
 
 		event.registerShader(new ShaderInstance(event.getResourceProvider(),
-						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "transformation_mask"),
+						new ResourceLocation(Reference.MOD_ID, "transformation_mask"),
 						DefaultVertexFormat.NEW_ENTITY),
 				shaderInstance -> outlineShader = shaderInstance);
 
 		event.registerShader(new ShaderInstance(event.getResourceProvider(),
-						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "transformation_mask_tex"),
+						new ResourceLocation(Reference.MOD_ID, "transformation_mask_tex"),
 						DefaultVertexFormat.NEW_ENTITY),
 				shaderInstance -> outlineMaskTexShader = shaderInstance);
 
 		event.registerShader(new ShaderInstance(event.getResourceProvider(),
-						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "kiattack"),
+						new ResourceLocation(Reference.MOD_ID, "kiattack"),
 						DefaultVertexFormat.NEW_ENTITY),
 				shaderInstance -> ki3dShader = shaderInstance);
 	}

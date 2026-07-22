@@ -40,7 +40,7 @@ public class SoundHelper {
 
         ResourceLocation soundLoc = ResourceLocation.tryParse(sound.id());
         if (soundLoc == null) {
-            soundLoc = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, sound.id());
+            soundLoc = new ResourceLocation(Reference.MOD_ID, sound.id());
         }
         return ForgeRegistries.SOUND_EVENTS.getValue(soundLoc);
     }

@@ -8,12 +8,12 @@ import software.bernie.geckolib.model.GeoModel;
 public class YajirobeKatanaModel extends GeoModel<YajirobeKatanaItem> {
     @Override
     public ResourceLocation getModelResource(YajirobeKatanaItem animatable) {
-        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/weapons/yajirobe_katana.geo.json");
+        return new ResourceLocation(Reference.MOD_ID, "geo/weapons/yajirobe_katana.geo.json");
     }
 
     @Override
     public ResourceLocation getTextureResource(YajirobeKatanaItem animatable) {
-        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/item/weapons/yajirobe_katana.png");
+        return new ResourceLocation(Reference.MOD_ID, "textures/item/weapons/yajirobe_katana.png");
     }
 
     @Override

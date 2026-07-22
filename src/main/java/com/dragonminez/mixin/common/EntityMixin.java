@@ -1,59 +1,12 @@
 package com.dragonminez.mixin.common;
 
-import com.dragonminez.common.stats.StatsCapability;
-import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.Pose;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.phys.AABB;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
-import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+// 1.20.2: Entity.canEnterPose was removed. The pose-fit check moved to
+// Player.canPlayerFitWithinBlocksAndEntitiesWhen(Pose), which now derives its box from
+// getDimensions(pose). Scaled-player pose fitting is therefore already handled by
+// PlayerMixin's getDimensions override, so this mixin no longer needs an injector.
 @Mixin(Entity.class)
 public abstract class EntityMixin {
-	@Shadow public abstract AABB getBoundingBox();
-
-	@Inject(method = "canEnterPose", at = @At("HEAD"), cancellable = true)
-	private void onCanEnterPose(Pose pose, CallbackInfoReturnable<Boolean> cir) {
-		Entity self = (Entity) (Object) this;
-		if (!(self instanceof Player player)) return;
-
-		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-			Float[] scaling = data.getCharacter().getResolvedModelScaling();
-			float currentScaleY = scaling[1];
-
-			final float BASE_SCALE = 0.9375f;
-			float ratioY = currentScaleY / BASE_SCALE;
-
-			if (Math.abs(ratioY - 1.0f) > 0.001F) {
-				float baseHeight = 1.8F;
-				float poseMultiplier = 1.0F;
-
-				if (pose == Pose.CROUCHING) {
-					poseMultiplier = 1.5F / 1.8F;
-				} else if (pose == Pose.SWIMMING || pose == Pose.FALL_FLYING || pose == Pose.SPIN_ATTACK) {
-					poseMultiplier = 0.6F / 1.8F;
-				}
-
-				float actualHeight = baseHeight * ratioY * poseMultiplier;
-
-				AABB currentBox = this.getBoundingBox();
-				AABB testBox = new AABB(
-					currentBox.minX,
-					currentBox.minY,
-					currentBox.minZ,
-					currentBox.maxX,
-					currentBox.minY + actualHeight,
-					currentBox.maxZ
-				);
-
-				boolean canFit = player.level().noCollision(player, testBox);
-				cir.setReturnValue(canFit);
-			}
-		});
-	}
 }
-

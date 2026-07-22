@@ -8,7 +8,7 @@ import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.event.network.CustomPayloadEvent;
 
 import java.util.function.Supplier;
 
@@ -32,9 +32,9 @@ public class FlyToggleC2S {
         return new FlyToggleC2S(buf);
     }
 
-    public static void handle(FlyToggleC2S msg, Supplier<NetworkEvent.Context> ctx) {
-        ctx.get().enqueueWork(() -> {
-            ServerPlayer player = ctx.get().getSender();
+    public static void handle(FlyToggleC2S msg, CustomPayloadEvent.Context ctx) {
+        ctx.enqueueWork(() -> {
+            ServerPlayer player = ctx.getSender();
             if (player == null) return;
 
             StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
@@ -70,6 +70,6 @@ public class FlyToggleC2S {
                 NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
             });
         });
-        ctx.get().setPacketHandled(true);
+        ctx.setPacketHandled(true);
     }
 }

@@ -5,7 +5,7 @@ import com.dragonminez.common.network.CompressionUtil;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.event.network.CustomPayloadEvent;
 
 import java.util.function.Supplier;
 
@@ -32,12 +32,12 @@ public class SyncServerConfigS2C {
 		buf.writeBoolean(reset);
 	}
 
-	public void handle(Supplier<NetworkEvent.Context> ctx) {
-		ctx.get().enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
+	public void handle(CustomPayloadEvent.Context ctx) {
+		ctx.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
 			if (reset) ConfigManager.beginServerSyncBatch();
 			String json = CompressionUtil.decompress(payload);
 			ConfigManager.applySpecificSyncedConfig(configPath, json);
 		}));
-		ctx.get().setPacketHandled(true);
+		ctx.setPacketHandled(true);
 	}
 }

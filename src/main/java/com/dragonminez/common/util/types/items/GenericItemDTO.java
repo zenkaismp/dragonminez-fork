@@ -29,7 +29,7 @@ public class GenericItemDTO {
     }
 
     public ItemStack getItemStack() {
-        var item = ForgeRegistries.ITEMS.getValue(ResourceLocation.parse(this.getItemId()));
+        var item = ForgeRegistries.ITEMS.getValue(new ResourceLocation(this.getItemId()));
         if (item != null) {
             return new ItemStack(item, this.count);
         }

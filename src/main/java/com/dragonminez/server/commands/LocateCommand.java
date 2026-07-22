@@ -37,7 +37,7 @@ public class LocateCommand {
 	private static int locateByName(CommandSourceStack source, String name) {
 		ResourceLocation id = name.indexOf(':') >= 0
 				? ResourceLocation.tryParse(name)
-				: ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, name);
+				: new ResourceLocation(Reference.MOD_ID, name);
 		if (id == null || !source.registryAccess().registryOrThrow(Registries.STRUCTURE).containsKey(id)) {
 			source.sendFailure(Component.translatable("command.dragonminez.locate.invalid", name));
 			return 0;

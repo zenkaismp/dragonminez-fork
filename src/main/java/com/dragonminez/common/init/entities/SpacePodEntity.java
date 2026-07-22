@@ -119,7 +119,7 @@ public class SpacePodEntity extends Mob implements GeoEntity {
         return this.getFirstPassenger() instanceof LivingEntity entity ? entity : null;
     }
 
-    @Override
+    // 1.20.2: Entity.getPassengersRidingOffset() was removed; kept as a local helper used by positionRider().
     public double getPassengersRidingOffset() {
         return 0.4D;
     }
@@ -127,7 +127,7 @@ public class SpacePodEntity extends Mob implements GeoEntity {
 	@Override
 	public void positionRider(Entity passenger, MoveFunction callback) {
 		if (this.hasPassenger(passenger)) {
-			double yOffset = this.getPassengersRidingOffset() + passenger.getMyRidingOffset();
+			double yOffset = this.getPassengersRidingOffset() + passenger.getMyRidingOffset(this);
 			Vec3 vec3 = (new Vec3(0.0D, 0.0D, 0.0D)).yRot(-this.getYRot() * ((float)Math.PI / 180F) - ((float)Math.PI / 2F));
 			callback.accept(passenger, this.getX() + vec3.x, this.getY() + yOffset, this.getZ() + vec3.z);
 			if (passenger instanceof LivingEntity livingPassenger) {

@@ -26,7 +26,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.event.network.CustomPayloadEvent;
 
 import java.util.function.Supplier;
 
@@ -58,8 +58,8 @@ public class NPCActionC2S {
 		buf.writeInt(this.value);
 	}
 
-	public static void handle(NPCActionC2S packet, Supplier<NetworkEvent.Context> ctx) {
-		NetworkEvent.Context context = ctx.get();
+	public static void handle(NPCActionC2S packet, CustomPayloadEvent.Context ctx) {
+		CustomPayloadEvent.Context context = ctx;
 		context.enqueueWork(() -> {
 			ServerPlayer player = context.getSender();
 			if (player == null) return;

@@ -52,7 +52,7 @@ public class DMZThirdPartyLayerForwarder<T extends AbstractClientPlayer & GeoAni
 		if (stats.getCharacter().isOozaruCached()) return;
 
 		var dispatcher = Minecraft.getInstance().getEntityRenderDispatcher();
-		var vanillaRenderer = dispatcher.getSkinMap().get(animatable.getModelName());
+		var vanillaRenderer = dispatcher.getSkinMap().get(animatable.getSkin().model().id());
 		if (!(vanillaRenderer instanceof PlayerRenderer playerRenderer)) return;
 
 		List<RenderLayer<?, ?>> layers;

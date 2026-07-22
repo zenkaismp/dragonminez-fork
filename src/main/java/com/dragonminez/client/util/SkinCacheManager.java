@@ -113,13 +113,13 @@ public final class SkinCacheManager {
     }
 
     public static ResourceLocation resolveTexture(String username) {
-        if (username == null || username.isEmpty()) return DefaultPlayerSkin.getDefaultSkin();
+        if (username == null || username.isEmpty()) return DefaultPlayerSkin.getDefaultTexture();
         String key = username.toLowerCase();
         ResourceLocation loc = registered.get(key);
         if (loc != null) return loc;
 
         if (initialized && !index.containsKey(key)) queueResolve(username, false);
-        return DefaultPlayerSkin.getDefaultSkin();
+        return DefaultPlayerSkin.getDefaultTexture();
     }
 
     private static void queueResolve(String username, boolean forceRecheck) {
@@ -333,7 +333,7 @@ public final class SkinCacheManager {
                 image.close();
                 return;
             }
-            ResourceLocation loc = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "skins/" + key);
+            ResourceLocation loc = new ResourceLocation(Reference.MOD_ID, "skins/" + key);
             Minecraft.getInstance().getTextureManager().register(loc, new DynamicTexture(image));
             registered.put(key, loc);
         });

@@ -37,9 +37,9 @@ import java.util.List;
 @OnlyIn(Dist.CLIENT)
 public class MinigamesScreen extends BaseMenuScreen {
 
-	private static final ResourceLocation MENU_BIG = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/menu/menubig.png");
-	private static final ResourceLocation BUTTON_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/buttons/menubuttons.png");
-	private static final ResourceLocation CHAR_BUTTONS = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/buttons/characterbuttons.png");
+	private static final ResourceLocation MENU_BIG = new ResourceLocation(Reference.MOD_ID, "textures/gui/menu/menubig.png");
+	private static final ResourceLocation BUTTON_TEXTURE = new ResourceLocation(Reference.MOD_ID, "textures/gui/buttons/menubuttons.png");
+	private static final ResourceLocation CHAR_BUTTONS = new ResourceLocation(Reference.MOD_ID, "textures/gui/buttons/characterbuttons.png");
 
 	private static final boolean DEBUG_UNLOCK_ALL = false;
 	private static final String[] MINIGAMES = {"rhythm", "control", "memory", "precision", "gravity", "shadowdummy"};
@@ -178,7 +178,7 @@ public class MinigamesScreen extends BaseMenuScreen {
 
 	@Override
 	public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-		if (isNotAnimating()) this.renderBackground(graphics);
+		if (isNotAnimating()) this.renderBackground(graphics, mouseX, mouseY, partialTick);
 		int uiMouseX = (int) Math.round(toUiX(mouseX));
 		int uiMouseY = (int) Math.round(toUiY(mouseY));
 
@@ -405,7 +405,7 @@ public class MinigamesScreen extends BaseMenuScreen {
 	}
 
 	@Override
-	public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+	public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double delta) {
 		double uiMouseX = toUiX(mouseX);
 		double uiMouseY = toUiY(mouseY);
 		int rightPanelX = getUiWidth() - 158;
@@ -417,7 +417,7 @@ public class MinigamesScreen extends BaseMenuScreen {
 			targetDescScrollY = Mth.clamp(targetDescScrollY - (float) (delta * 12.0), 0f, maxScroll);
 			return true;
 		}
-		return super.mouseScrolled(mouseX, mouseY, delta);
+		return super.mouseScrolled(mouseX, mouseY, scrollX, delta);
 	}
 
 	private void renderPlayerModel(GuiGraphics graphics, int x, int y, int scale, float mouseX, float mouseY) {
@@ -447,7 +447,7 @@ public class MinigamesScreen extends BaseMenuScreen {
 
 		graphics.pose().pushPose();
 		graphics.pose().translate(0.0D, 0.0D, 150.0D);
-		InventoryScreen.renderEntityInInventory(graphics, x, y, adjustedScale, pose, cameraOrientation, player);
+		InventoryScreen.renderEntityInInventory(graphics, x, y, adjustedScale, new org.joml.Vector3f(), pose, cameraOrientation, player);
 		graphics.pose().popPose();
 
 		player.yBodyRot = yBodyRotO;

@@ -24,8 +24,8 @@ import net.minecraft.world.level.levelgen.synth.NormalNoise;
 import java.util.List;
 
 public class SacredKaiGeneration {
-	public static final ResourceKey<LevelStem> SACREDKAI_STEM = ResourceKey.create(Registries.LEVEL_STEM, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "sacredkaiplanet"));
-	public static final ResourceKey<NoiseGeneratorSettings> SACREDKAI_NOISE_SETTINGS = ResourceKey.create(Registries.NOISE_SETTINGS, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "sacredkaiplanet"));
+	public static final ResourceKey<LevelStem> SACREDKAI_STEM = ResourceKey.create(Registries.LEVEL_STEM, new ResourceLocation(Reference.MOD_ID, "sacredkaiplanet"));
+	public static final ResourceKey<NoiseGeneratorSettings> SACREDKAI_NOISE_SETTINGS = ResourceKey.create(Registries.NOISE_SETTINGS, new ResourceLocation(Reference.MOD_ID, "sacredkaiplanet"));
 
 	public static void bootstrap(BootstapContext<LevelStem> context) {
 		HolderGetter<Biome> biomeRegistry = context.lookup(Registries.BIOME);

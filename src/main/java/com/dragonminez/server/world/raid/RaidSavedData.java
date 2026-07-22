@@ -7,6 +7,7 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
+import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.storage.DimensionDataStorage;
 
@@ -24,7 +25,7 @@ public class RaidSavedData extends SavedData {
 
 	public static RaidSavedData get(MinecraftServer server) {
 		DimensionDataStorage storage = server.getLevel(Level.OVERWORLD).getDataStorage();
-		return storage.computeIfAbsent(RaidSavedData::load, RaidSavedData::new, FILE_NAME);
+		return storage.computeIfAbsent(new SavedData.Factory<>(RaidSavedData::new, RaidSavedData::load, DataFixTypes.SAVED_DATA_MAP_INDEX), FILE_NAME);
 	}
 
 	public static RaidSavedData load(CompoundTag tag) {

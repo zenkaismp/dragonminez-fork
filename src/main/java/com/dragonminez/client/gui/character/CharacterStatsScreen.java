@@ -50,11 +50,11 @@ import java.util.Locale;
 @OnlyIn(Dist.CLIENT)
 public class CharacterStatsScreen extends BaseMenuScreen {
 
-	private static final ResourceLocation MENU_BIG = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
+	private static final ResourceLocation MENU_BIG = new ResourceLocation(Reference.MOD_ID,
 			"textures/gui/menu/menubig.png");
-	private static final ResourceLocation MENU_SMALL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
+	private static final ResourceLocation MENU_SMALL = new ResourceLocation(Reference.MOD_ID,
 			"textures/gui/menu/menusmall.png");
-	private static final ResourceLocation BUTTONS_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
+	private static final ResourceLocation BUTTONS_TEXTURE = new ResourceLocation(Reference.MOD_ID,
 			"textures/gui/buttons/characterbuttons.png");
 	private int tpMultiplier = 1;
 
@@ -120,7 +120,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 
 	@Override
 	public void render(@NonNull GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-		if (isNotAnimating()) this.renderBackground(graphics);
+		if (isNotAnimating()) this.renderBackground(graphics, mouseX, mouseY, partialTick);
 
 		int uiMouseX = (int) Math.round(toUiX(mouseX));
 		int uiMouseY = (int) Math.round(toUiY(mouseY));
@@ -1268,7 +1268,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 
 		graphics.pose().pushPose();
 		graphics.pose().translate(0.0D, 0.0D, 150.0D);
-		InventoryScreen.renderEntityInInventory(graphics, x, y, adjustedScale, pose, cameraOrientation, player);
+		InventoryScreen.renderEntityInInventory(graphics, x, y, adjustedScale, new org.joml.Vector3f(), pose, cameraOrientation, player);
 		graphics.pose().popPose();
 
 		player.yBodyRot = yBodyRotO;

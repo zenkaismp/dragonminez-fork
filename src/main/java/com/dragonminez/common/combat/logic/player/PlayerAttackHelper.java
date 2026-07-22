@@ -278,8 +278,8 @@ public class PlayerAttackHelper {
         if (parsed != null) candidates.add(parsed);
 
         if (!comboRaw.contains(":")) {
-            candidates.add(ResourceLocation.fromNamespaceAndPath("dragonminez", comboRaw));
-            candidates.add(ResourceLocation.fromNamespaceAndPath("minecraft", comboRaw));
+            candidates.add(new ResourceLocation("dragonminez", comboRaw));
+            candidates.add(new ResourceLocation("minecraft", comboRaw));
         }
 
         for (ResourceLocation candidate : candidates) {
@@ -329,7 +329,7 @@ public class PlayerAttackHelper {
                 if (attributes != null && attributes.attacks() != null) return attributes;
             }
         }
-        return WeaponRegistry.getAttributes(ResourceLocation.fromNamespaceAndPath("dragonminez", "fist"));
+        return WeaponRegistry.getAttributes(new ResourceLocation("dragonminez", "fist"));
     }
 
     @Nullable
@@ -340,7 +340,7 @@ public class PlayerAttackHelper {
         }
         var attributes = getActiveFormComboAttributes(player);
         if (attributes == null || attributes.attacks() == null) {
-            attributes = WeaponRegistry.getAttributes(ResourceLocation.fromNamespaceAndPath("dragonminez", "fist"));
+            attributes = WeaponRegistry.getAttributes(new ResourceLocation("dragonminez", "fist"));
         }
         return attributes;
     }

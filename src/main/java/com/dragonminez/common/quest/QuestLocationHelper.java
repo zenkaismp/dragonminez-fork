@@ -79,7 +79,7 @@ public final class QuestLocationHelper {
 				if (!tagId.contains(":")) {
 					return false;
 				}
-				ResourceLocation tagRL = ResourceLocation.parse(tagId);
+				ResourceLocation tagRL = new ResourceLocation(tagId);
 				TagKey<Biome> tagKey = TagKey.create(Registries.BIOME, tagRL);
 				return biomeHolder.is(tagKey);
 			}
@@ -88,7 +88,7 @@ public final class QuestLocationHelper {
 				return false;
 			}
 
-			return biomeHolder.is(ResourceLocation.parse(targetBiome));
+			return biomeHolder.is(new ResourceLocation(targetBiome));
 		} catch (Exception e) {
 			return false;
 		}
@@ -100,7 +100,7 @@ public final class QuestLocationHelper {
 		}
 
 		try {
-			ResourceLocation structRL = ResourceLocation.parse(targetStructure);
+			ResourceLocation structRL = new ResourceLocation(targetStructure);
 			ResourceKey<Structure> structKey = ResourceKey.create(Registries.STRUCTURE, structRL);
 			return level.structureManager().getStructureWithPieceAt(pos, structKey).isValid();
 		} catch (Exception e) {
@@ -114,7 +114,7 @@ public final class QuestLocationHelper {
 		}
 
 		try {
-			ResourceLocation dimensionRL = ResourceLocation.parse(targetDimension);
+			ResourceLocation dimensionRL = new ResourceLocation(targetDimension);
 			return level.dimension().location().equals(dimensionRL);
 		} catch (Exception e) {
 			return false;

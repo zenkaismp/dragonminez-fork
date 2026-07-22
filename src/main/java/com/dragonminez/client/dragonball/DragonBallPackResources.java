@@ -25,7 +25,7 @@ public class DragonBallPackResources implements PackResources {
 		this.packId = packId;
 		JsonObject packInfo = new JsonObject();
 		packInfo.addProperty("description", "DMZ Dragonballs Runtime Resources");
-		packInfo.addProperty("pack_format", 15);
+		packInfo.addProperty("pack_format", 18);
 
 		JsonObject root = new JsonObject();
 		root.add("pack", packInfo);
@@ -286,7 +286,7 @@ public class DragonBallPackResources implements PackResources {
 
 	private void publishIfMatches(String requestedPath, String fullPath, ResourceOutput resourceOutput) {
 		if (!fullPath.startsWith(requestedPath)) return;
-		resourceOutput.accept(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, fullPath), () -> {
+		resourceOutput.accept(new ResourceLocation(Reference.MOD_ID, fullPath), () -> {
 			String json = getGeneratedJson(fullPath);
 			byte[] bytes = json == null ? new byte[0] : json.getBytes(StandardCharsets.UTF_8);
 			return new ByteArrayInputStream(bytes);

@@ -45,7 +45,7 @@ public class WeaponRegistry {
 
     public static WeaponAttributes getAttributes(ItemStack itemStack) {
         if (itemStack == null) return null;
-        if (itemStack.isEmpty()) return getAttributes(ResourceLocation.parse("minecraft:air"));
+        if (itemStack.isEmpty()) return getAttributes(new ResourceLocation("minecraft:air"));
 
         var inStackAttributes = WeaponAttributesHelper.getContainerFromNBT(itemStack);
         if (inStackAttributes != null) {
@@ -247,7 +247,7 @@ public class WeaponRegistry {
         Map<String, WeaponAttributes> readRegistrations = gson.fromJson(json, mapType);
         Map<ResourceLocation, WeaponAttributes> newRegistrations = new HashMap<>();
 
-        readRegistrations.forEach((key, value) -> newRegistrations.put(ResourceLocation.parse(key), value));
+        readRegistrations.forEach((key, value) -> newRegistrations.put(new ResourceLocation(key), value));
         registrations = newRegistrations;
     }
 

@@ -47,11 +47,11 @@ import java.util.Map;
 @OnlyIn(Dist.CLIENT)
 public class SkillsMenuScreen extends BaseMenuScreen {
 
-	private static final ResourceLocation STAT_BUTTONS = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/buttons/characterbuttons.png");
-	private static final ResourceLocation MENU_BIG = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/menu/menubig.png");
-	private static final ResourceLocation MENU_SMALL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/menu/menusmall.png");
-	private static final ResourceLocation BUTTONS_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/buttons/characterbuttons.png");
-	private static final ResourceLocation EXCLAMATION_MARK = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/quest/exclamation_mark_quest.png");
+	private static final ResourceLocation STAT_BUTTONS = new ResourceLocation(Reference.MOD_ID, "textures/gui/buttons/characterbuttons.png");
+	private static final ResourceLocation MENU_BIG = new ResourceLocation(Reference.MOD_ID, "textures/gui/menu/menubig.png");
+	private static final ResourceLocation MENU_SMALL = new ResourceLocation(Reference.MOD_ID, "textures/gui/menu/menusmall.png");
+	private static final ResourceLocation BUTTONS_TEXTURE = new ResourceLocation(Reference.MOD_ID, "textures/gui/buttons/characterbuttons.png");
+	private static final ResourceLocation EXCLAMATION_MARK = new ResourceLocation(Reference.MOD_ID, "textures/gui/quest/exclamation_mark_quest.png");
 
 	private static final int SKILL_ITEM_HEIGHT = 20;
 	private static final int MAX_VISIBLE_SKILLS = 8;
@@ -441,7 +441,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 				.textureCoords(0, 0, 0, 10)
 				.textureSize(10, 10)
 				.onPress(button -> {
-					NetworkHandler.INSTANCE.sendToServer(new UpgradeTechniqueC2S(selectedSkill, statName));
+					NetworkHandler.sendToServer(new UpgradeTechniqueC2S(selectedSkill, statName));
 				})
 				.build();
 		btn.active = active;
@@ -570,7 +570,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 						.textureSize(10, 10)
 						.message(Component.literal(String.valueOf(i + 1)))
 						.onPress(btn -> {
-							NetworkHandler.INSTANCE.sendToServer(new EquipTechniqueC2S(slotIndex, selectedSkill));
+							NetworkHandler.sendToServer(new EquipTechniqueC2S(slotIndex, selectedSkill));
 							isBinding = false;
 							isImportingTechnique = false;
 							refreshButtons();
@@ -625,7 +625,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 					.message(tr("gui.dragonminez.skills.upgrade"))
 					.onPress(btn -> {
 						if (canUpgrade) {
-							NetworkHandler.INSTANCE.sendToServer(new UpdateSkillC2S(UpdateSkillC2S.SkillAction.UPGRADE, selectedSkill, cost));
+							NetworkHandler.sendToServer(new UpdateSkillC2S(UpdateSkillC2S.SkillAction.UPGRADE, selectedSkill, cost));
 							updateStatsData();
 						}
 					})
@@ -725,7 +725,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 
 	@Override
 	public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-		if (isNotAnimating()) this.renderBackground(graphics);
+		if (isNotAnimating()) this.renderBackground(graphics, mouseX, mouseY, partialTick);
 
 		int uiMouseX = (int) Math.round(toUiX(mouseX));
 		int uiMouseY = (int) Math.round(toUiY(mouseY));
@@ -827,7 +827,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 			graphics.fill(nx - 2, ny - 2, nx + size + 2, ny + size + 2, borderColor);
 			graphics.fill(nx, ny, nx + size, ny + size, bgColor);
 
-			ResourceLocation icon = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/icons/" + node.formType.toLowerCase(Locale.ROOT) + ".png");
+			ResourceLocation icon = new ResourceLocation(Reference.MOD_ID, "textures/gui/icons/" + node.formType.toLowerCase(Locale.ROOT) + ".png");
 
 			if (unlocked) {
 				float[] rgb = node.data.getRgbAuraColor();
@@ -1175,7 +1175,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 			setActionStatus(tr("gui.dragonminez.skills.status.invalid_code"), 0xFF5555);
 			return;
 		}
-		NetworkHandler.INSTANCE.sendToServer(new ImportTechniqueC2S(code));
+		NetworkHandler.sendToServer(new ImportTechniqueC2S(code));
 	}
 
 	private void setActionStatus(Component text, int color) {
@@ -1312,7 +1312,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 	}
 
 	@Override
-	public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+	public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double delta) {
 		double uiMouseX = toUiX(mouseX);
 		double uiMouseY = toUiY(mouseY);
 		int centerY = getUiHeight() / 2;
@@ -1345,7 +1345,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 			return true;
 		}
 
-		return super.mouseScrolled(mouseX, mouseY, delta);
+		return super.mouseScrolled(mouseX, mouseY, scrollX, delta);
 	}
 
 	private float calculateScrollPercent(double uiMouseY, int startY, int scrollBarHeight) {
@@ -1452,7 +1452,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 					boolean isFirstStackLevel = isStack && targetLevel == 0;
 
 					if (canPurchaseLevel && !isFirstStackLevel && !isMasterOnlyFirstFormLevel(clicked.formType, targetLevel) && cost != -1 && cost != Integer.MAX_VALUE && statsData.getResources().getTrainingPoints() >= cost) {
-						NetworkHandler.INSTANCE.sendToServer(new UpdateSkillC2S(UpdateSkillC2S.SkillAction.UPGRADE, clicked.formType, cost));
+						NetworkHandler.sendToServer(new UpdateSkillC2S(UpdateSkillC2S.SkillAction.UPGRADE, clicked.formType, cost));
 						updateStatsData();
 					}
 				} else {
@@ -1603,7 +1603,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		graphics.pose().translate(0.0D, 0.0D, 150.0D);
 		DMZSkinLayer.PREVIEW_MODE = character != null;
 		try {
-			InventoryScreen.renderEntityInInventory(graphics, x, y, adjustedScale, pose, cameraOrientation, player);
+			InventoryScreen.renderEntityInInventory(graphics, x, y, adjustedScale, new org.joml.Vector3f(), pose, cameraOrientation, player);
 		} finally {
 			DMZSkinLayer.PREVIEW_MODE = false;
 			graphics.pose().popPose();

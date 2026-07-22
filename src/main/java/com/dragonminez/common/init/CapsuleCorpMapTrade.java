@@ -135,7 +135,7 @@ public class CapsuleCorpMapTrade implements VillagerTrades.ItemListing {
 			String prefix = "filled_map." + Reference.MOD_ID + ".";
 			String translationKey = translatable.getKey();
 			if (translationKey.startsWith(prefix)) {
-				id = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
+				id = new ResourceLocation(Reference.MOD_ID,
 						translationKey.substring(prefix.length()));
 			}
 		}

@@ -16,19 +16,19 @@ public class DBSaibamanModel<T extends DBSagasEntity> extends GeoModel<T> {
     @Override
     public ResourceLocation getModelResource(T animatable) {
         String name = ForgeRegistries.ENTITY_TYPES.getKey(animatable.getType()).getPath();
-        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/sagas/saga_saibaman.geo.json");
+        return new ResourceLocation(Reference.MOD_ID, "geo/entity/sagas/saga_saibaman.geo.json");
     }
 
     @Override
     public ResourceLocation getTextureResource(T animatable) {
         String name = ForgeRegistries.ENTITY_TYPES.getKey(animatable.getType()).getPath();
-        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/sagas/" + name + ".png");
+        return new ResourceLocation(Reference.MOD_ID, "textures/entity/sagas/" + name + ".png");
     }
 
     @Override
     public ResourceLocation getAnimationResource(T animatable) {
         String name = ForgeRegistries.ENTITY_TYPES.getKey(animatable.getType()).getPath();
-        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "animations/entity/sagas/saga_saibaman.animation.json");
+        return new ResourceLocation(Reference.MOD_ID, "animations/entity/sagas/saga_saibaman.animation.json");
     }
 
     @Override

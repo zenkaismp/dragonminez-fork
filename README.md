@@ -20,9 +20,19 @@
 
 ---
 
+> ### ⚙️ Unofficial 1.20.2 Port
+>
+> This repository is a community **port of DragonMineZ to Minecraft 1.20.2 (Forge 48.1.0)**.
+>
+> **Why:** so DragonMineZ can run on Minecraft 1.20.2 servers and modpacks — the version that introduced the networking *configuration phase*, which many 1.20.2-era proxies and mods target.
+>
+> **Base:** it tracks the latest DragonMineZ — **v2.1.3** (upstream commit [`3c58ae8`](https://github.com/DragonMineZ/dragonminez/commit/3c58ae869788a37fb42d0ed47a5494724a07735a)) — including the GUI, texture/asset, combat and animation fixes merged upstream up to 2026-07-22. It is kept in sync with upstream and re-ported on top.
+>
+> **What changed:** the mod was migrated to the 1.20.2 APIs — networking configuration phase (`NetworkEvent.Context` → `CustomPayloadEvent.Context`, `ChannelBuilder`), `RecipeHolder`/codec recipes, `AdvancementHolder`, `SavedData.Factory` (with data-fix types), GUI signature changes (`renderBackground`/`mouseScrolled`), the skin API, `ResourceLocation` constructors, weapon `.geo.json` models set to format `1.12.0`, and dependency bumps (GeckoLib 4.3.1, TerraBlender/Curios/JEI for 1.20.2). Per-form hitbox and eye-height scaling (which used the now-removed `EntityEvent.Size`) is preserved via a `Player` mixin; a couple of GeckoLib 4.4+-only hooks are left inert and marked in-code.
+
 ## About
 
-**DragonMine Z** is an immersive **Work-In-Progress Minecraft Forge 1.20.1 mod** inspired by Akira Toriyama's most-famous work, [Dragon Ball](https://en.dragon-ball-official.com/).
+**DragonMine Z** is an immersive **Work-In-Progress Minecraft Forge 1.20.2 mod** inspired by Akira Toriyama's most-famous work, [Dragon Ball](https://en.dragon-ball-official.com/).
 
 Our goal is to bring the full Dragon Ball experience into Minecraft: custom characters, races, transformations, skills, stats, story content, dimensions, NPCs, structures, and a revamped survival experience.
 
@@ -72,7 +82,7 @@ You can download DragonMine Z from our official mod pages:
 - [CurseForge](https://www.curseforge.com/minecraft/mc-mods/dragonminez)
 - [Modrinth](https://modrinth.com/mod/dragonminez)
 
-DragonMine Z is made for **Minecraft Forge 1.20.1**.
+DragonMine Z is made for **Minecraft Forge 1.20.2**.
 
 ---
 

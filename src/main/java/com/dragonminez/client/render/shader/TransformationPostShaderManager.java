@@ -32,7 +32,7 @@ import java.util.Set;
 import java.util.UUID;
 
 public final class TransformationPostShaderManager {
-	private static final ResourceLocation TRANSFORMATION_EFFECT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "shaders/post/transformation_outline.json");
+	private static final ResourceLocation TRANSFORMATION_EFFECT = new ResourceLocation(Reference.MOD_ID, "shaders/post/transformation_outline.json");
 	private static final String UNPACK_PASS_NAME = Reference.MOD_ID + ":transformation_unpack";
 	private static final String BLUR_H_PASS_NAME = Reference.MOD_ID + ":transformation_blur_h";
 	private static final String BLUR_V_PASS_NAME = Reference.MOD_ID + ":transformation_blur_v";

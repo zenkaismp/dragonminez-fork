@@ -13,7 +13,7 @@ import java.util.function.Supplier;
 public class NamekPlantsBlock extends FlowerBlock {
 
 	public NamekPlantsBlock(Supplier<MobEffect> effectSupplier, int p_53513_, Properties p_53514_) {
-		super(effectSupplier, p_53513_, p_53514_);
+		super(effectSupplier.get(), p_53513_, p_53514_);
 	}
 
 	@Override

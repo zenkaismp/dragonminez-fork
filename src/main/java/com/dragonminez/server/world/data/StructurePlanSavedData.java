@@ -19,7 +19,7 @@ public class StructurePlanSavedData extends SavedData {
 	private final Map<Integer, ChunkPos> positions = new HashMap<>();
 
 	public static StructurePlanSavedData get(ServerLevel level) {
-		return level.getDataStorage().computeIfAbsent(StructurePlanSavedData::load, StructurePlanSavedData::new, NAME);
+		return level.getDataStorage().computeIfAbsent(new SavedData.Factory<>(StructurePlanSavedData::new, StructurePlanSavedData::load, net.minecraft.util.datafix.DataFixTypes.SAVED_DATA_MAP_INDEX), NAME);
 	}
 
 	public boolean isResolved() {

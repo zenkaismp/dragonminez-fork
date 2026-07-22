@@ -4,7 +4,7 @@ import com.dragonminez.common.network.ClientPacketHandler;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.event.network.CustomPayloadEvent;
 
 import java.util.function.Supplier;
 
@@ -18,8 +18,8 @@ public class OpenRecustomizeS2C {
 	public void encode(FriendlyByteBuf buf) {
 	}
 
-	public void handle(Supplier<NetworkEvent.Context> ctx) {
-		ctx.get().enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> ClientPacketHandler::handleOpenRecustomizePacket));
-		ctx.get().setPacketHandled(true);
+	public void handle(CustomPayloadEvent.Context ctx) {
+		ctx.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> ClientPacketHandler::handleOpenRecustomizePacket));
+		ctx.setPacketHandled(true);
 	}
 }

@@ -168,7 +168,7 @@ public final class NPCPlacementManager {
 
 		ResourceKey<Level> dimensionKey;
 		try {
-			dimensionKey = ResourceKey.create(net.minecraft.core.registries.Registries.DIMENSION, ResourceLocation.parse(dimension));
+			dimensionKey = ResourceKey.create(net.minecraft.core.registries.Registries.DIMENSION, new ResourceLocation(dimension));
 		} catch (Exception ignored) {
 			return null;
 		}
@@ -200,7 +200,7 @@ public final class NPCPlacementManager {
 		boolean overridePlacement = placement.override() || shouldForceManualSpawn(placement);
 		ResourceLocation entityId;
 		try {
-			entityId = ResourceLocation.parse(placement.entity());
+			entityId = new ResourceLocation(placement.entity());
 		} catch (Exception ignored) {
 			LogUtil.warn(Env.SERVER, "NPCPlacementManager: invalid entity id '{}' for placement '{}'", placement.entity(), placement.id());
 			return;

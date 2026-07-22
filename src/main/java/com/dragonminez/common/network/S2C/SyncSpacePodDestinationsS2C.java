@@ -6,7 +6,7 @@ import com.dragonminez.common.spacepod.SpacePodDestinationRegistry;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.event.network.CustomPayloadEvent;
 
 import java.util.List;
 import java.util.function.Supplier;
@@ -27,11 +27,11 @@ public class SyncSpacePodDestinationsS2C {
 		buf.writeByteArray(payload);
 	}
 
-	public void handle(Supplier<NetworkEvent.Context> ctx) {
-		ctx.get().enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
+	public void handle(CustomPayloadEvent.Context ctx) {
+		ctx.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
 			String json = CompressionUtil.decompress(payload);
 			SpacePodDestinationRegistry.setClientDestinations(SpacePodDestinationRegistry.fromJson(json));
 		}));
-		ctx.get().setPacketHandled(true);
+		ctx.setPacketHandled(true);
 	}
 }

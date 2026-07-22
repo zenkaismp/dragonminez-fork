@@ -14,7 +14,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.event.network.CustomPayloadEvent;
 
 import java.util.function.Supplier;
 
@@ -33,9 +33,9 @@ public class TravelToPlanetC2S {
 		return new TravelToPlanetC2S(buf.readUtf(32767));
 	}
 
-	public void handle(Supplier<NetworkEvent.Context> context) {
-		context.get().enqueueWork(() -> {
-			ServerPlayer player = context.get().getSender();
+	public void handle(CustomPayloadEvent.Context context) {
+		context.enqueueWork(() -> {
+			ServerPlayer player = context.getSender();
 			if (player == null) return;
 
 			boolean dead = StatsProvider.get(StatsCapability.INSTANCE, player)
@@ -76,6 +76,6 @@ public class TravelToPlanetC2S {
 				player.startRiding(newPod);
 			}
 		});
-		context.get().setPacketHandled(true);
+		context.setPacketHandled(true);
 	}
 }

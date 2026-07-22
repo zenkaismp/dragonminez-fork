@@ -134,7 +134,7 @@ public class QuestParser {
 			case "ITEM" -> {
 				String itemId = json.get("item").getAsString();
 				int count = json.get("count").getAsInt();
-				Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(itemId));
+				Item item = BuiltInRegistries.ITEM.get(new ResourceLocation(itemId));
 				yield (item != Items.AIR) ? new ItemObjective(item, count) : null;
 			}
 			case "KILL" -> {
@@ -181,7 +181,7 @@ public class QuestParser {
 				String interactEntity = json.has("entity") ? json.get("entity").getAsString() : null;
 				String entityName = json.has("entityName") ? json.get("entityName").getAsString() : null;
 				EntityType<?> interactType = interactEntity != null
-						? BuiltInRegistries.ENTITY_TYPE.get(ResourceLocation.parse(interactEntity))
+						? BuiltInRegistries.ENTITY_TYPE.get(new ResourceLocation(interactEntity))
 						: null;
 				yield new InteractObjective(interactType, entityName);
 			}
@@ -238,7 +238,7 @@ public class QuestParser {
 			case "ITEM" -> {
 				String itemId = json.get("item").getAsString();
 				int count = json.has("count") ? json.get("count").getAsInt() : 1;
-				Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(itemId));
+				Item item = BuiltInRegistries.ITEM.get(new ResourceLocation(itemId));
 				yield (item != Items.AIR) ? new ItemReward(new ItemStack(item, count)) : null;
 			}
 			case "GENERIC_ITEM" -> {

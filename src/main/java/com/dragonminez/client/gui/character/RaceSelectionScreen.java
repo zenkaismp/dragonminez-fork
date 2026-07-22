@@ -40,9 +40,9 @@ import java.util.Map;
 @OnlyIn(Dist.CLIENT)
 public class RaceSelectionScreen extends ScaledScreen {
 
-	private static final ResourceLocation BUTTONS_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
+	private static final ResourceLocation BUTTONS_TEXTURE = new ResourceLocation(Reference.MOD_ID,
 			"textures/gui/buttons/characterbuttons.png");
-	private static final ResourceLocation MENU_BIG = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
+	private static final ResourceLocation MENU_BIG = new ResourceLocation(Reference.MOD_ID,
 			"textures/gui/menu/menubig.png");
 
 	private final Map<String, PanoramaRenderer> panoramaCache = new HashMap<>();
@@ -91,13 +91,13 @@ public class RaceSelectionScreen extends ScaledScreen {
 
 	private PanoramaRenderer getPanorama(String raceName) {
 		return panoramaCache.computeIfAbsent(raceName, k -> {
-			ResourceLocation testLoc = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/" + k + "_panorama_0.png");
+			ResourceLocation testLoc = new ResourceLocation(Reference.MOD_ID, "textures/gui/background/" + k + "_panorama_0.png");
 			boolean exists = false;
 			if (Minecraft.getInstance().getResourceManager() != null) exists = Minecraft.getInstance().getResourceManager().getResource(testLoc).isPresent();
 
 			ResourceLocation baseLoc = exists
-					? ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/" + k + "_panorama")
-					: ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/roshi");
+					? new ResourceLocation(Reference.MOD_ID, "textures/gui/background/" + k + "_panorama")
+					: new ResourceLocation(Reference.MOD_ID, "textures/gui/background/roshi");
 
 			return new PanoramaRenderer(new CubeMap(baseLoc));
 		});
@@ -406,7 +406,7 @@ public class RaceSelectionScreen extends ScaledScreen {
 
 		graphics.pose().pushPose();
 		graphics.pose().translate(0.0D, 0.0D, 150.0D);
-		InventoryScreen.renderEntityInInventory(graphics, x, y, adjustedScale, pose, cameraOrientation, player);
+		InventoryScreen.renderEntityInInventory(graphics, x, y, adjustedScale, new org.joml.Vector3f(), pose, cameraOrientation, player);
 		graphics.pose().popPose();
 
 		player.yBodyRot = yBodyRotO;

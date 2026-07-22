@@ -55,8 +55,8 @@ import java.util.function.IntPredicate;
 
 @OnlyIn(Dist.CLIENT)
 public class CharacterCustomizationScreen extends ScaledScreen {
-	private static final ResourceLocation BUTTONS_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/buttons/characterbuttons.png");
-	private static final ResourceLocation MENU_BIG = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/menu/menubig.png");
+	private static final ResourceLocation BUTTONS_TEXTURE = new ResourceLocation(Reference.MOD_ID, "textures/gui/buttons/characterbuttons.png");
+	private static final ResourceLocation MENU_BIG = new ResourceLocation(Reference.MOD_ID, "textures/gui/menu/menubig.png");
 
 	private static final int LEFT_PANEL_X = 12;
 	private static final int LEFT_PANEL_WIDTH = 141;
@@ -170,13 +170,13 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 
 	private PanoramaRenderer getPanorama(String raceName) {
 		return panoramaCache.computeIfAbsent(raceName, k -> {
-			ResourceLocation testLoc = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/" + k + "_panorama_0.png");
+			ResourceLocation testLoc = new ResourceLocation(Reference.MOD_ID, "textures/gui/background/" + k + "_panorama_0.png");
 			boolean exists = false;
 			if (Minecraft.getInstance().getResourceManager() != null) exists = Minecraft.getInstance().getResourceManager().getResource(testLoc).isPresent();
 
 			ResourceLocation baseLoc = exists
-					? ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/" + k + "_panorama")
-					: ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/roshi");
+					? new ResourceLocation(Reference.MOD_ID, "textures/gui/background/" + k + "_panorama")
+					: new ResourceLocation(Reference.MOD_ID, "textures/gui/background/roshi");
 
 			return new PanoramaRenderer(new CubeMap(baseLoc));
 		});
@@ -761,7 +761,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 
 		DMZSkinLayer.PREVIEW_MODE = previewApplied;
 		try {
-			InventoryScreen.renderEntityInInventory(graphics, baseX, currentBaseY, adjustedScale, pose, cameraOrientation, player);
+			InventoryScreen.renderEntityInInventory(graphics, baseX, currentBaseY, adjustedScale, new org.joml.Vector3f(), pose, cameraOrientation, player);
 
 			if (tab == TabId.AURA_CLASS) {
 				RenderSystem.enableBlend();
@@ -888,7 +888,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 	}
 
 	@Override
-	public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+	public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double delta) {
 		double uiMouseX = toUiX(mouseX);
 		double uiMouseY = toUiY(mouseY);
 		int top = getUiHeight() / 2 - LEFT_PANEL_HEIGHT / 2 + LEFT_PANEL_PADDING;
@@ -939,7 +939,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 			}
 		}
 
-		return super.mouseScrolled(mouseX, mouseY, delta);
+		return super.mouseScrolled(mouseX, mouseY, scrollX, delta);
 	}
 
 	@Override
@@ -1875,7 +1875,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		graphics.pose().translate(0.0D, 0.0D, 320.0D);
 		DMZSkinLayer.PREVIEW_MODE = previewApplied;
 		try {
-			InventoryScreen.renderEntityInInventory(graphics, x, previewY, previewScale, pose, cameraOrientation, player);
+			InventoryScreen.renderEntityInInventory(graphics, x, previewY, previewScale, new org.joml.Vector3f(), pose, cameraOrientation, player);
 		} finally {
 			DMZSkinLayer.PREVIEW_MODE = false;
 			graphics.pose().popPose();

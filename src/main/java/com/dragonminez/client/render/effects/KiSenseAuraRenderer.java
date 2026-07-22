@@ -78,7 +78,7 @@ public final class KiSenseAuraRenderer {
 		double myBP = KiSenseScan.getMyBP();
 		if (myBP <= 0) myBP = Math.max(1, myData.getBattlePower());
 
-		ResourceLocation tex = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/aura/kakarot_cross.png");
+		ResourceLocation tex = new ResourceLocation(Reference.MOD_ID, "textures/entity/races/aura/kakarot_cross.png");
 
 		Camera camera = mc.gameRenderer.getMainCamera();
 		Vec3 camPos = camera.getPosition();

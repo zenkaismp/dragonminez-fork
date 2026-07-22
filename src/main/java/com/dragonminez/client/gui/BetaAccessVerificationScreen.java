@@ -18,7 +18,7 @@ import java.util.List;
 
 @OnlyIn(Dist.CLIENT)
 public class BetaAccessVerificationScreen extends Screen {
-	private static final ResourceLocation DMZ_FONT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth");
+	private static final ResourceLocation DMZ_FONT = new ResourceLocation(Reference.MOD_ID, "smooth");
 	private static final int CONTENT_WIDTH = 320;
 
 	private final Screen parent;
@@ -62,7 +62,7 @@ public class BetaAccessVerificationScreen extends Screen {
 
 	@Override
 	public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-		this.renderBackground(graphics);
+		this.renderBackground(graphics, mouseX, mouseY, partialTick);
 
 		int centerX = this.width / 2;
 		int y = this.height / 2 - 80;

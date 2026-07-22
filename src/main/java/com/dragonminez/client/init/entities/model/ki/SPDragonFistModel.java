@@ -17,17 +17,17 @@ public class SPDragonFistModel<T extends SPDragonFistEntity> extends GeoModel<T>
 
     @Override
     public ResourceLocation getModelResource(T animatable) {
-        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/skills/sp_dragonfist.geo.json");
+        return new ResourceLocation(Reference.MOD_ID, "geo/entity/skills/sp_dragonfist.geo.json");
     }
 
     @Override
     public ResourceLocation getTextureResource(T animatable) {
-        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/skills/sp_dragonfist.png");
+        return new ResourceLocation(Reference.MOD_ID, "textures/entity/skills/sp_dragonfist.png");
     }
 
     @Override
     public ResourceLocation getAnimationResource(T animatable) {
-        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "animations/entity/skills/sp_dragonfist.animation.json");
+        return new ResourceLocation(Reference.MOD_ID, "animations/entity/skills/sp_dragonfist.animation.json");
     }
 
     @Override

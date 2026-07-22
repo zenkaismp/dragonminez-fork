@@ -16,7 +16,7 @@ import net.minecraft.resources.ResourceLocation;
 import org.joml.Matrix4f;
 
 public class KiExplosionVisualRenderer extends EntityRenderer<KiExplosionVisualEntity> {
-    private static final ResourceLocation TEXTURE_EXPLOSION = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/ki_laser.png");
+    private static final ResourceLocation TEXTURE_EXPLOSION = new ResourceLocation(Reference.MOD_ID, "textures/entity/ki/ki_laser.png");
 
     public KiExplosionVisualRenderer(EntityRendererProvider.Context context) {
         super(context);

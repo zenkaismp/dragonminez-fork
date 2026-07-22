@@ -35,9 +35,9 @@ import java.util.function.Consumer;
 @OnlyIn(Dist.CLIENT)
 public class ConfigMenuScreen extends BaseMenuScreen {
 
-	private static final ResourceLocation MENU_BIG = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
+	private static final ResourceLocation MENU_BIG = new ResourceLocation(Reference.MOD_ID,
 			"textures/gui/menu/menubig.png");
-	private static final ResourceLocation STAT_BUTTONS = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
+	private static final ResourceLocation STAT_BUTTONS = new ResourceLocation(Reference.MOD_ID,
 			"textures/gui/buttons/characterbuttons.png");
 
 	private static final int CONFIG_ITEM_HEIGHT = 20;
@@ -310,7 +310,7 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 
 	@Override
 	public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-		if (isNotAnimating()) this.renderBackground(graphics);
+		if (isNotAnimating()) this.renderBackground(graphics, mouseX, mouseY, partialTick);
 		int uiMouseX = (int) Math.round(toUiX(mouseX));
 		int uiMouseY = (int) Math.round(toUiY(mouseY));
 
@@ -503,7 +503,7 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 	}
 
 	@Override
-	public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+	public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double delta) {
 		double uiMouseX = toUiX(mouseX);
 		double uiMouseY = toUiY(mouseY);
 		int leftPanelX = getLeftPanelX();
@@ -522,7 +522,7 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 			initConfigButtons();
 			return true;
 		}
-		return super.mouseScrolled(mouseX, mouseY, delta);
+		return super.mouseScrolled(mouseX, mouseY, scrollX, delta);
 	}
 
 	@Override

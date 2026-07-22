@@ -29,13 +29,13 @@ public class KiWeaponRenderer {
 	private static final float[] OOZARU_ARM_LEFT = {21f, 74f, 0f};
 
 	private static ResourceLocation weaponModel(String type) {
-		ResourceLocation loc = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/weapons/kiweapon_" + type.toLowerCase() + ".geo.json");
+		ResourceLocation loc = new ResourceLocation(Reference.MOD_ID, "geo/weapons/kiweapon_" + type.toLowerCase() + ".geo.json");
 		if (Minecraft.getInstance().getResourceManager().getResource(loc).isPresent()) return loc;
 		return null;
 	}
 
 	private static ResourceLocation weaponTexture(String type) {
-		ResourceLocation loc = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/weapons/kiweapon_" + type.toLowerCase() + ".png");
+		ResourceLocation loc = new ResourceLocation(Reference.MOD_ID, "textures/entity/weapons/kiweapon_" + type.toLowerCase() + ".png");
 		if (Minecraft.getInstance().getResourceManager().getResource(loc).isPresent()) return loc;
 		return null;
 	}

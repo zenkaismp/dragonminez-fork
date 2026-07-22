@@ -12,7 +12,7 @@ import com.google.gson.reflect.TypeToken;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.event.network.CustomPayloadEvent;
 
 import java.lang.reflect.Type;
 import java.util.List;
@@ -39,8 +39,8 @@ public class SyncWishesS2C {
         buf.writeByteArray(compressedWishes);
     }
 
-    public void handle(Supplier<NetworkEvent.Context> ctx) {
-        ctx.get().enqueueWork(() -> {
+    public void handle(CustomPayloadEvent.Context ctx) {
+        ctx.enqueueWork(() -> {
             DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
                 String decompressedJson = CompressionUtil.decompress(compressedWishes);
                 Type mapType = new TypeToken<Map<String, List<Wish>>>(){}.getType();
@@ -48,6 +48,6 @@ public class SyncWishesS2C {
                 if (wishes != null) WishManager.applySyncedWishes(wishes);
             });
         });
-        ctx.get().setPacketHandled(true);
+        ctx.setPacketHandled(true);
     }
 }

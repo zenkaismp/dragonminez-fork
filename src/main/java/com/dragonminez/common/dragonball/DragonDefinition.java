@@ -74,7 +74,7 @@ public class DragonDefinition {
 		float entityWidth = root.get("entity_width").getAsFloat();
 		float entityHeight = root.get("entity_height").getAsFloat();
 		Set<ResourceLocation> dimensions = new LinkedHashSet<>();
-		for (JsonElement element : root.getAsJsonArray("dimensions")) dimensions.add(ResourceLocation.parse(element.getAsString()));
+		for (JsonElement element : root.getAsJsonArray("dimensions")) dimensions.add(new ResourceLocation(element.getAsString()));
 		String ballSetId = root.get("ball_set").getAsString();
 		String wishScreenId = root.get("wish_screen_id").getAsString();
 		int wishCount = root.get("wish_count").getAsInt();

@@ -4,7 +4,7 @@ import com.dragonminez.common.network.ClientPacketHandler;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.event.network.CustomPayloadEvent;
 
 import java.util.function.Supplier;
 
@@ -29,9 +29,9 @@ public class TechniqueChargeSyncS2C {
 		return new TechniqueChargeSyncS2C(buf.readInt(), buf.readFloat(), buf.readBoolean());
 	}
 
-	public static void handle(TechniqueChargeSyncS2C msg, Supplier<NetworkEvent.Context> ctx) {
-		ctx.get().enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
+	public static void handle(TechniqueChargeSyncS2C msg, CustomPayloadEvent.Context ctx) {
+		ctx.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
 				() -> () -> ClientPacketHandler.handleTechniqueChargeSync(msg.playerId, msg.percent, msg.charging)));
-		ctx.get().setPacketHandled(true);
+		ctx.setPacketHandled(true);
 	}
 }

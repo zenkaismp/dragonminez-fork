@@ -24,7 +24,7 @@ public class JEIDragonMineZPlugin implements IModPlugin {
 
 	@Override
 	public ResourceLocation getPluginUid() {
-		return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "jei_plugin");
+		return new ResourceLocation(Reference.MOD_ID, "jei_plugin");
 	}
 
 	@Override
@@ -38,7 +38,7 @@ public class JEIDragonMineZPlugin implements IModPlugin {
 
 		List<KikonoRecipe> recipes = new ArrayList<>();
 
-		for (Recipe<?> recipe : recipeManager.getRecipes()) {
+		for (net.minecraft.world.item.crafting.RecipeHolder<?> holder : recipeManager.getRecipes()) { Recipe<?> recipe = holder.value();
 			if (recipe instanceof KikonoRecipe) {
 				recipes.add((KikonoRecipe) recipe);
 			}

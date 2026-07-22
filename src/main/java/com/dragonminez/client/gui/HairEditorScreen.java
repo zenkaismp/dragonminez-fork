@@ -44,10 +44,10 @@ import java.util.Set;
 
 @OnlyIn(Dist.CLIENT)
 public class HairEditorScreen extends ScaledScreen {
-	private static final ResourceLocation MENU_BIG = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/menu/menubig.png");
-	private static final ResourceLocation STAT_BUTTONS = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/buttons/characterbuttons.png");
-	private static final ResourceLocation DMZ_FONT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth");
-	private static final ResourceLocation PANORAMA_SAIYAN = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/roshi");
+	private static final ResourceLocation MENU_BIG = new ResourceLocation(Reference.MOD_ID, "textures/gui/menu/menubig.png");
+	private static final ResourceLocation STAT_BUTTONS = new ResourceLocation(Reference.MOD_ID, "textures/gui/buttons/characterbuttons.png");
+	private static final ResourceLocation DMZ_FONT = new ResourceLocation(Reference.MOD_ID, "smooth");
+	private static final ResourceLocation PANORAMA_SAIYAN = new ResourceLocation(Reference.MOD_ID, "textures/gui/background/roshi");
 
 	private static final Set<String> DEV_NAMES = Set.of("Dev", "ImYuseix", "ezShokkoh", "narukebaransu");
 	private final PanoramaRenderer panorama = new PanoramaRenderer(new CubeMap(PANORAMA_SAIYAN));
@@ -974,7 +974,7 @@ public class HairEditorScreen extends ScaledScreen {
 
 		graphics.pose().pushPose();
 		graphics.pose().translate(0.0D, 0.0D, 150.0D);
-		InventoryScreen.renderEntityInInventory(graphics, x, y, scale, pose, new Quaternionf().rotateX(0), player);
+		InventoryScreen.renderEntityInInventory(graphics, x, y, scale, new org.joml.Vector3f(), pose, new Quaternionf().rotateX(0), player);
 		graphics.pose().popPose();
 
 		player.yBodyRot = yBodyRotO;
@@ -1047,7 +1047,7 @@ public class HairEditorScreen extends ScaledScreen {
 	}
 
 	@Override
-	public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+	public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double delta) {
 		double uiMouseX = toUiX(mouseX);
 		int previewZoneLeft = 12 + 141 + 16;
 
@@ -1057,7 +1057,7 @@ public class HairEditorScreen extends ScaledScreen {
 			return true;
 		}
 
-		return super.mouseScrolled(mouseX, mouseY, delta);
+		return super.mouseScrolled(mouseX, mouseY, scrollX, delta);
 	}
 
 	private boolean handleFaceSelectorClick(double mouseX, double mouseY) {

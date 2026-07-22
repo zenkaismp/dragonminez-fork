@@ -15,7 +15,7 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.event.network.CustomPayloadEvent;
 
 import java.util.function.Supplier;
 
@@ -52,8 +52,8 @@ public class ExecuteActionC2S {
 		buffer.writeBoolean(rightClick);
 	}
 
-	public void handle(Supplier<NetworkEvent.Context> contextSupplier) {
-		NetworkEvent.Context context = contextSupplier.get();
+	public void handle(CustomPayloadEvent.Context contextSupplier) {
+		CustomPayloadEvent.Context context = contextSupplier;
 		context.enqueueWork(() -> {
 			ServerPlayer player = context.getSender();
 			if (player != null) {

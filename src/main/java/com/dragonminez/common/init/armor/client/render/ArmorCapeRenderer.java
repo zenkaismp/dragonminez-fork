@@ -32,7 +32,7 @@ public class ArmorCapeRenderer extends GeoArmorRenderer<DbzArmorCapeItem> {
         String itemId = animatable.getItemId();
 
         if (itemId.contains("pothala") || itemId.contains("scouter"))
-            return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/armor/blank.png");
+            return new ResourceLocation(Reference.MOD_ID, "textures/armor/blank.png");
 
         return ArmorTextureResolver.resolve(modId, itemId, this.getCurrentSlot(), this.getCurrentStack());
     }

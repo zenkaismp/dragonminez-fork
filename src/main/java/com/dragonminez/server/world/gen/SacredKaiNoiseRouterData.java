@@ -13,7 +13,7 @@ import net.minecraft.world.level.levelgen.synth.NormalNoise;
 public class SacredKaiNoiseRouterData extends NoiseRouterData {
 
 	private static final ResourceKey<DensityFunction> SLOPED_CHEESE =
-			ResourceKey.create(Registries.DENSITY_FUNCTION, ResourceLocation.fromNamespaceAndPath("minecraft", "overworld/sloped_cheese"));
+			ResourceKey.create(Registries.DENSITY_FUNCTION, new ResourceLocation("minecraft", "overworld/sloped_cheese"));
 
 	public static NoiseRouter createSacredKaiRouter(HolderGetter<DensityFunction> density, HolderGetter<NormalNoise.NoiseParameters> noise) {
 		NoiseRouter base = overworld(density, noise, false, false);

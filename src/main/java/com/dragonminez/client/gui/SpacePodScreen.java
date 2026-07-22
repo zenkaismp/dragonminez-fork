@@ -28,9 +28,9 @@ import java.util.List;
 @OnlyIn(Dist.CLIENT)
 public class SpacePodScreen extends ScaledScreen {
 
-	private static final ResourceLocation MENU_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/menu/menubig.png");
-	private static final ResourceLocation BUTTON_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/buttons/characterbuttons.png");
-	private static final ResourceLocation ICONS_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/spaceshipicons.png");
+	private static final ResourceLocation MENU_TEXTURE = new ResourceLocation(Reference.MOD_ID, "textures/gui/menu/menubig.png");
+	private static final ResourceLocation BUTTON_TEXTURE = new ResourceLocation(Reference.MOD_ID, "textures/gui/buttons/characterbuttons.png");
+	private static final ResourceLocation ICONS_TEXTURE = new ResourceLocation(Reference.MOD_ID, "textures/gui/spaceshipicons.png");
 
 	private static final int PANEL_WIDTH = 141;
 	private static final int PANEL_HEIGHT = 213;
@@ -55,7 +55,7 @@ public class SpacePodScreen extends ScaledScreen {
 	private TexturedTextButton travelButton;
 
 	public SpacePodScreen() {
-		super(Component.literal("Space Pod").withStyle(Style.EMPTY.withFont(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth"))));
+		super(Component.literal("Space Pod").withStyle(Style.EMPTY.withFont(new ResourceLocation(Reference.MOD_ID, "smooth"))));
 	}
 
 	@Override
@@ -120,7 +120,7 @@ public class SpacePodScreen extends ScaledScreen {
 
 	@Override
 	public void render(@NonNull GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-		this.renderBackground(graphics);
+		this.renderBackground(graphics, mouseX, mouseY, partialTick);
 
 		int uiMouseX = (int) toUiX(mouseX);
 		int uiMouseY = (int) toUiY(mouseY);
@@ -290,12 +290,12 @@ public class SpacePodScreen extends ScaledScreen {
 	}
 
 	@Override
-	public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+	public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double delta) {
 		if (maxScroll > 0) {
 			targetScroll = (float) Mth.clamp(targetScroll - (Math.signum(delta) * ITEM_HEIGHT * 2), 0, maxScroll);
 			return true;
 		}
-		return super.mouseScrolled(mouseX, mouseY, delta);
+		return super.mouseScrolled(mouseX, mouseY, scrollX, delta);
 	}
 
 	@Override

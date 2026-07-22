@@ -44,9 +44,9 @@ import java.util.Set;
 
 @OnlyIn(Dist.CLIENT)
 public class QuestNPCDialogueScreen extends ScaledScreen {
-	private static final ResourceLocation DIALOGUE_BG = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
+	private static final ResourceLocation DIALOGUE_BG = new ResourceLocation(Reference.MOD_ID,
 			"textures/gui/menu/menunpc.png");
-	private static final ResourceLocation BUTTONS_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
+	private static final ResourceLocation BUTTONS_TEXTURE = new ResourceLocation(Reference.MOD_ID,
 			"textures/gui/buttons/characterbuttons.png");
 	private static final Set<String> TEXT_MASTERS = Set.of("karin", "guru", "dende", "enma", "baba", "popo", "gero", "toribot", "babidi");
 	private static final Set<String> SERVICE_MASTERS = Set.of("piccolo", "roshi", "kingkai", "oldkai", "babidi");
@@ -300,7 +300,7 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 
 	@Override
 	public void render(@NonNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-		this.renderBackground(guiGraphics);
+		this.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
 
 		int uiMouseX = (int) Math.round(toUiX(mouseX));
 		int uiMouseY = (int) Math.round(toUiY(mouseY));
@@ -550,7 +550,7 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 	}
 
 	@Override
-	public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+	public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double delta) {
 		double uiMouseX = toUiX(mouseX);
 		double uiMouseY = toUiY(mouseY);
 		int scrollAmount = (int) Math.signum(delta);
@@ -590,7 +590,7 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 			}
 		}
 
-		return super.mouseScrolled(mouseX, mouseY, delta);
+		return super.mouseScrolled(mouseX, mouseY, scrollX, delta);
 	}
 
 	@Override

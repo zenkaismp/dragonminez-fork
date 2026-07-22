@@ -43,12 +43,20 @@ import java.util.List;
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public class ModCommonEvents {
 
+	// 1.20.2: Pack.ResourcesSupplier gained openFull(); adapt an id -> PackResources factory.
+	private static Pack.ResourcesSupplier packSupplier(java.util.function.Function<String, net.minecraft.server.packs.PackResources> factory) {
+		return new Pack.ResourcesSupplier() {
+			@Override public net.minecraft.server.packs.PackResources openPrimary(String id) { return factory.apply(id); }
+			@Override public net.minecraft.server.packs.PackResources openFull(String id, Pack.Info info) { return factory.apply(id); }
+		};
+	}
+
 	@SubscribeEvent
 	public static void onAddPackFinders(AddPackFindersEvent event) {
 		if (event.getPackType() == PackType.SERVER_DATA) {
 			event.addRepositorySource((packConsumer) -> {
 				Pack dragonballPack = Pack.readMetaAndCreate("dmz_dragonballs_runtime_data", Component.literal("DMZ Dragonballs Runtime Data"), true,
-					DragonBallDataPackResources::new, PackType.SERVER_DATA, Pack.Position.TOP, PackSource.BUILT_IN);
+					packSupplier(DragonBallDataPackResources::new), PackType.SERVER_DATA, Pack.Position.TOP, PackSource.BUILT_IN);
 				if (dragonballPack != null) packConsumer.accept(dragonballPack);
 			});
 		}

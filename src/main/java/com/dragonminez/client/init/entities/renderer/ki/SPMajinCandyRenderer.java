@@ -25,7 +25,7 @@ import java.util.Random;
 
 public class SPMajinCandyRenderer extends EntityRenderer<SPMajinCandyEntity> {
 
-    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/null.png");
+    private static final ResourceLocation TEXTURE = new ResourceLocation(Reference.MOD_ID, "textures/entity/races/null.png");
 
     public SPMajinCandyRenderer(EntityRendererProvider.Context pContext) {
         super(pContext);

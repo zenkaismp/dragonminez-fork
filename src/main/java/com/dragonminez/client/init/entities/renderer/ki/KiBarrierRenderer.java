@@ -19,7 +19,7 @@ import net.minecraft.world.entity.LivingEntity;
 import org.joml.Matrix4f;
 
 public class KiBarrierRenderer extends EntityRenderer<KiBarrierEntity> {
-    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/ki_laser.png");
+    private static final ResourceLocation TEXTURE = new ResourceLocation(Reference.MOD_ID, "textures/entity/ki/ki_laser.png");
     private static final float SHIELD_SURROUND_FACTOR = 1.45f;
 
     public KiBarrierRenderer(EntityRendererProvider.Context pContext) {

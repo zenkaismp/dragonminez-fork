@@ -40,7 +40,7 @@ public class OverworldRegion extends Region {
 	private static final Climate.Parameter DEPTH_SURFACE = Climate.Parameter.point(0.0F);
 
 	public OverworldRegion(int weight) {
-		super(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "overworld_region"), RegionType.OVERWORLD, weight);
+		super(new ResourceLocation(Reference.MOD_ID, "overworld_region"), RegionType.OVERWORLD, weight);
 	}
 
 	@Override

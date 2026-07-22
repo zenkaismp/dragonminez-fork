@@ -93,10 +93,10 @@ public class KillObjective extends QuestObjective {
 		}
 		try {
 			if (isTag()) {
-				TagKey<EntityType<?>> tag = TagKey.create(Registries.ENTITY_TYPE, ResourceLocation.parse(entityId.substring(1)));
+				TagKey<EntityType<?>> tag = TagKey.create(Registries.ENTITY_TYPE, new ResourceLocation(entityId.substring(1)));
 				return type.builtInRegistryHolder().is(tag);
 			}
-			return type.equals(ForgeRegistries.ENTITY_TYPES.getValue(ResourceLocation.parse(entityId)));
+			return type.equals(ForgeRegistries.ENTITY_TYPES.getValue(new ResourceLocation(entityId)));
 		} catch (Exception e) {
 			return false;
 		}
@@ -106,7 +106,7 @@ public class KillObjective extends QuestObjective {
 	public EntityType<?> resolveEntityType() {
 		try {
 			if (isTag()) {
-				TagKey<EntityType<?>> tag = TagKey.create(Registries.ENTITY_TYPE, ResourceLocation.parse(entityId.substring(1)));
+				TagKey<EntityType<?>> tag = TagKey.create(Registries.ENTITY_TYPE, new ResourceLocation(entityId.substring(1)));
 				var tags = ForgeRegistries.ENTITY_TYPES.tags();
 				if (tags == null) {
 					return null;
@@ -120,7 +120,7 @@ public class KillObjective extends QuestObjective {
 				}
 				return members.get(ThreadLocalRandom.current().nextInt(members.size()));
 			}
-			return ForgeRegistries.ENTITY_TYPES.getValue(ResourceLocation.parse(entityId));
+			return ForgeRegistries.ENTITY_TYPES.getValue(new ResourceLocation(entityId));
 		} catch (Exception e) {
 			return null;
 		}

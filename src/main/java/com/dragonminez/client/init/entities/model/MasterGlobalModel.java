@@ -26,28 +26,28 @@ public class MasterGlobalModel<T extends MastersEntity> extends GeoModel<T> {
     @Override
     public ResourceLocation getModelResource(T animatable) {
         String name = ForgeRegistries.ENTITY_TYPES.getKey(animatable.getType()).getPath();
-        ResourceLocation original = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/master/" + name + ".geo.json");
+        ResourceLocation original = new ResourceLocation(Reference.MOD_ID, "geo/entity/master/" + name + ".geo.json");
 
         boolean exists = MODEL_CACHE.computeIfAbsent(name, k -> resourceExists(original));
-        return exists ? original : ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/enemies/robotxv.geo.json");
+        return exists ? original : new ResourceLocation(Reference.MOD_ID, "geo/entity/enemies/robotxv.geo.json");
     }
 
     @Override
     public ResourceLocation getTextureResource(T animatable) {
         String name = ForgeRegistries.ENTITY_TYPES.getKey(animatable.getType()).getPath();
-        ResourceLocation original = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/master/" + name + ".png");
+        ResourceLocation original = new ResourceLocation(Reference.MOD_ID, "textures/entity/master/" + name + ".png");
 
         boolean exists = TEXTURE_CACHE.computeIfAbsent(name, k -> resourceExists(original));
-        return exists ? original : ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/enemies/robotxv.png");
+        return exists ? original : new ResourceLocation(Reference.MOD_ID, "textures/entity/enemies/robotxv.png");
     }
 
     @Override
     public ResourceLocation getAnimationResource(T animatable) {
         String name = ForgeRegistries.ENTITY_TYPES.getKey(animatable.getType()).getPath();
-        ResourceLocation original = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "animations/entity/master/" + name + ".animation.json");
+        ResourceLocation original = new ResourceLocation(Reference.MOD_ID, "animations/entity/master/" + name + ".animation.json");
 
         boolean exists = ANIM_CACHE.computeIfAbsent(name, k -> resourceExists(original));
-        return exists ? original : ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "animations/entity/master/master_goku.animation.json");
+        return exists ? original : new ResourceLocation(Reference.MOD_ID, "animations/entity/master/master_goku.animation.json");
     }
 
     @Override

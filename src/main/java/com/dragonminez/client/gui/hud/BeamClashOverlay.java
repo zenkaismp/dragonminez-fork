@@ -13,7 +13,7 @@ import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 public class BeamClashOverlay {
 
 	private static final ResourceLocation BAR_TEXTURE =
-			ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/hud/kicharge_hud.png");
+			new ResourceLocation(Reference.MOD_ID, "textures/gui/hud/kicharge_hud.png");
 
 	private static final int SRC_W = 148;
 	private static final int SRC_H = 14;
@@ -35,7 +35,7 @@ public class BeamClashOverlay {
 
 	public static final IGuiOverlay HUD_BEAM_CLASH = (forgeGui, guiGraphics, partialTicks, width, height) -> {
 		Minecraft mc = Minecraft.getInstance();
-		if (mc.player == null || mc.options.renderDebug) return;
+		if (mc.player == null || mc.getDebugOverlay().showDebugScreen()) return;
 		if (!ClientBeamClashState.isActive()) return;
 
 		float advantage = Mth.clamp(ClientBeamClashState.advantage(), 0.0f, 1.0f);

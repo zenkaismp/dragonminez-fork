@@ -117,16 +117,24 @@ public class ModClientEvents {
 
 			event.addRepositorySource((packConsumer) -> {
 				Pack crowdinPack = Pack.readMetaAndCreate("dmz_crowdin_ota", Component.literal("DMZ Live Translations"), true,
-						CrowdinPackResources::new, PackType.CLIENT_RESOURCES, Pack.Position.TOP, PackSource.BUILT_IN);
+						packSupplier(CrowdinPackResources::new), PackType.CLIENT_RESOURCES, Pack.Position.TOP, PackSource.BUILT_IN);
 				if (crowdinPack != null) packConsumer.accept(crowdinPack);
 
 				Pack dragonBallRuntimePack = Pack.readMetaAndCreate("dmz_dragonballs_runtime", Component.literal("DMZ Dragonballs Runtime Resources"), true,
-						DragonBallPackResources::new, PackType.CLIENT_RESOURCES, Pack.Position.TOP, PackSource.BUILT_IN);
+						packSupplier(DragonBallPackResources::new), PackType.CLIENT_RESOURCES, Pack.Position.TOP, PackSource.BUILT_IN);
 				if (dragonBallRuntimePack != null) packConsumer.accept(dragonBallRuntimePack);
 			});
 		}
 	}
 
+
+	// 1.20.2: Pack.ResourcesSupplier gained openFull(); adapt an id -> PackResources factory.
+	private static Pack.ResourcesSupplier packSupplier(java.util.function.Function<String, net.minecraft.server.packs.PackResources> factory) {
+		return new Pack.ResourcesSupplier() {
+			@Override public net.minecraft.server.packs.PackResources openPrimary(String id) { return factory.apply(id); }
+			@Override public net.minecraft.server.packs.PackResources openFull(String id, Pack.Info info) { return factory.apply(id); }
+		};
+	}
 
 	@SubscribeEvent
 	public static void onClientSetup(FMLClientSetupEvent event) {
@@ -191,7 +199,7 @@ public class ModClientEvents {
 			ItemBlockRenderTypes.setRenderLayer(MainBlocks.POTTED_SACRED_SAPLING.get(), RenderType.cutout());
 
 
-			ItemProperties.registerGeneric(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "loaded"),
+			ItemProperties.registerGeneric(new ResourceLocation(Reference.MOD_ID, "loaded"),
 					(stack, level, entity, seed) -> {
 						return 1.0F; // Loaded items :D
 					});
@@ -320,7 +328,7 @@ public class ModClientEvents {
 
 		if (Minecraft.ON_OSX) {
 			try {
-				ResourceLocation macLoc = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "icons/minecraft.icns");
+				ResourceLocation macLoc = new ResourceLocation(Reference.MOD_ID, "icons/minecraft.icns");
 				var res = mc.getResourceManager().getResource(macLoc);
 				if (res.isPresent()) MacosUtil.loadIcon(res.get()::open);
 			} catch (Exception ignored) {}
@@ -333,7 +341,7 @@ public class ModClientEvents {
 
 		for (String name : iconNames) {
 			try {
-				ResourceLocation loc = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "icons/" + name);
+				ResourceLocation loc = new ResourceLocation(Reference.MOD_ID, "icons/" + name);
 				var resource = mc.getResourceManager().getResource(loc);
 				if (resource.isPresent()) {
 					try (InputStream is = resource.get().open()) {

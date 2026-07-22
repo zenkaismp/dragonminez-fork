@@ -16,7 +16,7 @@ import org.joml.Matrix4f;
 
 public class KiExplosionRenderer extends EntityRenderer<KiExplosionEntity> {
 
-    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/ki_laser.png");
+    private static final ResourceLocation TEXTURE = new ResourceLocation(Reference.MOD_ID, "textures/entity/ki/ki_laser.png");
 
     public KiExplosionRenderer(EntityRendererProvider.Context pContext) {
         super(pContext);

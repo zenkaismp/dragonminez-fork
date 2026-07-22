@@ -24,8 +24,8 @@ import java.util.Locale;
 
 public class MainDamageTypes {
 
-    public static final ResourceKey<DamageType> KIBLAST = ResourceKey.create(Registries.DAMAGE_TYPE, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "kiblast"));
-    public static final ResourceKey<DamageType> STRIKE_ATTACK = ResourceKey.create(Registries.DAMAGE_TYPE, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "strike_attack"));
+    public static final ResourceKey<DamageType> KIBLAST = ResourceKey.create(Registries.DAMAGE_TYPE, new ResourceLocation(Reference.MOD_ID, "kiblast"));
+    public static final ResourceKey<DamageType> STRIKE_ATTACK = ResourceKey.create(Registries.DAMAGE_TYPE, new ResourceLocation(Reference.MOD_ID, "strike_attack"));
 
 	public static DamageSource kiblast(Level level, Entity projectile, Entity owner) {
 		Holder<DamageType> holder = level.registryAccess().registryOrThrow(Registries.DAMAGE_TYPE).getHolderOrThrow(KIBLAST);

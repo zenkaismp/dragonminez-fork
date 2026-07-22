@@ -24,7 +24,7 @@ import org.joml.Matrix4f;
 import java.util.Random;
 
 public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
-    private static final ResourceLocation TEXTURE_WAVE_CORE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/kiwave.png");
+    private static final ResourceLocation TEXTURE_WAVE_CORE = new ResourceLocation(Reference.MOD_ID, "textures/entity/ki/kiwave.png");
 
     public KiWaveRenderer(EntityRendererProvider.Context pContext) {
         super(pContext);
@@ -302,7 +302,7 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
         shader.safeGetUniform("alp2").set(0.1f * alpha);
         shader.safeGetUniform("projectionMatrix").set(RenderSystem.getProjectionMatrix());
 
-        RenderType lightningType = ModRenderTypes.getCustomLightning(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/null.png"));
+        RenderType lightningType = ModRenderTypes.getCustomLightning(new ResourceLocation(Reference.MOD_ID, "textures/entity/races/null.png"));
         lightningType.setupRenderState();
 
         shader.apply();

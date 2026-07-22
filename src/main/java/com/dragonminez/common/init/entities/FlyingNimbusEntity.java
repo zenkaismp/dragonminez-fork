@@ -204,8 +204,7 @@ public class FlyingNimbusEntity extends Mob implements GeoEntity {
         return this.getFirstPassenger() instanceof LivingEntity entity ? entity : null;
     }
 
-    @Override
-    public double getPassengersRidingOffset() {
+        public double getPassengersRidingOffset() {
         return 0.9D;
     }
 
@@ -217,7 +216,7 @@ public class FlyingNimbusEntity extends Mob implements GeoEntity {
             float xOffset = 0.0f;
             float zOffset = (index == 0) ? 0.4F : -0.4F;
 
-            double yOffset = this.getPassengersRidingOffset() + passenger.getMyRidingOffset();
+            double yOffset = this.getPassengersRidingOffset() + passenger.getMyRidingOffset(this);
 
             float yaw = -this.getYRot() * ((float)Math.PI / 180F);
             Vec3 vec3 = (new Vec3(xOffset, 0.0D, zOffset)).yRot(yaw);

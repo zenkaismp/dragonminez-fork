@@ -24,7 +24,6 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraftforge.network.NetworkHooks;
 import org.jetbrains.annotations.Nullable;
 
 public class FuelGeneratorBlock extends BaseEntityBlock {
@@ -67,7 +66,7 @@ public class FuelGeneratorBlock extends BaseEntityBlock {
 		if (!pLevel.isClientSide()) {
 			BlockEntity entity = pLevel.getBlockEntity(pPos);
 			if (entity instanceof FuelGeneratorBlockEntity generator) {
-				NetworkHooks.openScreen((ServerPlayer) pPlayer, generator, pPos);
+				((ServerPlayer) pPlayer).openMenu(generator, pPos);
 			}
 		}
 		return InteractionResult.sidedSuccess(pLevel.isClientSide());

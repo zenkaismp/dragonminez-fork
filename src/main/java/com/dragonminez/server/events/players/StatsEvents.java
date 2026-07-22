@@ -50,7 +50,6 @@ import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.entity.EntityEvent;
 import net.minecraftforge.event.entity.living.*;
 import net.minecraftforge.event.entity.player.AttackEntityEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
@@ -917,76 +916,4 @@ public class StatsEvents {
 		});
 	}
 
-    @SubscribeEvent
-    public static void onEntitySize(EntityEvent.Size event) {
-        Entity entity = event.getEntity();
-        if (!(entity instanceof Player)) return;
-
-        StatsProvider.get(StatsCapability.INSTANCE, entity).ifPresent(data -> {
-            var character = data.getCharacter();
-            String currentForm = character.getActiveForm();
-            String race = character.getRaceName().toLowerCase();
-
-            String logicKey = character.getRenderLogicKey();
-
-            Float[] resolved = character.getResolvedModelScaling();
-            float configScaleX = resolved[0];
-            float configScaleY = resolved[1];
-
-            float scalingX = configScaleX;
-            float scalingY = configScaleY;
-
-            boolean isOozaru = logicKey.startsWith("oozaru") ||
-                    (race.equals("saiyan") && (Objects.equals(currentForm, SaiyanForms.OOZARU) || Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU)));
-
-            if (isOozaru) {
-                float baseOozaruSize = 3.8f;
-
-                float visualScaleX = Math.max(0.1f, configScaleX - 2.8f);
-                float visualScaleY = Math.max(0.1f, configScaleY - 2.8f);
-
-                scalingX = visualScaleX * baseOozaruSize;
-                scalingY = visualScaleY * baseOozaruSize;
-            } else {
-                scalingX = configScaleX;
-                scalingY = configScaleY;
-            }
-
-            Pose pose = event.getPose();
-
-            if (pose == Pose.DYING || pose == Pose.SLEEPING) {
-                event.setNewSize(EntityDimensions.fixed(0.2F, 0.2F));
-                event.setNewEyeHeight(0.2F);
-                return;
-            }
-
-            float rawWidth = 0.6F * scalingX;
-            float rawHeight = 1.9F * scalingY;
-
-            float finalWidth = Math.round(rawWidth * 10.0F) / 10.0F;
-            float finalHeight = Math.round(rawHeight * 10.0F) / 10.0F;
-
-            float poseHeightMultiplier = 1.0F;
-            float eyeHeightMultiplier = 1.0F;
-
-            if (pose == Pose.CROUCHING) {
-                poseHeightMultiplier = 1.5F / 1.8F;
-                eyeHeightMultiplier = 1.27F / 1.62F;
-            } else if (pose == Pose.SWIMMING || pose == Pose.FALL_FLYING || pose == Pose.SPIN_ATTACK) {
-                poseHeightMultiplier = 0.6F / 1.8F;
-                eyeHeightMultiplier = 0.4F / 1.62F;
-            }
-
-            float heightConPose = finalHeight * poseHeightMultiplier;
-            float alturaSegura = Math.round(heightConPose * 10.0F) / 10.0F;
-
-            EntityDimensions newDims = EntityDimensions.fixed(finalWidth, alturaSegura);
-            event.setNewSize(newDims);
-
-            float rawEyeHeight = 1.7F * scalingY * eyeHeightMultiplier;
-            float finalEyeHeight = Math.round(rawEyeHeight * 10.0F) / 10.0F;
-
-            event.setNewEyeHeight(finalEyeHeight);
-        });
-    }
 }

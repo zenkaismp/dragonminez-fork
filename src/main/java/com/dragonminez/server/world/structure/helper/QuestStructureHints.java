@@ -93,7 +93,7 @@ public final class QuestStructureHints {
 	private static String normalize(String structureId) {
 		if (structureId == null || structureId.isBlank() || !structureId.contains(":")) return null;
 		try {
-			return ResourceLocation.parse(structureId).toString();
+			return new ResourceLocation(structureId).toString();
 		} catch (Exception e) {
 			return null;
 		}

@@ -7,6 +7,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.world.level.saveddata.SavedData;
 import org.jetbrains.annotations.NotNull;
 
@@ -38,7 +39,7 @@ public class DragonBallSavedData extends SavedData {
 	}
 
 	public static DragonBallSavedData get(ServerLevel level) {
-		return level.getDataStorage().computeIfAbsent(DragonBallSavedData::load, DragonBallSavedData::new, "dragon_balls_data");
+		return level.getDataStorage().computeIfAbsent(new SavedData.Factory<>(DragonBallSavedData::new, DragonBallSavedData::load, DataFixTypes.SAVED_DATA_MAP_INDEX), "dragon_balls_data");
 	}
 
 	public Map<Integer, List<BlockPos>> getActiveBalls(String setId) {

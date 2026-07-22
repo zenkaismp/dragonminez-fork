@@ -7,7 +7,7 @@ import com.dragonminez.common.wish.WishManager;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.event.network.CustomPayloadEvent;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -34,9 +34,9 @@ public class GrantWishC2S {
 		return new GrantWishC2S(dragon, indices);
 	}
 
-	public void handle(Supplier<NetworkEvent.Context> context) {
-		context.get().enqueueWork(() -> {
-			ServerPlayer player = context.get().getSender();
+	public void handle(CustomPayloadEvent.Context context) {
+		context.enqueueWork(() -> {
+			ServerPlayer player = context.getSender();
 			if (player == null) return;
 			ServerLevel level = player.serverLevel();
 			DragonWishEntity dragon = level.getEntitiesOfClass(DragonWishEntity.class,
@@ -66,6 +66,6 @@ public class GrantWishC2S {
 				wish.grant(player);
 			}
 		});
-		context.get().setPacketHandled(true);
+		context.setPacketHandled(true);
 	}
 }

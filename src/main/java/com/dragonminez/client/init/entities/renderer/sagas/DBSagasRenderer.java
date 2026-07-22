@@ -33,8 +33,8 @@ import java.util.Random;
 
 public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<T> {
 
-    private static final ResourceLocation NAPPA_NORMAL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/sagas/saga_nappa.png");
-    private static final ResourceLocation NAPPA_DAMAGED = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/sagas/saga_nappa2.png");
+    private static final ResourceLocation NAPPA_NORMAL = new ResourceLocation(Reference.MOD_ID, "textures/entity/sagas/saga_nappa.png");
+    private static final ResourceLocation NAPPA_DAMAGED = new ResourceLocation(Reference.MOD_ID, "textures/entity/sagas/saga_nappa2.png");
 
     public DBSagasRenderer(EntityRendererProvider.Context renderManager) {
         super(renderManager, new DBSagaModel<>());
@@ -153,7 +153,7 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
         float alphaCurve = (float) Math.sin(progress * Math.PI);
 
         String auraType = animatable.getAuraType() != null && !animatable.getAuraType().isEmpty() ? animatable.getAuraType().toLowerCase() : "kakarot";
-        ResourceLocation crossTex = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/aura/" + auraType + "_cross.png");
+        ResourceLocation crossTex = new ResourceLocation(Reference.MOD_ID, "textures/entity/races/aura/" + auraType + "_cross.png");
 
         ShaderInstance shader = DMZShaders.auraShader;
         if (shader == null) return;
@@ -208,9 +208,9 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
         Matrix4f projectionMatrix = RenderSystem.getProjectionMatrix();
 
         String auraType = animatable.getAuraType() != null && !animatable.getAuraType().isEmpty() ? animatable.getAuraType().toLowerCase() : "kakarot";
-        ResourceLocation mainTex = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/aura/" + auraType + "_aura.png");
-        ResourceLocation crossTex = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/aura/" + auraType + "_cross.png");
-        ResourceLocation sparkingTex = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/aura/sparking_effects.png");
+        ResourceLocation mainTex = new ResourceLocation(Reference.MOD_ID, "textures/entity/races/aura/" + auraType + "_aura.png");
+        ResourceLocation crossTex = new ResourceLocation(Reference.MOD_ID, "textures/entity/races/aura/" + auraType + "_cross.png");
+        ResourceLocation sparkingTex = new ResourceLocation(Reference.MOD_ID, "textures/entity/races/aura/sparking_effects.png");
 
         float animSpeed = (animatable.tickCount + partialTick) * 0.5f;
         shader.safeGetUniform("speed").set(animSpeed);
@@ -334,7 +334,7 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
         shader.safeGetUniform("power").set(3.0f);
         shader.safeGetUniform("divis").set(1.0f);
 
-        ResourceLocation lightningTex = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/null.png");
+        ResourceLocation lightningTex = new ResourceLocation(Reference.MOD_ID, "textures/entity/races/null.png");
         RenderType renderType = AuraRenderer.lightningType(lightningTex);
         AuraRenderer.customSetup(renderType, lightningTex, shader);
 

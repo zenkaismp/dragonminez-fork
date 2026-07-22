@@ -40,7 +40,7 @@ public abstract class TitleScreenMixin extends Screen {
 	@Unique
 	private static final String dragonminez$PATREON_URL = "https://www.patreon.com/cw/DragonMineZ";
 	@Unique
-	private static final ResourceLocation dragonminez$PATREON_LOGO = ResourceLocation.fromNamespaceAndPath("minecraft", "textures/gui/title/patreon_logo.png");
+	private static final ResourceLocation dragonminez$PATREON_LOGO = new ResourceLocation("minecraft", "textures/gui/title/patreon_logo.png");
 	@Unique
 	private static final List<RegistryObject<SoundEvent>> dragonminez$MENU_PLAYLIST = List.of(
 			MainSounds.MENU_MUSIC_1,

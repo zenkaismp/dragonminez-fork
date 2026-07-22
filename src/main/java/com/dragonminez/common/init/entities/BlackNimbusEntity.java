@@ -216,15 +216,14 @@ public class BlackNimbusEntity extends Mob implements GeoEntity {
         return this.getFirstPassenger() instanceof LivingEntity entity ? entity : null;
     }
 
-    @Override
-    public double getPassengersRidingOffset() {
+        public double getPassengersRidingOffset() {
         return 0.9D;
     }
 
 	@Override
 	public void positionRider(Entity passenger, MoveFunction callback) {
 		if (this.hasPassenger(passenger)) {
-			double yOffset = this.getPassengersRidingOffset() + passenger.getMyRidingOffset();
+			double yOffset = this.getPassengersRidingOffset() + passenger.getMyRidingOffset(this);
 			Vec3 vec3 = (new Vec3(0.0D, 0.0D, 0.0D)).yRot(-this.getYRot() * ((float)Math.PI / 180F) - ((float)Math.PI / 2F));
 			callback.accept(passenger, this.getX() + vec3.x, this.getY() + yOffset, this.getZ() + vec3.z);
 			if (passenger instanceof LivingEntity livingPassenger) {

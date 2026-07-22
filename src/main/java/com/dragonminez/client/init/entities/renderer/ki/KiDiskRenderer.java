@@ -18,7 +18,7 @@ import org.joml.Matrix4f;
 
 public class KiDiskRenderer extends EntityRenderer<KiDiskEntity> {
 
-    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/kidisc.png");
+    private static final ResourceLocation TEXTURE = new ResourceLocation(Reference.MOD_ID, "textures/entity/ki/kidisc.png");
 
     public KiDiskRenderer(EntityRendererProvider.Context pContext) {
         super(pContext);

@@ -21,7 +21,7 @@ import java.io.IOException;
  */
 public final class GravityRedManager {
 
-	private static final ResourceLocation EFFECT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "shaders/post/gravity_red.json");
+	private static final ResourceLocation EFFECT = new ResourceLocation(Reference.MOD_ID, "shaders/post/gravity_red.json");
 
 	private static PostChain chain = null;
 	private static RenderTarget depthHolder = null;

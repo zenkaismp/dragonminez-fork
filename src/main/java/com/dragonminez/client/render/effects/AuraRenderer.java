@@ -157,7 +157,7 @@ public class AuraRenderer {
 			poseStack.scale(finalScaleX, -finalScaleY, 1.0f);
 
 			String typeStr = layer.type != null && !layer.type.isEmpty() ? layer.type.toLowerCase() : "kakarot";
-			ResourceLocation mainTex = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/aura/" + typeStr + "_aura.png");
+			ResourceLocation mainTex = new ResourceLocation(Reference.MOD_ID, "textures/entity/races/aura/" + typeStr + "_aura.png");
 
 			RenderSystem.setShaderTexture(0, mainTex);
 			RenderSystem.setShader(() -> shader);
@@ -685,9 +685,9 @@ public class AuraRenderer {
 		float finalAlpha = maxAlpha * alphaMultiplier * layer.alpha;
 
 		String typeStr = layer.type != null && !layer.type.isEmpty() ? layer.type.toLowerCase() : "kakarot";
-		ResourceLocation mainTex = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/aura/" + typeStr + "_aura.png");
-		ResourceLocation crossTex = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/aura/" + typeStr + "_cross.png");
-		ResourceLocation sparkingTex = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/aura/sparking_effects.png");
+		ResourceLocation mainTex = new ResourceLocation(Reference.MOD_ID, "textures/entity/races/aura/" + typeStr + "_aura.png");
+		ResourceLocation crossTex = new ResourceLocation(Reference.MOD_ID, "textures/entity/races/aura/" + typeStr + "_cross.png");
+		ResourceLocation sparkingTex = new ResourceLocation(Reference.MOD_ID, "textures/entity/races/aura/sparking_effects.png");
 
 		float animSpeed = (player.tickCount + partialTick) * 0.5f;
 
@@ -836,7 +836,7 @@ public class AuraRenderer {
 		float alphaCurve = (float) Math.sin(progress * Math.PI);
 
 		String typeStr = topLayer.type != null && !topLayer.type.isEmpty() ? topLayer.type.toLowerCase() : "kakarot";
-		ResourceLocation crossTex = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/aura/" + typeStr + "_cross.png");
+		ResourceLocation crossTex = new ResourceLocation(Reference.MOD_ID, "textures/entity/races/aura/" + typeStr + "_cross.png");
 
 		ShaderInstance shader = DMZShaders.auraShader;
 		if (shader == null) return;
@@ -963,7 +963,7 @@ public class AuraRenderer {
 		shader.safeGetUniform("power").set(3.0f);
 		shader.safeGetUniform("divis").set(1.0f);
 
-		ResourceLocation lightningTex = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/null.png");
+		ResourceLocation lightningTex = new ResourceLocation(Reference.MOD_ID, "textures/entity/races/null.png");
 		RenderType renderType = lightningType(lightningTex);
 		customSetup(renderType, lightningTex, shader);
 

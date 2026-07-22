@@ -855,13 +855,13 @@ public class UtilityMenuScreen extends ScaledScreen {
 	}
 
 	@Override
-	public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+	public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double delta) {
 		if (panelOptions != null && panelScrollable) {
 			int maxScroll = Math.max(0, panelOptions.size() - visiblePanelRows());
 			panelScroll = Mth.clamp(panelScroll - (int) Math.signum(delta), 0, maxScroll);
 			return true;
 		}
-		return super.mouseScrolled(mouseX, mouseY, delta);
+		return super.mouseScrolled(mouseX, mouseY, scrollX, delta);
 	}
 
 	@Override

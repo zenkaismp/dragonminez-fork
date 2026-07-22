@@ -9,9 +9,11 @@ import com.dragonminez.server.world.dimension.NamekDimension;
 import com.dragonminez.server.world.dimension.OtherworldDimension;
 import com.dragonminez.server.world.dimension.SacredKaiDimension;
 import net.minecraft.advancements.Advancement;
+import net.minecraft.advancements.AdvancementHolder;
+import net.minecraft.advancements.Criterion;
 import net.minecraft.advancements.AdvancementRewards;
 import net.minecraft.advancements.FrameType;
-import net.minecraft.advancements.RequirementsStrategy;
+import net.minecraft.advancements.AdvancementRequirements;
 import net.minecraft.advancements.critereon.*;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.Registries;
@@ -44,21 +46,21 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 
 	private static class DMZAdvancements implements AdvancementSubProvider {
 		@Override
-		public void generate(HolderLookup.Provider provider, Consumer<Advancement> consumer) {
-			Advancement root = Advancement.Builder.advancement()
+		public void generate(HolderLookup.Provider provider, Consumer<AdvancementHolder> consumer) {
+			AdvancementHolder root = Advancement.Builder.advancement()
 					.display(
 							MainItems.DBALL4_BLOCK_ITEM.get(), // Ítem de muestra
 							Component.translatable("advancements.dragonminez.root.title"), // Título
 							Component.translatable("advancements.dragonminez.root.description"), // Descripción
-							ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/block/rocky_stone.png"), // Textura de fondo
+							new ResourceLocation(Reference.MOD_ID, "textures/block/rocky_stone.png"), // Textura de fondo
 							FrameType.TASK, true, true, false
 					) // Tipo de marco, si se muestra en la esquina superior derecha, si se muestra en el chat y si se oculta en los Logros ("Logro Oculto/Secreto")
 					.addCriterion("first_spawn_in_world", // Nombre del criterio
-							PlayerTrigger.TriggerInstance.located(EntityPredicate.Builder.entity().of(EntityType.PLAYER).build())) // Criterio
+							PlayerTrigger.TriggerInstance.located(EntityPredicate.Builder.entity().of(EntityType.PLAYER))) // Criterio
 					.rewards(AdvancementRewards.Builder.experience(0)) // Recompensa de experiencia (Se pueden poner más tipos xd)
 					.save(consumer, "dragonminez:root"); // Logro "raíz" o "inicial"; el primero de todos.
 
-			Advancement rockybiome = Advancement.Builder.advancement()
+			AdvancementHolder rockybiome = Advancement.Builder.advancement()
 					.parent(root)
 					.display(
 							MainBlocks.ROCKY_STONE.get(),
@@ -68,11 +70,11 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 					).addCriterion("found_rockybiome",
 							PlayerTrigger.TriggerInstance.located(
 									LocationPredicate.Builder.location()
-											.setBiome(OverworldBiomes.ROCKY).build()
+											.setBiome(OverworldBiomes.ROCKY)
 							)
 					).save(consumer, "dragonminez:rockybiome");
 
-			Advancement otherworld = Advancement.Builder.advancement()
+			AdvancementHolder otherworld = Advancement.Builder.advancement()
 					.parent(root)
 					.display(
 							MainBlocks.OTHERWORLD_CLOUD.get(),
@@ -84,7 +86,7 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 					).save(consumer, "dragonminez:otherworld");
 
 
-			Advancement invincible = Advancement.Builder.advancement()
+			AdvancementHolder invincible = Advancement.Builder.advancement()
 					.parent(root)
 					.display(
 							MainItems.INVENCIBLE_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
@@ -101,10 +103,10 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 									MainItems.INVENCIBLE_BLUE_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
 									MainItems.INVENCIBLE_BLUE_ARMOR.get(ArmorItem.Type.LEGGINGS).get(),
 									MainItems.INVENCIBLE_BLUE_ARMOR.get(ArmorItem.Type.BOOTS).get()))
-					.requirements(RequirementsStrategy.OR)
+					.requirements(AdvancementRequirements.Strategy.OR)
 					.save(consumer, "dragonminez:invincible");
 
-			Advancement kamilookout = Advancement.Builder.advancement()
+			AdvancementHolder kamilookout = Advancement.Builder.advancement()
 					.parent(root)
 					.display(
 							Items.CLOCK,
@@ -113,13 +115,13 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 							null, FrameType.GOAL, true, true, false
 					).addCriterion("kamilookout",
 							PlayerTrigger.TriggerInstance.located(
-									LocationPredicate.inStructure(
-											ResourceKey.create(Registries.STRUCTURE, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "kamilookout"))
+									LocationPredicate.Builder.inStructure(
+											ResourceKey.create(Registries.STRUCTURE, new ResourceLocation(Reference.MOD_ID, "kamilookout"))
 									)
 							)
 					).save(consumer, "dragonminez:kamilookout");
 
-			Advancement gokuhouse = Advancement.Builder.advancement()
+			AdvancementHolder gokuhouse = Advancement.Builder.advancement()
 					.parent(root)
 					.display(
 							MainBlocks.DBALL4_BLOCK.get(),
@@ -128,13 +130,13 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 							null, FrameType.GOAL, true, true, false
 					).addCriterion("gokuhouse",
 							PlayerTrigger.TriggerInstance.located(
-									LocationPredicate.inStructure(
-											ResourceKey.create(Registries.STRUCTURE, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "goku_house"))
+									LocationPredicate.Builder.inStructure(
+											ResourceKey.create(Registries.STRUCTURE, new ResourceLocation(Reference.MOD_ID, "goku_house"))
 									)
 							)
 					).save(consumer, "dragonminez:gokuhouse");
 
-			Advancement roshihouse = Advancement.Builder.advancement()
+			AdvancementHolder roshihouse = Advancement.Builder.advancement()
 					.parent(root)
 					.display(
 							MainItems.WEIGHT_TURTLE_SHELL.get(),
@@ -143,13 +145,13 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 							null, FrameType.GOAL, true, true, false
 					).addCriterion("roshihouse",
 							PlayerTrigger.TriggerInstance.located(
-									LocationPredicate.inStructure(
-											ResourceKey.create(Registries.STRUCTURE, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "roshi_house"))
+									LocationPredicate.Builder.inStructure(
+											ResourceKey.create(Registries.STRUCTURE, new ResourceLocation(Reference.MOD_ID, "roshi_house"))
 									)
 							)
 					).save(consumer, "dragonminez:roshihouse");
 
-			Advancement timechamber = Advancement.Builder.advancement()
+			AdvancementHolder timechamber = Advancement.Builder.advancement()
 					.parent(kamilookout)
 					.display(
 							MainItems.VEGETA_Z_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
@@ -160,7 +162,7 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 							ChangeDimensionTrigger.TriggerInstance.changedDimensionTo(HTCDimension.HTC_KEY)
 					).save(consumer, "dragonminez:timechamber");
 
-			Advancement nimbus = Advancement.Builder.advancement()
+			AdvancementHolder nimbus = Advancement.Builder.advancement()
 					.parent(kamilookout)
 					.display(
 							MainItems.NUBE_ITEM.get(),
@@ -171,7 +173,7 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 							InventoryChangeTrigger.TriggerInstance.hasItems(MainItems.NUBE_ITEM.get())
 					).save(consumer, "dragonminez:nimbus");
 
-			Advancement radar = Advancement.Builder.advancement()
+			AdvancementHolder radar = Advancement.Builder.advancement()
 					.parent(root)
 					.display(
 							MainItems.DBALL_RADAR_ITEM.get(),
@@ -182,7 +184,7 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 							InventoryChangeTrigger.TriggerInstance.hasItems(MainItems.DBALL_RADAR_ITEM.get())
 					).save(consumer, "dragonminez:radar");
 
-			Advancement dball1 = Advancement.Builder.advancement()
+			AdvancementHolder dball1 = Advancement.Builder.advancement()
 					.parent(radar)
 					.display(
 							MainItems.DBALL1_BLOCK_ITEM.get(),
@@ -193,7 +195,7 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 							InventoryChangeTrigger.TriggerInstance.hasItems(MainItems.DBALL1_BLOCK_ITEM.get())
 					).save(consumer, "dragonminez:dball1");
 
-			Advancement dball7 = Advancement.Builder.advancement()
+			AdvancementHolder dball7 = Advancement.Builder.advancement()
 					.parent(dball1)
 					.display(
 							MainItems.DBALL7_BLOCK_ITEM.get(),
@@ -211,7 +213,7 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 									MainItems.DBALL7_BLOCK_ITEM.get())
 					).save(consumer, "dragonminez:dball7");
 
-			Advancement namekdim = Advancement.Builder.advancement()
+			AdvancementHolder namekdim = Advancement.Builder.advancement()
 					.parent(root)
 					.display(
 							MainBlocks.NAMEK_GRASS_BLOCK.get(),
@@ -222,7 +224,7 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 							ChangeDimensionTrigger.TriggerInstance.changedDimensionTo(NamekDimension.NAMEK_KEY)
 					).save(consumer, "dragonminez:namekdim");
 
-			Advancement patriarca = Advancement.Builder.advancement()
+			AdvancementHolder patriarca = Advancement.Builder.advancement()
 					.parent(namekdim)
 					.display(
 							MainItems.PICCOLO_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
@@ -232,7 +234,7 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 					).addCriterion("patriarca", inStructure("elder_guru")
 					).save(consumer, "dragonminez:patriarca");
 
-			Advancement radarnamek = Advancement.Builder.advancement()
+			AdvancementHolder radarnamek = Advancement.Builder.advancement()
 					.parent(namekdim)
 					.display(
 							MainItems.NAMEKDBALL_RADAR_ITEM.get(),
@@ -243,7 +245,7 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 							InventoryChangeTrigger.TriggerInstance.hasItems(MainItems.NAMEKDBALL_RADAR_ITEM.get())
 					).save(consumer, "dragonminez:radarnamek");
 
-			Advancement namekballs = Advancement.Builder.advancement()
+			AdvancementHolder namekballs = Advancement.Builder.advancement()
 					.parent(radarnamek)
 					.display(
 							MainItems.DBALL1_NAMEK_BLOCK_ITEM.get(),
@@ -261,7 +263,7 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 									MainItems.DBALL7_NAMEK_BLOCK_ITEM.get())
 					).save(consumer, "dragonminez:namekballs");
 
-			Advancement kikono = Advancement.Builder.advancement()
+			AdvancementHolder kikono = Advancement.Builder.advancement()
 					.parent(namekdim)
 					.display(
 							MainItems.KIKONO_SHARD.get(),
@@ -272,7 +274,7 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 							InventoryChangeTrigger.TriggerInstance.hasItems(MainItems.KIKONO_SHARD.get())
 					).save(consumer, "dragonminez:kikono");
 
-			Advancement armorStation = Advancement.Builder.advancement()
+			AdvancementHolder armorStation = Advancement.Builder.advancement()
 					.parent(kikono)
 					.display(
 							MainBlocks.KIKONO_STATION.get(),
@@ -283,7 +285,7 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 							InventoryChangeTrigger.TriggerInstance.hasItems(MainBlocks.KIKONO_STATION.get())
 					).save(consumer, "dragonminez:armorstation");
 
-			Advancement patternz = Advancement.Builder.advancement()
+			AdvancementHolder patternz = Advancement.Builder.advancement()
 					.parent(armorStation)
 					.display(
 							MainItems.BLANK_PATTERN_Z.get(),
@@ -294,7 +296,7 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 							InventoryChangeTrigger.TriggerInstance.hasItems(MainItems.BLANK_PATTERN_Z.get())
 					).save(consumer, "dragonminez:patternz");
 
-			Advancement patternsuper = Advancement.Builder.advancement()
+			AdvancementHolder patternsuper = Advancement.Builder.advancement()
 					.parent(armorStation)
 					.display(
 							MainItems.BLANK_PATTERN_SUPER.get(),
@@ -305,7 +307,7 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 							InventoryChangeTrigger.TriggerInstance.hasItems(MainItems.BLANK_PATTERN_SUPER.get())
 					).save(consumer, "dragonminez:patternsuper");
 
-			Advancement gokuarmor = Advancement.Builder.advancement()
+			AdvancementHolder gokuarmor = Advancement.Builder.advancement()
 					.parent(patternz)
 					.display(
 							MainItems.GOKU_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
@@ -317,10 +319,10 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 					.addCriterion("gokuarmor_super", armorOf(MainItems.GOKU_SUPER_ARMOR))
 					.addCriterion("gokuarmor_gt", armorOf(MainItems.GOKU_GT_ARMOR))
 					.addCriterion("gokuarmor_yardrat", armorOf(MainItems.YARDRAT_ARMOR))
-					.requirements(RequirementsStrategy.OR)
+					.requirements(AdvancementRequirements.Strategy.OR)
 					.save(consumer, "dragonminez:gokuarmor");
 
-			Advancement gotenarmor = Advancement.Builder.advancement()
+			AdvancementHolder gotenarmor = Advancement.Builder.advancement()
 					.parent(patternz)
 					.display(
 							MainItems.GOTEN_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
@@ -329,10 +331,10 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 							null, FrameType.TASK, true, true, false
 					).addCriterion("gotenarmor", armorOf(MainItems.GOTEN_ARMOR))
 					.addCriterion("gotenarmor_super", armorOf(MainItems.GOTEN_SUPER_ARMOR))
-					.requirements(RequirementsStrategy.OR)
+					.requirements(AdvancementRequirements.Strategy.OR)
 					.save(consumer, "dragonminez:gotenarmor");
 
-			Advancement futuregohanarmor = Advancement.Builder.advancement()
+			AdvancementHolder futuregohanarmor = Advancement.Builder.advancement()
 					.parent(patternz)
 					.display(
 							MainItems.FUTURE_GOHAN_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
@@ -345,7 +347,7 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 									MainItems.FUTURE_GOHAN_ARMOR.get(ArmorItem.Type.BOOTS).get())
 					).save(consumer, "dragonminez:futuregohanarmor");
 
-			Advancement vegetaarmor = Advancement.Builder.advancement()
+			AdvancementHolder vegetaarmor = Advancement.Builder.advancement()
 					.parent(patternz)
 					.display(
 							MainItems.VEGETA_SAIYAN_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
@@ -356,10 +358,10 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 					.addCriterion("vegetaarmor_namek", armorOf(MainItems.VEGETA_NAMEK_ARMOR))
 					.addCriterion("vegetaarmor_z", armorOf(MainItems.VEGETA_Z_ARMOR))
 					.addCriterion("vegetaarmor_gt", armorOf(MainItems.VEGETA_GT_ARMOR))
-					.requirements(RequirementsStrategy.OR)
+					.requirements(AdvancementRequirements.Strategy.OR)
 					.save(consumer, "dragonminez:vegetaarmor");
 
-			Advancement vegettoarmor = Advancement.Builder.advancement()
+			AdvancementHolder vegettoarmor = Advancement.Builder.advancement()
 					.parent(patternz)
 					.display(
 							MainItems.VEGETTO_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
@@ -372,7 +374,7 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 									MainItems.VEGETTO_ARMOR.get(ArmorItem.Type.BOOTS).get())
 					).save(consumer, "dragonminez:vegettoarmor");
 
-			Advancement gogetaarmor = Advancement.Builder.advancement()
+			AdvancementHolder gogetaarmor = Advancement.Builder.advancement()
 					.parent(patternz)
 					.display(
 							MainItems.GOGETA_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
@@ -385,7 +387,7 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 									MainItems.GOGETA_ARMOR.get(ArmorItem.Type.BOOTS).get())
 					).save(consumer, "dragonminez:gogetaarmor");
 
-			Advancement demonbluegiarmor = Advancement.Builder.advancement()
+			AdvancementHolder demonbluegiarmor = Advancement.Builder.advancement()
 					.parent(patternz)
 					.display(
 							MainItems.DEMON_GI_BLUE_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
@@ -394,10 +396,10 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 							null, FrameType.TASK, true, true, false
 					).addCriterion("demonbluegiarmor", armorOf(MainItems.DEMON_GI_BLUE_ARMOR))
 					.addCriterion("demonbluegiarmor_gohan_super", armorOf(MainItems.GOHAN_SUPER_ARMOR))
-					.requirements(RequirementsStrategy.OR)
+					.requirements(AdvancementRequirements.Strategy.OR)
 					.save(consumer, "dragonminez:demonbluegiarmor");
 
-			Advancement bardockarmor = Advancement.Builder.advancement()
+			AdvancementHolder bardockarmor = Advancement.Builder.advancement()
 					.parent(patternz)
 					.display(
 							MainItems.BARDOCK_DBZ_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
@@ -406,10 +408,10 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 							null, FrameType.TASK, true, true, false
 					).addCriterion("bardockarmor", armorOf(MainItems.BARDOCK_DBZ_ARMOR))
 					.addCriterion("bardockarmor_super", armorOf(MainItems.BARDOCK_SUPER_ARMOR))
-					.requirements(RequirementsStrategy.OR)
+					.requirements(AdvancementRequirements.Strategy.OR)
 					.save(consumer, "dragonminez:bardockarmor");
 
-			Advancement turlesarmor = Advancement.Builder.advancement()
+			AdvancementHolder turlesarmor = Advancement.Builder.advancement()
 					.parent(patternz)
 					.display(
 							MainItems.TURLES_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
@@ -422,7 +424,7 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 									MainItems.TURLES_ARMOR.get(ArmorItem.Type.BOOTS).get())
 					).save(consumer, "dragonminez:turlesarmor");
 
-			Advancement tienarmor = Advancement.Builder.advancement()
+			AdvancementHolder tienarmor = Advancement.Builder.advancement()
 					.parent(patternz)
 					.display(
 							MainItems.TIEN_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
@@ -435,7 +437,7 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 									MainItems.TIEN_ARMOR.get(ArmorItem.Type.BOOTS).get())
 					).save(consumer, "dragonminez:tienarmor");
 
-			Advancement trunksarmor = Advancement.Builder.advancement()
+			AdvancementHolder trunksarmor = Advancement.Builder.advancement()
 					.parent(patternz)
 					.display(
 							MainItems.TRUNKS_Z_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
@@ -445,10 +447,10 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 					).addCriterion("trunksarmor", armorOf(MainItems.TRUNKS_Z_ARMOR))
 					.addCriterion("trunksarmor_super", armorOf(MainItems.TRUNKS_SUPER_ARMOR))
 					.addCriterion("trunksarmor_kid", armorOf(MainItems.TRUNKS_KID_ARMOR))
-					.requirements(RequirementsStrategy.OR)
+					.requirements(AdvancementRequirements.Strategy.OR)
 					.save(consumer, "dragonminez:trunksarmor");
 
-			Advancement brolyarmor = Advancement.Builder.advancement()
+			AdvancementHolder brolyarmor = Advancement.Builder.advancement()
 					.parent(patternsuper)
 					.display(
 							MainItems.BROLY_SUPER_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
@@ -457,10 +459,10 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 							null, FrameType.TASK, true, true, false
 					).addCriterion("brolyarmor", armorOf(MainItems.BROLY_SUPER_ARMOR))
 					.addCriterion("brolyarmor_z", armorOf(MainItems.BROLY_Z_ARMOR))
-					.requirements(RequirementsStrategy.OR)
+					.requirements(AdvancementRequirements.Strategy.OR)
 					.save(consumer, "dragonminez:brolyarmor");
 
-			Advancement shinarmor = Advancement.Builder.advancement()
+			AdvancementHolder shinarmor = Advancement.Builder.advancement()
 					.parent(patternz)
 					.display(
 							MainItems.SHIN_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
@@ -473,7 +475,7 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 									MainItems.SHIN_ARMOR.get(ArmorItem.Type.BOOTS).get())
 					).save(consumer, "dragonminez:shinarmor");
 
-			Advancement blackarmor = Advancement.Builder.advancement()
+			AdvancementHolder blackarmor = Advancement.Builder.advancement()
 					.parent(patternsuper)
 					.display(
 							MainItems.BLACKGOKU_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
@@ -486,7 +488,7 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 									MainItems.BLACKGOKU_ARMOR.get(ArmorItem.Type.BOOTS).get())
 					).save(consumer, "dragonminez:blackarmor");
 
-			Advancement zamasuarmor = Advancement.Builder.advancement()
+			AdvancementHolder zamasuarmor = Advancement.Builder.advancement()
 					.parent(patternsuper)
 					.display(
 							MainItems.ZAMASU_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
@@ -499,7 +501,7 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 									MainItems.ZAMASU_ARMOR.get(ArmorItem.Type.BOOTS).get())
 					).save(consumer, "dragonminez:zamasuarmor");
 
-			Advancement fusionzamasuarmor = Advancement.Builder.advancement()
+			AdvancementHolder fusionzamasuarmor = Advancement.Builder.advancement()
 					.parent(patternsuper)
 					.display(
 							MainItems.FUSION_ZAMASU_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
@@ -512,7 +514,7 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 									MainItems.FUSION_ZAMASU_ARMOR.get(ArmorItem.Type.BOOTS).get())
 					).save(consumer, "dragonminez:fusionzamasuarmor");
 
-			Advancement pridetrooparmor = Advancement.Builder.advancement()
+			AdvancementHolder pridetrooparmor = Advancement.Builder.advancement()
 					.parent(patternsuper)
 					.display(
 							MainItems.PRIDE_TROOPS_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
@@ -525,7 +527,7 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 									MainItems.PRIDE_TROOPS_ARMOR.get(ArmorItem.Type.BOOTS).get())
 					).save(consumer, "dragonminez:pridetrooparmor");
 
-			Advancement hitarmor = Advancement.Builder.advancement()
+			AdvancementHolder hitarmor = Advancement.Builder.advancement()
 					.parent(patternsuper)
 					.display(
 							MainItems.HIT_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
@@ -538,7 +540,7 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 									MainItems.HIT_ARMOR.get(ArmorItem.Type.BOOTS).get())
 					).save(consumer, "dragonminez:hitarmor");
 
-			Advancement gasarmor = Advancement.Builder.advancement()
+			AdvancementHolder gasarmor = Advancement.Builder.advancement()
 					.parent(patternsuper)
 					.display(
 							MainItems.GAS_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
@@ -551,7 +553,7 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 									MainItems.GAS_ARMOR.get(ArmorItem.Type.BOOTS).get())
 					).save(consumer, "dragonminez:gasarmor");
 
-			Advancement sacredkai = Advancement.Builder.advancement()
+			AdvancementHolder sacredkai = Advancement.Builder.advancement()
 					.parent(root)
 					.display(
 							MainBlocks.SACRED_PLANET_GRASS_BLOCK.get(),
@@ -562,7 +564,7 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 							ChangeDimensionTrigger.TriggerInstance.changedDimensionTo(SacredKaiDimension.SACREDKAI_KEY)
 					).save(consumer, "dragonminez:sacredkai");
 
-			Advancement gerolab = Advancement.Builder.advancement()
+			AdvancementHolder gerolab = Advancement.Builder.advancement()
 					.parent(rockybiome)
 					.display(
 							MainItems.A16_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
@@ -572,7 +574,7 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 					).addCriterion("gerolab", inStructure("gero_lab")
 					).save(consumer, "dragonminez:gerolab");
 
-			Advancement babidi = Advancement.Builder.advancement()
+			AdvancementHolder babidi = Advancement.Builder.advancement()
 					.parent(root)
 					.display(
 							net.minecraft.world.level.block.Blocks.SPAWNER,
@@ -582,7 +584,7 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 					).addCriterion("babidi", inStructure("babidi")
 					).save(consumer, "dragonminez:babidi");
 
-			Advancement cellarena = Advancement.Builder.advancement()
+			AdvancementHolder cellarena = Advancement.Builder.advancement()
 					.parent(root)
 					.display(
 							net.minecraft.world.level.block.Blocks.QUARTZ_BLOCK,
@@ -592,7 +594,7 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 					).addCriterion("cellarena", inStructure("cell_arena")
 					).save(consumer, "dragonminez:cellarena");
 
-			Advancement piccolohouse = Advancement.Builder.advancement()
+			AdvancementHolder piccolohouse = Advancement.Builder.advancement()
 					.parent(root)
 					.display(
 							MainItems.WEIGHT_PICCOLO_CAPE.get(),
@@ -602,7 +604,7 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 					).addCriterion("piccolohouse", inStructure("piccolo_house")
 					).save(consumer, "dragonminez:piccolohouse");
 
-			Advancement yamchahouse = Advancement.Builder.advancement()
+			AdvancementHolder yamchahouse = Advancement.Builder.advancement()
 					.parent(root)
 					.display(
 							Blocks.SAND,
@@ -612,7 +614,7 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 					).addCriterion("yamchahouse", inStructure("yamcha_house")
 					).save(consumer, "dragonminez:yamchahouse");
 
-			Advancement trunksship = Advancement.Builder.advancement()
+			AdvancementHolder trunksship = Advancement.Builder.advancement()
 					.parent(root)
 					.display(
 							MainItems.TRUNKS_Z_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
@@ -622,7 +624,7 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 					).addCriterion("trunksship", inStructure("trunks_ship")
 					).save(consumer, "dragonminez:trunksship");
 
-			Advancement vegetapod = Advancement.Builder.advancement()
+			AdvancementHolder vegetapod = Advancement.Builder.advancement()
 					.parent(rockybiome)
 					.display(
 							MainItems.NAVE_SAIYAN_ITEM.get(),
@@ -632,7 +634,7 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 					).addCriterion("vegetapod", inStructure("vegeta_pod")
 					).save(consumer, "dragonminez:vegetapod");
 
-			Advancement friezaship = Advancement.Builder.advancement()
+			AdvancementHolder friezaship = Advancement.Builder.advancement()
 					.parent(namekdim)
 					.display(
 							net.minecraft.world.level.block.Blocks.IRON_BLOCK,
@@ -642,7 +644,7 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 					).addCriterion("friezaship", inStructure("frieza_ship")
 					).save(consumer, "dragonminez:friezaship");
 
-			Advancement oldkaipillar = Advancement.Builder.advancement()
+			AdvancementHolder oldkaipillar = Advancement.Builder.advancement()
 					.parent(sacredkai)
 					.display(
 							MainBlocks.SACRED_CHRYSANTHEMUM_FLOWER.get(),
@@ -652,7 +654,7 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 					).addCriterion("oldkaipillar", inStructure("oldkai_pillar")
 					).save(consumer, "dragonminez:oldkaipillar");
 
-			Advancement greatsaiyamanarmor = Advancement.Builder.advancement()
+			AdvancementHolder greatsaiyamanarmor = Advancement.Builder.advancement()
 					.parent(patternz)
 					.display(
 							MainItems.GREAT_SAIYAMAN_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
@@ -662,7 +664,7 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 					).addCriterion("greatsaiyamanarmor", armorOf(MainItems.GREAT_SAIYAMAN_ARMOR)
 					).save(consumer, "dragonminez:greatsaiyamanarmor");
 
-			Advancement piccoloarmor = Advancement.Builder.advancement()
+			AdvancementHolder piccoloarmor = Advancement.Builder.advancement()
 					.parent(patternz)
 					.display(
 							MainItems.PICCOLO_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
@@ -672,7 +674,7 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 					).addCriterion("piccoloarmor", armorOf(MainItems.PICCOLO_ARMOR)
 					).save(consumer, "dragonminez:piccoloarmor");
 
-			Advancement majinbuuarmor = Advancement.Builder.advancement()
+			AdvancementHolder majinbuuarmor = Advancement.Builder.advancement()
 					.parent(patternz)
 					.display(
 							MainItems.MAJIN_BUU_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
@@ -682,7 +684,7 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 					).addCriterion("majinbuuarmor", armorOf(MainItems.MAJIN_BUU_ARMOR)
 					).save(consumer, "dragonminez:majinbuuarmor");
 
-			Advancement vegetabuuarmor = Advancement.Builder.advancement()
+			AdvancementHolder vegetabuuarmor = Advancement.Builder.advancement()
 					.parent(patternz)
 					.display(
 							MainItems.VEGETA_BUU_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
@@ -692,7 +694,7 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 					).addCriterion("vegetabuuarmor", armorOf(MainItems.VEGETA_BUU_ARMOR)
 					).save(consumer, "dragonminez:vegetabuuarmor");
 
-			Advancement a16armor = Advancement.Builder.advancement()
+			AdvancementHolder a16armor = Advancement.Builder.advancement()
 					.parent(patternz)
 					.display(
 							MainItems.A16_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
@@ -702,7 +704,7 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 					).addCriterion("a16armor", armorOf(MainItems.A16_ARMOR)
 					).save(consumer, "dragonminez:a16armor");
 
-			Advancement a17armor = Advancement.Builder.advancement()
+			AdvancementHolder a17armor = Advancement.Builder.advancement()
 					.parent(patternz)
 					.display(
 							MainItems.A17_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
@@ -711,10 +713,10 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 							null, FrameType.TASK, true, true, false
 					).addCriterion("a17armor", armorOf(MainItems.A17_ARMOR))
 					.addCriterion("a17armor_super", armorOf(MainItems.A17_SUPER_ARMOR))
-					.requirements(RequirementsStrategy.OR)
+					.requirements(AdvancementRequirements.Strategy.OR)
 					.save(consumer, "dragonminez:a17armor");
 
-			Advancement a18armor = Advancement.Builder.advancement()
+			AdvancementHolder a18armor = Advancement.Builder.advancement()
 					.parent(patternz)
 					.display(
 							MainItems.A18_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
@@ -725,10 +727,10 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 					.addCriterion("a18armor_kame", armorOf(MainItems.A18_KAME_ARMOR))
 					.addCriterion("a18armor_tournament", armorOf(MainItems.A18_TOURNAMENT_ARMOR))
 					.addCriterion("a18armor_cell", armorOf(MainItems.A18_CELL_ARMOR))
-					.requirements(RequirementsStrategy.OR)
+					.requirements(AdvancementRequirements.Strategy.OR)
 					.save(consumer, "dragonminez:a18armor");
 
-			Advancement orangehigharmor = Advancement.Builder.advancement()
+			AdvancementHolder orangehigharmor = Advancement.Builder.advancement()
 					.parent(patternz)
 					.display(
 							MainItems.ORANGE_HIGH_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
@@ -738,7 +740,7 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 					).addCriterion("orangehigharmor", armorOf(MainItems.ORANGE_HIGH_ARMOR)
 					).save(consumer, "dragonminez:orangehigharmor");
 
-			Advancement videlarmor = Advancement.Builder.advancement()
+			AdvancementHolder videlarmor = Advancement.Builder.advancement()
 					.parent(patternz)
 					.display(
 							MainItems.VIDEL_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
@@ -748,7 +750,7 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 					).addCriterion("videlarmor", armorOf(MainItems.VIDEL_ARMOR)
 					).save(consumer, "dragonminez:videlarmor");
 
-			Advancement narukearmor = Advancement.Builder.advancement()
+			AdvancementHolder narukearmor = Advancement.Builder.advancement()
 					.parent(patternz)
 					.display(
 							MainItems.NARUKE_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
@@ -758,7 +760,7 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 					).addCriterion("narukearmor", armorOf(MainItems.NARUKE_ARMOR)
 					).save(consumer, "dragonminez:narukearmor");
 
-			Advancement strongestarmor = Advancement.Builder.advancement()
+			AdvancementHolder strongestarmor = Advancement.Builder.advancement()
 					.parent(patternz)
 					.display(
 							MainItems.STRONGEST_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
@@ -768,7 +770,7 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 					).addCriterion("strongestarmor", armorOf(MainItems.STRONGEST_ARMOR)
 					).save(consumer, "dragonminez:strongestarmor");
 
-			Advancement gokuwhisarmor = Advancement.Builder.advancement()
+			AdvancementHolder gokuwhisarmor = Advancement.Builder.advancement()
 					.parent(patternsuper)
 					.display(
 							MainItems.GOKU_WHIS_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
@@ -778,7 +780,7 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 					).addCriterion("gokuwhisarmor", armorOf(MainItems.GOKU_WHIS_ARMOR)
 					).save(consumer, "dragonminez:gokuwhisarmor");
 
-			Advancement vegetasuperarmor = Advancement.Builder.advancement()
+			AdvancementHolder vegetasuperarmor = Advancement.Builder.advancement()
 					.parent(patternsuper)
 					.display(
 							MainItems.VEGETA_SUPER_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
@@ -787,10 +789,10 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 							null, FrameType.TASK, true, true, false
 					).addCriterion("vegetasuperarmor", armorOf(MainItems.VEGETA_SUPER_ARMOR))
 					.addCriterion("vegetasuperarmor_whis", armorOf(MainItems.VEGETA_WHIS_ARMOR))
-					.requirements(RequirementsStrategy.OR)
+					.requirements(AdvancementRequirements.Strategy.OR)
 					.save(consumer, "dragonminez:vegetasuperarmor");
 
-			Advancement gammasarmor = Advancement.Builder.advancement()
+			AdvancementHolder gammasarmor = Advancement.Builder.advancement()
 					.parent(patternsuper)
 					.display(
 							MainItems.GAMMA1_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
@@ -799,10 +801,10 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 							null, FrameType.TASK, true, true, false
 					).addCriterion("gammasarmor", armorOf(MainItems.GAMMA1_ARMOR))
 					.addCriterion("gammasarmor_2", armorOf(MainItems.GAMMA2_ARMOR))
-					.requirements(RequirementsStrategy.OR)
+					.requirements(AdvancementRequirements.Strategy.OR)
 					.save(consumer, "dragonminez:gammasarmor");
 
-			Advancement granolaarmor = Advancement.Builder.advancement()
+			AdvancementHolder granolaarmor = Advancement.Builder.advancement()
 					.parent(patternsuper)
 					.display(
 							MainItems.GRANOLA_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
@@ -812,7 +814,7 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 					).addCriterion("granolaarmor", armorOf(MainItems.GRANOLA_ARMOR)
 					).save(consumer, "dragonminez:granolaarmor");
 
-			Advancement age1000armor = Advancement.Builder.advancement()
+			AdvancementHolder age1000armor = Advancement.Builder.advancement()
 					.parent(patternsuper)
 					.display(
 							MainItems.AGE1000_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
@@ -822,7 +824,7 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 					).addCriterion("age1000armor", armorOf(MainItems.AGE1000_ARMOR)
 					).save(consumer, "dragonminez:age1000armor");
 
-			Advancement ginearmor = Advancement.Builder.advancement()
+			AdvancementHolder ginearmor = Advancement.Builder.advancement()
 					.parent(patternsuper)
 					.display(
 							MainItems.GINE_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
@@ -832,7 +834,7 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 					).addCriterion("ginearmor", armorOf(MainItems.GINE_ARMOR)
 					).save(consumer, "dragonminez:ginearmor");
 
-			Advancement kalearmor = Advancement.Builder.advancement()
+			AdvancementHolder kalearmor = Advancement.Builder.advancement()
 					.parent(patternsuper)
 					.display(
 							MainItems.KALE_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
@@ -842,7 +844,7 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 					).addCriterion("kalearmor", armorOf(MainItems.KALE_ARMOR)
 					).save(consumer, "dragonminez:kalearmor");
 
-			Advancement cauliflaarmor = Advancement.Builder.advancement()
+			AdvancementHolder cauliflaarmor = Advancement.Builder.advancement()
 					.parent(patternsuper)
 					.display(
 							MainItems.CAULIFLA_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
@@ -852,7 +854,7 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 					).addCriterion("cauliflaarmor", armorOf(MainItems.CAULIFLA_ARMOR)
 					).save(consumer, "dragonminez:cauliflaarmor");
 
-			Advancement beerusarmor = Advancement.Builder.advancement()
+			AdvancementHolder beerusarmor = Advancement.Builder.advancement()
 					.parent(patternsuper)
 					.display(
 							MainItems.BEERUS_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
@@ -862,7 +864,7 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 					).addCriterion("beerusarmor", armorOf(MainItems.BEERUS_ARMOR)
 					).save(consumer, "dragonminez:beerusarmor");
 
-			Advancement keflaarmor = Advancement.Builder.advancement()
+			AdvancementHolder keflaarmor = Advancement.Builder.advancement()
 					.parent(patternsuper)
 					.display(
 							MainItems.KEFLA_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
@@ -872,7 +874,7 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 					).addCriterion("keflaarmor", armorOf(MainItems.KEFLA_ARMOR)
 					).save(consumer, "dragonminez:keflaarmor");
 
-			Advancement majin21armor = Advancement.Builder.advancement()
+			AdvancementHolder majin21armor = Advancement.Builder.advancement()
 					.parent(patternsuper)
 					.display(
 							MainItems.MAJIN21_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
@@ -882,7 +884,7 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 					).addCriterion("majin21armor", armorOf(MainItems.MAJIN21_ARMOR)
 					).save(consumer, "dragonminez:majin21armor");
 
-			Advancement whisarmor = Advancement.Builder.advancement()
+			AdvancementHolder whisarmor = Advancement.Builder.advancement()
 					.parent(patternsuper)
 					.display(
 							MainItems.WHIS_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
@@ -893,14 +895,14 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 					).save(consumer, "dragonminez:whisarmor");
 		}
 
-		private static PlayerTrigger.TriggerInstance inStructure(String id) {
+		private static Criterion<PlayerTrigger.TriggerInstance> inStructure(String id) {
 			return PlayerTrigger.TriggerInstance.located(
-					LocationPredicate.inStructure(
+					LocationPredicate.Builder.inStructure(
 							ResourceKey.create(Registries.STRUCTURE,
-									ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, id))));
+									new ResourceLocation(Reference.MOD_ID, id))));
 		}
 
-		private static InventoryChangeTrigger.TriggerInstance armorOf(Map<ArmorItem.Type, RegistryObject<Item>> set) {
+		private static Criterion<InventoryChangeTrigger.TriggerInstance> armorOf(Map<ArmorItem.Type, RegistryObject<Item>> set) {
 			return InventoryChangeTrigger.TriggerInstance.hasItems(
 					set.get(ArmorItem.Type.CHESTPLATE).get(),
 					set.get(ArmorItem.Type.LEGGINGS).get(),

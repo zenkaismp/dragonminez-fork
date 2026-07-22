@@ -36,10 +36,10 @@ import java.util.List;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
 public class ScouterHUD {
-	private static final ResourceLocation SCOUTER_GREEN = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/scouter/scouter_green.png");
-	private static final ResourceLocation SCOUTER_RED = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/scouter/scouter_red.png");
-	private static final ResourceLocation SCOUTER_BLUE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/scouter/scouter_blue.png");
-	private static final ResourceLocation SCOUTER_PURPLE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/scouter/scouter_purple.png");
+	private static final ResourceLocation SCOUTER_GREEN = new ResourceLocation(Reference.MOD_ID, "textures/gui/scouter/scouter_green.png");
+	private static final ResourceLocation SCOUTER_RED = new ResourceLocation(Reference.MOD_ID, "textures/gui/scouter/scouter_red.png");
+	private static final ResourceLocation SCOUTER_BLUE = new ResourceLocation(Reference.MOD_ID, "textures/gui/scouter/scouter_blue.png");
+	private static final ResourceLocation SCOUTER_PURPLE = new ResourceLocation(Reference.MOD_ID, "textures/gui/scouter/scouter_purple.png");
 
 	private static boolean isRenderingInfo = false;
 
@@ -127,7 +127,7 @@ public class ScouterHUD {
 
 	public static final IGuiOverlay HUD_SCOUTER = (forgeGui, guiGraphics, partialTicks, width, height) -> {
 		Minecraft mc = Minecraft.getInstance();
-		if (mc.options.renderDebug || mc.player == null) return;
+		if (mc.getDebugOverlay().showDebugScreen() || mc.player == null) return;
 		if (ConfigManager.getUserConfig().getAlternativeHud()) return;
 
 		ItemStack scouterStack = getScouterStack(mc.player);

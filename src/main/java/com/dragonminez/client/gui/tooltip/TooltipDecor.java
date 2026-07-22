@@ -9,7 +9,7 @@ import net.minecraft.util.Mth;
 import org.joml.Matrix4f;
 
 public class TooltipDecor {
-	public static final ResourceLocation DEFAULT_BORDERS = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/tooltip_borders.png");
+	public static final ResourceLocation DEFAULT_BORDERS = new ResourceLocation(Reference.MOD_ID, "textures/gui/tooltip_borders.png");
 
 	public static int currentBorderStart = 0;
 	public static int currentBorderEnd = 0;

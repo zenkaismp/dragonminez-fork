@@ -28,8 +28,8 @@ import org.lwjgl.glfw.GLFW;
 import java.util.List;
 
 public abstract class BaseMinigameScreen extends Screen {
-	protected static final ResourceLocation DMZ_FONT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth");
-	private static final ResourceLocation MENU_NPC_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/menu/menunpc.png");
+	protected static final ResourceLocation DMZ_FONT = new ResourceLocation(Reference.MOD_ID, "smooth");
+	private static final ResourceLocation MENU_NPC_TEXTURE = new ResourceLocation(Reference.MOD_ID, "textures/gui/menu/menunpc.png");
 	private static final int PANEL_TEX_W = 346;
 	private static final int PANEL_TEX_H = 94;
 
@@ -152,7 +152,7 @@ public abstract class BaseMinigameScreen extends Screen {
 
 	@Override
 	public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-		this.renderBackground(graphics);
+		this.renderBackground(graphics, mouseX, mouseY, partialTick);
 		RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
 
 		renderGame(graphics);

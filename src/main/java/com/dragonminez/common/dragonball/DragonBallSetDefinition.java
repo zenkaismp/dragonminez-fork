@@ -99,7 +99,7 @@ public class DragonBallSetDefinition {
 	public static DragonBallSetDefinition fromJson(JsonObject root) {
 		String id = root.get("id").getAsString();
 		Set<ResourceLocation> dimensions = new java.util.LinkedHashSet<>();
-		for (JsonElement element : root.getAsJsonArray("dimensions")) dimensions.add(ResourceLocation.parse(element.getAsString()));
+		for (JsonElement element : root.getAsJsonArray("dimensions")) dimensions.add(new ResourceLocation(element.getAsString()));
 		int copies = root.has("copies") ? root.get("copies").getAsInt() : 5;
 		int spawnRange = root.get("spawn_range").getAsInt();
 		int summonRadius = root.get("summon_radius").getAsInt();

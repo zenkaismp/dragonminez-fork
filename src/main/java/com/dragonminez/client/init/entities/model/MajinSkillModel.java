@@ -15,17 +15,17 @@ public class MajinSkillModel<T extends MajinSkillEntity> extends GeoModel<T> {
 
     @Override
     public ResourceLocation getModelResource(T animatable) {
-        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/skills/majinskill.geo.json");
+        return new ResourceLocation(Reference.MOD_ID, "geo/entity/skills/majinskill.geo.json");
     }
 
     @Override
     public ResourceLocation getTextureResource(T animatable) {
-        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/ki_laser.png");
+        return new ResourceLocation(Reference.MOD_ID, "textures/entity/ki/ki_laser.png");
     }
 
     @Override
     public ResourceLocation getAnimationResource(T animatable) {
-        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "animations/entity/skills/majinskill.animation.json");
+        return new ResourceLocation(Reference.MOD_ID, "animations/entity/skills/majinskill.animation.json");
     }
 
 }

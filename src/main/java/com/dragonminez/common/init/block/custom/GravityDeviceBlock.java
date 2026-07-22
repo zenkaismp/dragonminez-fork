@@ -23,7 +23,6 @@ import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.network.NetworkHooks;
 import org.jetbrains.annotations.Nullable;
 
 public class GravityDeviceBlock extends BaseEntityBlock {
@@ -84,7 +83,7 @@ public class GravityDeviceBlock extends BaseEntityBlock {
 			BlockEntity entity = pLevel.getBlockEntity(pPos);
 			if (entity instanceof GravityDeviceBlockEntity device) {
 				device.refreshRoom();
-				NetworkHooks.openScreen((ServerPlayer) pPlayer, device, pPos);
+				((ServerPlayer) pPlayer).openMenu(device, pPos);
 			}
 		}
 		return InteractionResult.sidedSuccess(pLevel.isClientSide());

@@ -41,12 +41,8 @@ public class SagaOzaruEntity extends DBSagasEntity{
     protected void registerGoals() {
         super.registerGoals();
 
-        this.goalSelector.addGoal(3, new MeleeAttackGoal(this, 1.8D, false) {
-            @Override
-            protected double getAttackReachSqr(LivingEntity pAttackTarget) {
-                return 5.0D;
-            }
-        });
+        // 1.20.2: MeleeAttackGoal.getAttackReachSqr was removed; Ozaru uses default melee reach (its huge hitbox already exceeds the old 5.0 sqr).
+        this.goalSelector.addGoal(3, new MeleeAttackGoal(this, 1.8D, false));
     }
 
     @Override

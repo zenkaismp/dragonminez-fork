@@ -24,7 +24,6 @@ import net.minecraft.world.level.block.state.properties.*;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.network.NetworkHooks;
 import org.jetbrains.annotations.Nullable;
 
 public class KikonoStationBlock extends BaseEntityBlock {
@@ -133,7 +132,7 @@ public class KikonoStationBlock extends BaseEntityBlock {
 
 			BlockEntity entity = pLevel.getBlockEntity(targetPos);
 			if (entity instanceof KikonoStationBlockEntity station) {
-				NetworkHooks.openScreen((ServerPlayer) pPlayer, station, targetPos);
+				((ServerPlayer) pPlayer).openMenu(station, targetPos);
 			} else {
 				throw new IllegalStateException("Container provider missing at " + targetPos);
 			}

@@ -22,7 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
+import net.minecraft.data.recipes.RecipeOutput;
 
 public class DMZRecipeProvider extends RecipeProvider implements IConditionBuilder {
 	public DMZRecipeProvider(PackOutput pOutput) {
@@ -30,7 +30,7 @@ public class DMZRecipeProvider extends RecipeProvider implements IConditionBuild
 	}
 
 	@Override
-	protected void buildRecipes(@NotNull Consumer<FinishedRecipe> pWriter) {
+	protected void buildRecipes(@NotNull RecipeOutput pWriter) {
 		DragonBallPackManager.LoadedDefinitions externalDragonballPacks = DragonBallPackManager.loadAll();
 		Map<String, DragonRadarDefinition> radarDefinitions = new LinkedHashMap<>();
 		for (var radarDefinition : DragonBallDefinitions.getBootstrapRadars()) radarDefinitions.put(radarDefinition.getId(), radarDefinition);
@@ -101,20 +101,20 @@ public class DMZRecipeProvider extends RecipeProvider implements IConditionBuild
 				.pattern("RLR").pattern("LGL").pattern("RLR")
 				.define('R', Items.REDSTONE).define('L', Items.LAPIS_LAZULI).define('G', MainItems.GETE_INGOT.get())
 				.unlockedBy(getHasName(MainItems.GETE_INGOT.get()), has(MainItems.GETE_INGOT.get())).group(Reference.MOD_ID)
-				.save(pWriter, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "ki_battery"));
+				.save(pWriter, new ResourceLocation(Reference.MOD_ID, "ki_battery"));
 
 		SimpleCookingRecipeBuilder.smelting(Ingredient.of(MainItems.FROG_LEGS_RAW.get()),
 						RecipeCategory.FOOD, MainItems.FROG_LEGS_COOKED.get(), 0.35f, 200)
 				.unlockedBy(getHasName(MainItems.FROG_LEGS_RAW.get()), has(MainItems.FROG_LEGS_RAW.get())).group(Reference.MOD_ID)
-				.save(pWriter, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "frog_legs_cooked"));
+				.save(pWriter, new ResourceLocation(Reference.MOD_ID, "frog_legs_cooked"));
 		SimpleCookingRecipeBuilder.smoking(Ingredient.of(MainItems.FROG_LEGS_RAW.get()),
 						RecipeCategory.FOOD, MainItems.FROG_LEGS_COOKED.get(), 0.35f, 100)
 				.unlockedBy(getHasName(MainItems.FROG_LEGS_RAW.get()), has(MainItems.FROG_LEGS_RAW.get())).group(Reference.MOD_ID)
-				.save(pWriter, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "frog_legs_cooked_smoking"));
+				.save(pWriter, new ResourceLocation(Reference.MOD_ID, "frog_legs_cooked_smoking"));
 		SimpleCookingRecipeBuilder.campfireCooking(Ingredient.of(MainItems.FROG_LEGS_RAW.get()),
 						RecipeCategory.FOOD, MainItems.FROG_LEGS_COOKED.get(), 0.35f, 600)
 				.unlockedBy(getHasName(MainItems.FROG_LEGS_RAW.get()), has(MainItems.FROG_LEGS_RAW.get())).group(Reference.MOD_ID)
-				.save(pWriter, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "frog_legs_cooked_campfire"));
+				.save(pWriter, new ResourceLocation(Reference.MOD_ID, "frog_legs_cooked_campfire"));
 
 		ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, MainBlocks.NAMEK_AJISSA_PRESSURE_PLATE.get(), 1)
 				.pattern("##")
@@ -1126,7 +1126,7 @@ public class DMZRecipeProvider extends RecipeProvider implements IConditionBuild
 	private static final List<ItemLike> Cobre = List.of(MainBlocks.NAMEK_COPPER_ORE.get(), MainBlocks.NAMEK_DEEPSLATE_COPPER.get());
 	private static final List<ItemLike> Carbon = List.of(MainBlocks.NAMEK_COAL_ORE.get(), MainBlocks.NAMEK_DEEPSLATE_COAL.get());
 
-	protected static void oreSmelting(@NotNull Consumer<FinishedRecipe> pFinishedRecipeConsumer,
+	protected static void oreSmelting(@NotNull RecipeOutput pFinishedRecipeConsumer,
 									  List<ItemLike> pIngredients, @NotNull RecipeCategory pCategory,
 									  @NotNull ItemLike pResult, float pExperience, int pCookingTIme,
 									  @NotNull String pGroup) {
@@ -1134,7 +1134,7 @@ public class DMZRecipeProvider extends RecipeProvider implements IConditionBuild
 				pExperience, pCookingTIme, pGroup, "_from_smelting");
 	}
 
-	protected static void oreBlasting(@NotNull Consumer<FinishedRecipe> pFinishedRecipeConsumer,
+	protected static void oreBlasting(@NotNull RecipeOutput pFinishedRecipeConsumer,
 									  List<ItemLike> pIngredients, @NotNull RecipeCategory pCategory,
 									  @NotNull ItemLike pResult, float pExperience, int pCookingTime,
 									  @NotNull String pGroup) {
@@ -1142,7 +1142,7 @@ public class DMZRecipeProvider extends RecipeProvider implements IConditionBuild
 				pExperience, pCookingTime, pGroup, "_from_blasting");
 	}
 
-	protected static void oreCooking(@NotNull Consumer<FinishedRecipe> pFinishedRecipeConsumer,
+	protected static void oreCooking(@NotNull RecipeOutput pFinishedRecipeConsumer,
 									 @NotNull RecipeSerializer<? extends AbstractCookingRecipe> pCookingSerializer,
 									 List<ItemLike> pIngredients, @NotNull RecipeCategory pCategory,
 									 @NotNull ItemLike pResult, float pExperience, int pCookingTime,
@@ -1157,10 +1157,10 @@ public class DMZRecipeProvider extends RecipeProvider implements IConditionBuild
 	}
 
 	// --- Gete tech ---
-	private void geteCapsule(Consumer<FinishedRecipe> w, ItemLike base, ItemLike result, String id) {
+	private void geteCapsule(RecipeOutput w, ItemLike base, ItemLike result, String id) {
 		ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, result)
 				.requires(base).requires(MainItems.GETE_INGOT.get())
 				.unlockedBy(getHasName(MainItems.GETE_INGOT.get()), has(MainItems.GETE_INGOT.get())).group(Reference.MOD_ID)
-				.save(w, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, id));
+				.save(w, new ResourceLocation(Reference.MOD_ID, id));
 	}
 }

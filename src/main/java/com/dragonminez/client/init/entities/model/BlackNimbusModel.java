@@ -10,17 +10,17 @@ public class BlackNimbusModel<T extends BlackNimbusEntity> extends GeoModel<T> {
 
     @Override
     public ResourceLocation getModelResource(T animatable) {
-        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/kinton.geo.json");
+        return new ResourceLocation(Reference.MOD_ID, "geo/entity/kinton.geo.json");
     }
 
     @Override
     public ResourceLocation getTextureResource(T animatable) {
-        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/black_kinton.png");
+        return new ResourceLocation(Reference.MOD_ID, "textures/entity/black_kinton.png");
     }
 
     @Override
     public ResourceLocation getAnimationResource(T animatable) {
-        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "animations/entity/kinton.animation.json");
+        return new ResourceLocation(Reference.MOD_ID, "animations/entity/kinton.animation.json");
     }
 
 }

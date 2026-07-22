@@ -4,7 +4,7 @@ import com.dragonminez.common.combat.clash.BeamClashManager;
 import com.dragonminez.common.network.PacketRateLimiter;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.event.network.CustomPayloadEvent;
 
 import java.util.function.Supplier;
 
@@ -19,13 +19,13 @@ public class BeamClashInputC2S {
 	public void toBytes(FriendlyByteBuf buf) {
 	}
 
-	public static void handle(BeamClashInputC2S msg, Supplier<NetworkEvent.Context> ctx) {
-		ctx.get().enqueueWork(() -> {
-			ServerPlayer player = ctx.get().getSender();
+	public static void handle(BeamClashInputC2S msg, CustomPayloadEvent.Context ctx) {
+		ctx.enqueueWork(() -> {
+			ServerPlayer player = ctx.getSender();
 			if (player == null) return;
 			if (!PacketRateLimiter.allow(player.getUUID(), "beam_clash_press", player.level().getGameTime(), 1L)) return;
 			BeamClashManager.handlePlayerPress(player);
 		});
-		ctx.get().setPacketHandled(true);
+		ctx.setPacketHandled(true);
 	}
 }

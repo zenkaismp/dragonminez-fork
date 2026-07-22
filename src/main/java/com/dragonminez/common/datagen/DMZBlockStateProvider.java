@@ -125,7 +125,7 @@ public class DMZBlockStateProvider extends BlockStateProvider {
 				int star = entry.getKey();
 				RegistryObject<Block> block = entry.getValue();
 				if (assets != null && assets.getFlatTexturePathForStar(star).isPresent()) {
-					ResourceLocation texture = ResourceLocation.parse(assets.getFlatTexturePathForStar(star).get());
+					ResourceLocation texture = new ResourceLocation(assets.getFlatTexturePathForStar(star).get());
 					simpleBlockWithItem(block.get(), models().cubeAll(ForgeRegistries.BLOCKS.getKey(block.get()).getPath(), texture));
 				} else {
 					blockWithItem(block);
@@ -140,9 +140,9 @@ public class DMZBlockStateProvider extends BlockStateProvider {
 	
 	private void grassBlock(RegistryObject<Block> blockRegistryObject) {
 		String path = ForgeRegistries.BLOCKS.getKey(blockRegistryObject.get()).getPath();
-		ResourceLocation bottom = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "block/" + path + "_down");
-		ResourceLocation top = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "block/" + path + "_top");
-		ResourceLocation side = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "block/" + path + "_side");
+		ResourceLocation bottom = new ResourceLocation(Reference.MOD_ID, "block/" + path + "_down");
+		ResourceLocation top = new ResourceLocation(Reference.MOD_ID, "block/" + path + "_top");
+		ResourceLocation side = new ResourceLocation(Reference.MOD_ID, "block/" + path + "_side");
 		
 		simpleBlockWithItem(blockRegistryObject.get(), 
 			models().cubeBottomTop(path, side, bottom, top));
@@ -154,7 +154,7 @@ public class DMZBlockStateProvider extends BlockStateProvider {
 	}
 	private void leavesBlock(RegistryObject<Block> blockRegistryObject) {
 		simpleBlockWithItem(blockRegistryObject.get(), models().singleTexture(ForgeRegistries.BLOCKS.getKey(blockRegistryObject.get()).getPath(),
-				ResourceLocation.parse("minecraft:block/leaves"), "all", blockTexture(blockRegistryObject.get())).renderType("cutout"));
+				new ResourceLocation("minecraft:block/leaves"), "all", blockTexture(blockRegistryObject.get())).renderType("cutout"));
 	}
 	private void saplingBlock(RegistryObject<Block> blockRegistryObject) {
 		simpleBlock(blockRegistryObject.get(),

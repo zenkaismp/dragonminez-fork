@@ -16,7 +16,7 @@ public class WeightCapeRenderer extends GeoArmorRenderer<WeightItem> {
 
     @Override
     public ResourceLocation getTextureLocation(WeightItem animatable) {
-        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/weighted_items.png");
+        return new ResourceLocation(Reference.MOD_ID, "textures/entity/races/weighted_items.png");
     }
 
     @Override

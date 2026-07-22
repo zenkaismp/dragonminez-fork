@@ -172,7 +172,7 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 		ModelPart geoPart = KiWeaponModelLoader.get(lower);
 		if (geoPart == null) return;
 
-		ResourceLocation tex = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/weapons/kiweapon_" + lower + ".png");
+		ResourceLocation tex = new ResourceLocation(Reference.MOD_ID, "textures/entity/weapons/kiweapon_" + lower + ".png");
 		ps.pushPose();
 		ps.translate(KI_GEO_TX, KI_GEO_TY, KI_GEO_TZ);
 		if (KI_GEO_RX != 0.0F) ps.mulPose(Axis.XP.rotationDegrees(KI_GEO_RX));
@@ -248,7 +248,7 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 	}
 
 	private ResourceLocation loc(String path) {
-		return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, path);
+		return new ResourceLocation(Reference.MOD_ID, path);
 	}
 
 	private static HumanoidModel.ArmPose getArmPose(AbstractClientPlayer pPlayer, InteractionHand pHand) {
@@ -301,7 +301,7 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 
 	@Override
 	public @NonNull ResourceLocation getTextureLocation(AbstractClientPlayer pEntity) {
-		return pEntity.getSkinTextureLocation();
+		return pEntity.getSkin().texture();
 	}
 
 	private void renderKiPartTex(PoseStack ps, MultiBufferSource buffer, int light, ModelPart part, float[] color, ResourceLocation texture) {

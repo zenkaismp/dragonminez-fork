@@ -36,8 +36,8 @@ import java.util.Map;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
 public class KiSenseEvent {
-	private static final ResourceLocation HUD_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/hud/alternativehud.png");
-	private static final ResourceLocation DMZ_FONT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth");
+	private static final ResourceLocation HUD_TEXTURE = new ResourceLocation(Reference.MOD_ID, "textures/gui/hud/alternativehud.png");
+	private static final ResourceLocation DMZ_FONT = new ResourceLocation(Reference.MOD_ID, "smooth");
 	static NumberFormat numberFormat = NumberFormat.getInstance(Locale.US);
 
 	private static final double LOD_DISTANCE = 24.0;

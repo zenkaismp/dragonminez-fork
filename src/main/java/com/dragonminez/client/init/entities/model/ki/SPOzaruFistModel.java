@@ -13,17 +13,17 @@ public class SPOzaruFistModel<T extends OzaruFistEntity> extends GeoModel<T> {
 
     @Override
     public ResourceLocation getModelResource(T animatable) {
-        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/skills/sp_ozarufist.geo.json");
+        return new ResourceLocation(Reference.MOD_ID, "geo/entity/skills/sp_ozarufist.geo.json");
     }
 
     @Override
     public ResourceLocation getTextureResource(T animatable) {
-        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/skills/sp_ozarufist.png");
+        return new ResourceLocation(Reference.MOD_ID, "textures/entity/skills/sp_ozarufist.png");
     }
 
     @Override
     public ResourceLocation getAnimationResource(T animatable) {
-        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "animations/entity/skills/sp_ozarufist.animation.json");
+        return new ResourceLocation(Reference.MOD_ID, "animations/entity/skills/sp_ozarufist.animation.json");
     }
 
 }

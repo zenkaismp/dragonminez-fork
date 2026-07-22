@@ -42,6 +42,6 @@ public final class ArmorTextureResolver {
     }
 
     private static ResourceLocation texture(String modId, String itemId, String suffix) {
-        return ResourceLocation.fromNamespaceAndPath(modId, "textures/armor/" + itemId + suffix + ".png");
+        return new ResourceLocation(modId, "textures/armor/" + itemId + suffix + ".png");
     }
 }

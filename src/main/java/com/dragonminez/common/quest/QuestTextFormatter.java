@@ -462,7 +462,7 @@ public final class QuestTextFormatter {
 		}
 
 		try {
-			return ResourceLocation.parse(id);
+			return new ResourceLocation(id);
 		} catch (Exception ignored) {
 			return null;
 		}

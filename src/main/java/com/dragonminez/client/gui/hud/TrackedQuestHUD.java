@@ -28,11 +28,11 @@ public class TrackedQuestHUD {
 
 	private static final int PANEL_WIDTH = 180;
 	private static final int MAX_TEXT_WIDTH = PANEL_WIDTH - 16;
-	private static final ResourceLocation DMZ_FONT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth");
+	private static final ResourceLocation DMZ_FONT = new ResourceLocation(Reference.MOD_ID, "smooth");
 
 	public static final IGuiOverlay HUD_TRACKED_QUEST = (forgeGui, guiGraphics, partialTicks, width, height) -> {
 		Minecraft mc = Minecraft.getInstance();
-		if (mc.options.renderDebug || mc.player == null) return;
+		if (mc.getDebugOverlay().showDebugScreen() || mc.player == null) return;
 
 		StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> {
 			PlayerQuestData pqd = data.getPlayerQuestData();

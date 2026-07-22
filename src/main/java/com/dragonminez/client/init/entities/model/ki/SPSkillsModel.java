@@ -18,18 +18,18 @@ public class SPSkillsModel<T extends SPBlueHurricaneEntity> extends GeoModel<T> 
     @Override
     public ResourceLocation getModelResource(T animatable) {
         String name = ForgeRegistries.ENTITY_TYPES.getKey(animatable.getType()).getPath();
-        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/skills/" + name + ".geo.json");
+        return new ResourceLocation(Reference.MOD_ID, "geo/entity/skills/" + name + ".geo.json");
     }
 
     @Override
     public ResourceLocation getTextureResource(T animatable) {
         String name = ForgeRegistries.ENTITY_TYPES.getKey(animatable.getType()).getPath();
-        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/skills/" + name + ".png");
+        return new ResourceLocation(Reference.MOD_ID, "textures/entity/skills/" + name + ".png");
     }
 
     @Override
     public ResourceLocation getAnimationResource(T animatable) {
         String name = ForgeRegistries.ENTITY_TYPES.getKey(animatable.getType()).getPath();
-        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "animations/entity/skills/" + name + ".animation.json");
+        return new ResourceLocation(Reference.MOD_ID, "animations/entity/skills/" + name + ".animation.json");
     }
 }

@@ -27,7 +27,7 @@ public class CrowdinPackResources implements PackResources {
 
 		JsonObject packInfo = new JsonObject();
 		packInfo.addProperty("description", "DMZ Live Translations");
-		packInfo.addProperty("pack_format", 15);
+		packInfo.addProperty("pack_format", 18);
 
 		JsonObject root = new JsonObject();
 		root.add("pack", packInfo);

@@ -39,7 +39,7 @@ public abstract class AbstractRadialNode implements RadialNode {
 	}
 
 	protected static ResourceLocation icon(String name) {
-		return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/radial/" + name + ".png");
+		return new ResourceLocation(Reference.MOD_ID, "textures/gui/radial/" + name + ".png");
 	}
 
 	protected static ResourceLocation iconForFormType(String type) {

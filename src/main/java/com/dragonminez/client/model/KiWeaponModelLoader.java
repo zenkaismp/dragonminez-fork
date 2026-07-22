@@ -35,7 +35,7 @@ public class KiWeaponModelLoader {
     }
 
     private static ModelPart build(String type) {
-        ResourceLocation loc = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/weapons/kiweapon_" + type + ".geo.json");
+        ResourceLocation loc = new ResourceLocation(Reference.MOD_ID, "geo/weapons/kiweapon_" + type + ".geo.json");
         var resource = Minecraft.getInstance().getResourceManager().getResource(loc);
         if (resource.isEmpty()) return null;
 

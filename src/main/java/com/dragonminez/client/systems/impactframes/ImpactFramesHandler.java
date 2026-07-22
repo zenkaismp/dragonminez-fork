@@ -75,7 +75,7 @@ public class ImpactFramesHandler {
 		Minecraft mc = Minecraft.getInstance();
 		if (impactFrameShader == null) {
 			try {
-				impactFrameShader = new PostChain(mc.getTextureManager(), mc.getResourceManager(), mc.getMainRenderTarget(), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "shaders/post/impact_frame.json"));
+				impactFrameShader = new PostChain(mc.getTextureManager(), mc.getResourceManager(), mc.getMainRenderTarget(), new ResourceLocation(Reference.MOD_ID, "shaders/post/impact_frame.json"));
 				impactFrameShader.resize(mc.getWindow().getWidth(), mc.getWindow().getHeight());
 				lastWidth = mc.getWindow().getWidth();
 				lastHeight = mc.getWindow().getHeight();

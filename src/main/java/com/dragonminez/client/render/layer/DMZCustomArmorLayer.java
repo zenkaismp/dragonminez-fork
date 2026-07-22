@@ -35,9 +35,9 @@ import java.util.Set;
 
 public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable> extends GeoRenderLayer<T> {
 
-    private static final ResourceLocation MAJIN_ARMOR_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/armor/armormajinfat.geo.json");
-    private static final ResourceLocation MAJIN_SLIM_ARMOR_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/armor/armormajinslim.geo.json");
-    private static final ResourceLocation OOZARU_ARMOR_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/armor/armoroozaru.geo.json");
+    private static final ResourceLocation MAJIN_ARMOR_MODEL = new ResourceLocation(Reference.MOD_ID, "geo/armor/armormajinfat.geo.json");
+    private static final ResourceLocation MAJIN_SLIM_ARMOR_MODEL = new ResourceLocation(Reference.MOD_ID, "geo/armor/armormajinslim.geo.json");
+    private static final ResourceLocation OOZARU_ARMOR_MODEL = new ResourceLocation(Reference.MOD_ID, "geo/armor/armoroozaru.geo.json");
 
     private static final Set<String> SLIM_SUPPORTED_MODELS = Set.of(
             "majin_evil", "majin_kid", "majin_super", "majin_ultra", "majin", "saiyan", "human", "ssj4gt", "ssj4d"
@@ -377,7 +377,7 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
         }
         String typeSuffix = (type == null || type.isEmpty()) ? "" : "_" + type;
         String textureLocation = String.format("%s:textures/models/armor/%s_layer_1%s.png", domain, materialName, typeSuffix);
-        return ResourceLocation.parse(ForgeHooksClient.getArmorTexture(entity, stack, textureLocation, slot, type));
+        return new ResourceLocation(ForgeHooksClient.getArmorTexture(entity, stack, textureLocation, slot, type));
     }
 
     private record ArmorRenderContext(boolean shouldRender, boolean isSlimTarget, boolean isOozaruTarget,

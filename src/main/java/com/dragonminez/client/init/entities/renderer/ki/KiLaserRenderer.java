@@ -20,7 +20,7 @@ import net.minecraft.resources.ResourceLocation;
 import org.joml.Matrix4f;
 
 public class KiLaserRenderer extends EntityRenderer<KiLaserEntity> {
-    private static final ResourceLocation TEXTURE_KI = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/kiblast.png");
+    private static final ResourceLocation TEXTURE_KI = new ResourceLocation(Reference.MOD_ID, "textures/entity/ki/kiblast.png");
 
     public KiLaserRenderer(EntityRendererProvider.Context pContext) {
         super(pContext);

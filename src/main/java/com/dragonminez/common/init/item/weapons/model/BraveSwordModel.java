@@ -8,12 +8,12 @@ import software.bernie.geckolib.model.GeoModel;
 public class BraveSwordModel extends GeoModel<BraveSwordItem> {
 	@Override
 	public ResourceLocation getModelResource(BraveSwordItem animatable) {
-		return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/weapons/brave_sword.geo.json");
+		return new ResourceLocation(Reference.MOD_ID, "geo/weapons/brave_sword.geo.json");
 	}
 
 	@Override
 	public ResourceLocation getTextureResource(BraveSwordItem animatable) {
-		return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/item/weapons/brave_sword.png");
+		return new ResourceLocation(Reference.MOD_ID, "textures/item/weapons/brave_sword.png");
 	}
 
 	@Override

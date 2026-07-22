@@ -8,12 +8,12 @@ import software.bernie.geckolib.model.GeoModel;
 public class GravityDeviceItemModel extends GeoModel<GravityDeviceItem> {
 	@Override
 	public ResourceLocation getModelResource(GravityDeviceItem animatable) {
-		return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/block/gravitydevice.geo.json");
+		return new ResourceLocation(Reference.MOD_ID, "geo/block/gravitydevice.geo.json");
 	}
 
 	@Override
 	public ResourceLocation getTextureResource(GravityDeviceItem animatable) {
-		return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/block/custom/gravitydevice.png");
+		return new ResourceLocation(Reference.MOD_ID, "textures/block/custom/gravitydevice.png");
 	}
 
 	@Override

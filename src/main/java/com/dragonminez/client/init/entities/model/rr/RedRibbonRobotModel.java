@@ -15,18 +15,18 @@ public class RedRibbonRobotModel<T extends RedRibbonEntity> extends GeoModel<T> 
 
     @Override
     public ResourceLocation getModelResource(T animatable) {
-        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/enemies/robot1.geo.json");
+        return new ResourceLocation(Reference.MOD_ID, "geo/entity/enemies/robot1.geo.json");
     }
 
     @Override
     public ResourceLocation getTextureResource(T animatable) {
         String name = ForgeRegistries.ENTITY_TYPES.getKey(animatable.getType()).getPath();
-        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/enemies/" + name + ".png");
+        return new ResourceLocation(Reference.MOD_ID, "textures/entity/enemies/" + name + ".png");
     }
 
     @Override
     public ResourceLocation getAnimationResource(T animatable) {
-        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "animations/entity/enemies/robot1.animation.json");
+        return new ResourceLocation(Reference.MOD_ID, "animations/entity/enemies/robot1.animation.json");
     }
 
     @Override

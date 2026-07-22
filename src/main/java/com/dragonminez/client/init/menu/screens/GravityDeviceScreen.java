@@ -19,8 +19,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 
 public class GravityDeviceScreen extends AbstractContainerScreen<GravityDeviceMenu> {
-	protected static final ResourceLocation DMZ_FONT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth");
-	private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/screen/gravity_device_gui.png");
+	protected static final ResourceLocation DMZ_FONT = new ResourceLocation(Reference.MOD_ID, "smooth");
+	private static final ResourceLocation TEXTURE = new ResourceLocation(Reference.MOD_ID, "textures/gui/screen/gravity_device_gui.png");
 
 	private EditBox gravityInput;
 	private Button toggleButton;
@@ -87,7 +87,7 @@ public class GravityDeviceScreen extends AbstractContainerScreen<GravityDeviceMe
 
 	@Override
 	public void render(GuiGraphics guiGraphics, int pMouseX, int pMouseY, float delta) {
-		renderBackground(guiGraphics);
+		renderBackground(guiGraphics, pMouseX, pMouseY, delta);
 		if (toggleButton != null) toggleButton.setMessage(toggleLabel(menu.isActive()));
 		super.render(guiGraphics, pMouseX, pMouseY, delta);
 

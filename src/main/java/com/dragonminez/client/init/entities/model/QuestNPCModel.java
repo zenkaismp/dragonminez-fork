@@ -146,7 +146,7 @@ public class QuestNPCModel extends GeoModel<QuestNPCEntity> {
 		return new AssetPaths(
 				assetFromKey(modelKey, "geo/entity/sagas/", ".geo.json"),
 				assetFromKey(safeTexture, "textures/entity/sagas/", ".png"),
-				ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, SAGA_BASE_ANIMATION)
+				new ResourceLocation(Reference.MOD_ID, SAGA_BASE_ANIMATION)
 		);
 	}
 
@@ -161,12 +161,12 @@ public class QuestNPCModel extends GeoModel<QuestNPCEntity> {
 	private static ResourceLocation assetFromKey(String key, String prefix, String suffix) {
 		String safeKey = key == null || key.isBlank() ? FALLBACK_MODEL : key;
 		if (safeKey.contains(":")) {
-			return ResourceLocation.parse(safeKey);
+			return new ResourceLocation(safeKey);
 		}
 		if (safeKey.contains("/")) {
-			return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, safeKey);
+			return new ResourceLocation(Reference.MOD_ID, safeKey);
 		}
-		return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, prefix + safeKey + suffix);
+		return new ResourceLocation(Reference.MOD_ID, prefix + safeKey + suffix);
 	}
 
 	private static ResourceLocation fallbackModel() {

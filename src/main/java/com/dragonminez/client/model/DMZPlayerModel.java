@@ -30,47 +30,47 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> extends GeoModel<T> {
 
-    private static final ResourceLocation BASE_DEFAULT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/human.geo.json");
-    private static final ResourceLocation BASE_SLIM = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/human_slim.geo.json");
-    private static final ResourceLocation MAJIN_FAT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/majin.geo.json");
-    private static final ResourceLocation MAJIN_SLIM = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/majin_slim.geo.json");
-    private static final ResourceLocation JANEMBA_SUPER = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/janemba_super.geo.json");
-    private static final ResourceLocation JANEMBA_FAT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/janemba_fat.geo.json");
+    private static final ResourceLocation BASE_DEFAULT = new ResourceLocation(Reference.MOD_ID, "geo/entity/races/human.geo.json");
+    private static final ResourceLocation BASE_SLIM = new ResourceLocation(Reference.MOD_ID, "geo/entity/races/human_slim.geo.json");
+    private static final ResourceLocation MAJIN_FAT = new ResourceLocation(Reference.MOD_ID, "geo/entity/races/majin.geo.json");
+    private static final ResourceLocation MAJIN_SLIM = new ResourceLocation(Reference.MOD_ID, "geo/entity/races/majin_slim.geo.json");
+    private static final ResourceLocation JANEMBA_SUPER = new ResourceLocation(Reference.MOD_ID, "geo/entity/races/janemba_super.geo.json");
+    private static final ResourceLocation JANEMBA_FAT = new ResourceLocation(Reference.MOD_ID, "geo/entity/races/janemba_fat.geo.json");
 
-    private static final ResourceLocation FROST_DEMON = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/frostdemon.geo.json");
-    private static final ResourceLocation FROST_DEMON_SECOND = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/frostdemon_second.geo.json");
-    private static final ResourceLocation FROST_DEMON_THIRD = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/frostdemon_third.geo.json");
-    private static final ResourceLocation FROST_DEMON_FIFTH = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/frostdemon_fifth.geo.json");
-    private static final ResourceLocation FROSTDEMON_BUFFED = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/frostdemon_fp.geo.json");
-    private static final ResourceLocation FROSTDEMON_METALCORE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/frostdemon_metalcore.geo.json");
+    private static final ResourceLocation FROST_DEMON = new ResourceLocation(Reference.MOD_ID, "geo/entity/races/frostdemon.geo.json");
+    private static final ResourceLocation FROST_DEMON_SECOND = new ResourceLocation(Reference.MOD_ID, "geo/entity/races/frostdemon_second.geo.json");
+    private static final ResourceLocation FROST_DEMON_THIRD = new ResourceLocation(Reference.MOD_ID, "geo/entity/races/frostdemon_third.geo.json");
+    private static final ResourceLocation FROST_DEMON_FIFTH = new ResourceLocation(Reference.MOD_ID, "geo/entity/races/frostdemon_fifth.geo.json");
+    private static final ResourceLocation FROSTDEMON_BUFFED = new ResourceLocation(Reference.MOD_ID, "geo/entity/races/frostdemon_fp.geo.json");
+    private static final ResourceLocation FROSTDEMON_METALCORE = new ResourceLocation(Reference.MOD_ID, "geo/entity/races/frostdemon_metalcore.geo.json");
 
-    private static final ResourceLocation BIO_ANDROID = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/bioandroid.geo.json");
-    private static final ResourceLocation BIO_ANDROID_SEMI = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/bioandroid_semi.geo.json");
-    private static final ResourceLocation BIO_ANDROID_PERFECT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/bioandroid_perfect.geo.json");
-    private static final ResourceLocation BIO_ANDROID_ULTRA = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/bioandroid_ultra.geo.json");
-    private static final ResourceLocation BIO_ANDROID_XENO = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/bioandroid_xeno.geo.json");
+    private static final ResourceLocation BIO_ANDROID = new ResourceLocation(Reference.MOD_ID, "geo/entity/races/bioandroid.geo.json");
+    private static final ResourceLocation BIO_ANDROID_SEMI = new ResourceLocation(Reference.MOD_ID, "geo/entity/races/bioandroid_semi.geo.json");
+    private static final ResourceLocation BIO_ANDROID_PERFECT = new ResourceLocation(Reference.MOD_ID, "geo/entity/races/bioandroid_perfect.geo.json");
+    private static final ResourceLocation BIO_ANDROID_ULTRA = new ResourceLocation(Reference.MOD_ID, "geo/entity/races/bioandroid_ultra.geo.json");
+    private static final ResourceLocation BIO_ANDROID_XENO = new ResourceLocation(Reference.MOD_ID, "geo/entity/races/bioandroid_xeno.geo.json");
 
-    private static final ResourceLocation OOZARU = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/oozaru.geo.json");
-    private static final ResourceLocation HUMAN_SAIYAN_BUFFED = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/hbuffed.geo.json");
-    private static final ResourceLocation HUMAN_SAIYAN_SLIM_BUFFED = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/hbuffed_slim.geo.json");
-    private static final ResourceLocation HUMAN_SAIYAN_FEMALE_BUFFED = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/hbuffed_fem.geo.json");
+    private static final ResourceLocation OOZARU = new ResourceLocation(Reference.MOD_ID, "geo/entity/races/oozaru.geo.json");
+    private static final ResourceLocation HUMAN_SAIYAN_BUFFED = new ResourceLocation(Reference.MOD_ID, "geo/entity/races/hbuffed.geo.json");
+    private static final ResourceLocation HUMAN_SAIYAN_SLIM_BUFFED = new ResourceLocation(Reference.MOD_ID, "geo/entity/races/hbuffed_slim.geo.json");
+    private static final ResourceLocation HUMAN_SAIYAN_FEMALE_BUFFED = new ResourceLocation(Reference.MOD_ID, "geo/entity/races/hbuffed_fem.geo.json");
 
-    private static final ResourceLocation HUMAN_SAIYAN_4ARMS = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/h4arms.geo.json");
-    private static final ResourceLocation HUMAN_SAIYAN_4ARMS_SLIM = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/h4armsslim.geo.json");
-    private static final ResourceLocation HUMAN_SAIYAN_4ARMS_FEM = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/h4armsfem.geo.json");
+    private static final ResourceLocation HUMAN_SAIYAN_4ARMS = new ResourceLocation(Reference.MOD_ID, "geo/entity/races/h4arms.geo.json");
+    private static final ResourceLocation HUMAN_SAIYAN_4ARMS_SLIM = new ResourceLocation(Reference.MOD_ID, "geo/entity/races/h4armsslim.geo.json");
+    private static final ResourceLocation HUMAN_SAIYAN_4ARMS_FEM = new ResourceLocation(Reference.MOD_ID, "geo/entity/races/h4armsfem.geo.json");
 
-    private static final ResourceLocation CANDY_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/candy.geo.json");
-    private static final ResourceLocation CANDY_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/candy.png");
+    private static final ResourceLocation CANDY_MODEL = new ResourceLocation(Reference.MOD_ID, "geo/entity/races/candy.geo.json");
+    private static final ResourceLocation CANDY_TEXTURE = new ResourceLocation(Reference.MOD_ID, "textures/entity/races/candy.png");
 
     private static final Map<ResourceLocation, Boolean> FILE_EXISTS_CACHE = new ConcurrentHashMap<>();
     private static final Map<String, ResourceLocation> MODEL_RESOLUTION_CACHE = new ConcurrentHashMap<>();
 
-    private static final ResourceLocation ANIM_PRIMARY = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "animations/entity/races/movement.animation.json");
+    private static final ResourceLocation ANIM_PRIMARY = new ResourceLocation(Reference.MOD_ID, "animations/entity/races/movement.animation.json");
     private static final ResourceLocation[] ANIM_FALLBACKS = {
-        ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "animations/entity/races/combat.animation.json"),
-        ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "animations/entity/races/ki.animation.json"),
-        ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "animations/entity/races/transf.animation.json"),
-        ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "animations/entity/races/skp.animation.json")
+        new ResourceLocation(Reference.MOD_ID, "animations/entity/races/combat.animation.json"),
+        new ResourceLocation(Reference.MOD_ID, "animations/entity/races/ki.animation.json"),
+        new ResourceLocation(Reference.MOD_ID, "animations/entity/races/transf.animation.json"),
+        new ResourceLocation(Reference.MOD_ID, "animations/entity/races/skp.animation.json")
     };
 
     private final ResourceLocation textureLocation;
@@ -78,7 +78,7 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
 
     public DMZPlayerModel(String raceName, String customModel) {
         this.customModel = customModel;
-        this.textureLocation = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/null.png");
+        this.textureLocation = new ResourceLocation(Reference.MOD_ID, "textures/entity/races/null.png");
     }
 
     @Override
@@ -93,7 +93,7 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
             String gender = character.getGender().toLowerCase();
             String currentForm = character.getActiveForm();
             int bodyType = character.getBodyType();
-            String playerModelName = player.getModelName();
+            String playerModelName = player.getSkin().model().id();
 
             RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(race);
             var activeStackFormData = character.getActiveStackFormData();
@@ -240,7 +240,7 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
         }
 
         String suffix = (customRaceGender != null && !customRaceGender.isEmpty()) ? "_" + customRaceGender : "";
-        ResourceLocation customLoc = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/" + modelName + suffix + ".geo.json");
+        ResourceLocation customLoc = new ResourceLocation(Reference.MOD_ID, "geo/entity/races/" + modelName + suffix + ".geo.json");
 
         if (fileExists(customLoc)) return customLoc;
         return isSlimSkin ? BASE_SLIM : BASE_DEFAULT;
@@ -259,7 +259,8 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
         return ANIM_PRIMARY;
     }
 
-    @Override
+    // ponytail: GeckoLib 4.3.1 GeoModel has no getAnimationResourceFallbacks (a 4.4+ hook); left as a
+    // dead helper so animation fallbacks re-activate if GeckoLib is upgraded.
     public ResourceLocation[] getAnimationResourceFallbacks(T t) {
         return ANIM_FALLBACKS;
     }

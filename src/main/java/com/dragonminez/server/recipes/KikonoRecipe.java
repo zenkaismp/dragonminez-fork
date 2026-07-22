@@ -1,20 +1,20 @@
 package com.dragonminez.server.recipes;
 
 import com.dragonminez.common.init.MainRecipes;
-import com.google.gson.JsonObject;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.GsonHelper;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.*;
 import net.minecraft.world.level.Level;
-import org.jetbrains.annotations.Nullable;
+
+import java.util.List;
 
 public class KikonoRecipe implements Recipe<SimpleContainer> {
-	private final ResourceLocation id;
 	private final ItemStack output;
 	private final NonNullList<Ingredient> recipeItems;
 	private final Ingredient pattern;
@@ -22,8 +22,7 @@ public class KikonoRecipe implements Recipe<SimpleContainer> {
 	private final int craftingTime;
 	private final int energyCost;
 
-	public KikonoRecipe(ResourceLocation id, ItemStack output, NonNullList<Ingredient> recipeItems, Ingredient pattern, Ingredient template, int craftingTime, int energyCost) {
-		this.id = id;
+	public KikonoRecipe(ItemStack output, NonNullList<Ingredient> recipeItems, Ingredient pattern, Ingredient template, int craftingTime, int energyCost) {
 		this.output = output;
 		this.recipeItems = recipeItems;
 		this.pattern = pattern;
@@ -59,11 +58,6 @@ public class KikonoRecipe implements Recipe<SimpleContainer> {
 	@Override
 	public ItemStack getResultItem(RegistryAccess pRegistryAccess) {
 		return output.copy();
-	}
-
-	@Override
-	public ResourceLocation getId() {
-		return id;
 	}
 
 	@Override
@@ -105,29 +99,38 @@ public class KikonoRecipe implements Recipe<SimpleContainer> {
 		return this.craftingTime;
 	}
 
+	private static NonNullList<Ingredient> toNonNull(List<Ingredient> inputs) {
+		NonNullList<Ingredient> list = NonNullList.withSize(9, Ingredient.EMPTY);
+		for (int i = 0; i < inputs.size() && i < 9; i++) list.set(i, inputs.get(i));
+		return list;
+	}
+
 	public static class Serializer implements RecipeSerializer<KikonoRecipe> {
 		public static final Serializer INSTANCE = new Serializer();
 
+		// {"item":"id","count":n} — matches KikonoRecipeBuilder's output/ingredient JSON.
+		private static final Codec<ItemStack> OUTPUT_CODEC = RecordCodecBuilder.create(i -> i.group(
+				BuiltInRegistries.ITEM.byNameCodec().fieldOf("item").forGetter(ItemStack::getItem),
+				Codec.INT.optionalFieldOf("count", 1).forGetter(ItemStack::getCount)
+		).apply(i, (item, count) -> new ItemStack(item, count)));
+
+		public static final Codec<KikonoRecipe> CODEC = RecordCodecBuilder.create(inst -> inst.group(
+				OUTPUT_CODEC.fieldOf("output").forGetter(r -> r.output),
+				Ingredient.CODEC.fieldOf("pattern").forGetter(r -> r.pattern),
+				Ingredient.CODEC.fieldOf("template").forGetter(r -> r.template),
+				Ingredient.CODEC.listOf().fieldOf("inputs").forGetter(r -> List.copyOf(r.recipeItems)),
+				Codec.INT.optionalFieldOf("crafting_time", 100).forGetter(r -> r.craftingTime),
+				Codec.INT.optionalFieldOf("energy_cost", 1000).forGetter(r -> r.energyCost)
+		).apply(inst, (output, pattern, template, inputs, time, energy) ->
+				new KikonoRecipe(output, toNonNull(inputs), pattern, template, time, energy)));
+
 		@Override
-		public KikonoRecipe fromJson(ResourceLocation pRecipeId, JsonObject pSerializedRecipe) {
-			ItemStack output = ShapedRecipe.itemStackFromJson(GsonHelper.getAsJsonObject(pSerializedRecipe, "output"));
-			Ingredient pattern = Ingredient.fromJson(GsonHelper.getAsJsonObject(pSerializedRecipe, "pattern"));
-			Ingredient template = Ingredient.fromJson(GsonHelper.getAsJsonObject(pSerializedRecipe, "template"));
-			int time = GsonHelper.getAsInt(pSerializedRecipe, "crafting_time", 100);
-			int energy = GsonHelper.getAsInt(pSerializedRecipe, "energy_cost", 1000);
-
-			NonNullList<Ingredient> inputs = NonNullList.withSize(9, Ingredient.EMPTY);
-			for (int i = 0; i < 9; i++) {
-				if (pSerializedRecipe.has("slot_" + (i + 1))) {
-					inputs.set(i, Ingredient.fromJson(pSerializedRecipe.get("slot_" + (i + 1))));
-				}
-			}
-
-			return new KikonoRecipe(pRecipeId, output, inputs, pattern, template, time, energy);
+		public Codec<KikonoRecipe> codec() {
+			return CODEC;
 		}
 
 		@Override
-		public @Nullable KikonoRecipe fromNetwork(ResourceLocation pRecipeId, FriendlyByteBuf pBuffer) {
+		public KikonoRecipe fromNetwork(FriendlyByteBuf pBuffer) {
 			ItemStack output = pBuffer.readItem();
 			Ingredient pattern = Ingredient.fromNetwork(pBuffer);
 			Ingredient template = Ingredient.fromNetwork(pBuffer);
@@ -139,7 +142,7 @@ public class KikonoRecipe implements Recipe<SimpleContainer> {
 				inputs.set(i, Ingredient.fromNetwork(pBuffer));
 			}
 
-			return new KikonoRecipe(pRecipeId, output, inputs, pattern, template, time, energy);
+			return new KikonoRecipe(output, inputs, pattern, template, time, energy);
 		}
 
 		@Override

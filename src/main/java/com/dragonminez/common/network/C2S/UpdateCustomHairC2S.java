@@ -7,7 +7,7 @@ import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.event.network.CustomPayloadEvent;
 
 import java.util.function.Supplier;
 
@@ -36,9 +36,9 @@ public class UpdateCustomHairC2S {
         return new UpdateCustomHairC2S(hairIndex, hair);
     }
 
-    public static void handle(UpdateCustomHairC2S msg, Supplier<NetworkEvent.Context> ctx) {
-        ctx.get().enqueueWork(() -> {
-            ServerPlayer player = ctx.get().getSender();
+    public static void handle(UpdateCustomHairC2S msg, CustomPayloadEvent.Context ctx) {
+        ctx.enqueueWork(() -> {
+            ServerPlayer player = ctx.getSender();
             if (player == null) return;
 
             StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
@@ -55,6 +55,6 @@ public class UpdateCustomHairC2S {
                 }
             });
         });
-        ctx.get().setPacketHandled(true);
+        ctx.setPacketHandled(true);
     }
 }

@@ -19,25 +19,25 @@ public class DragonDBModel<T extends DragonWishEntity> extends GeoModel<T> {
 	@Override
 	public ResourceLocation getModelResource(T animatable) {
 		DragonAssetDefinition assets = resolveAssets(animatable);
-		if (assets != null && assets.getModelPath().isPresent()) return ResourceLocation.parse(assets.getModelPath().get());
+		if (assets != null && assets.getModelPath().isPresent()) return new ResourceLocation(assets.getModelPath().get());
 		String name = ForgeRegistries.ENTITY_TYPES.getKey(animatable.getType()).getPath();
-		return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/dragon/" + name + ".geo.json");
+		return new ResourceLocation(Reference.MOD_ID, "geo/entity/dragon/" + name + ".geo.json");
 	}
 
 	@Override
 	public ResourceLocation getTextureResource(T animatable) {
 		DragonAssetDefinition assets = resolveAssets(animatable);
-		if (assets != null && assets.getTexturePath().isPresent()) return ResourceLocation.parse(assets.getTexturePath().get());
+		if (assets != null && assets.getTexturePath().isPresent()) return new ResourceLocation(assets.getTexturePath().get());
 		String name = ForgeRegistries.ENTITY_TYPES.getKey(animatable.getType()).getPath();
-		return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/dragon/" + name + ".png");
+		return new ResourceLocation(Reference.MOD_ID, "textures/entity/dragon/" + name + ".png");
 	}
 
 	@Override
 	public ResourceLocation getAnimationResource(T animatable) {
 		DragonAssetDefinition assets = resolveAssets(animatable);
-		if (assets != null && assets.getAnimationPath().isPresent()) return ResourceLocation.parse(assets.getAnimationPath().get());
+		if (assets != null && assets.getAnimationPath().isPresent()) return new ResourceLocation(assets.getAnimationPath().get());
 		String name = ForgeRegistries.ENTITY_TYPES.getKey(animatable.getType()).getPath();
-		return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "animations/entity/dragon/" + name + ".animation.json");
+		return new ResourceLocation(Reference.MOD_ID, "animations/entity/dragon/" + name + ".animation.json");
 	}
 
 	private DragonAssetDefinition resolveAssets(T animatable) {

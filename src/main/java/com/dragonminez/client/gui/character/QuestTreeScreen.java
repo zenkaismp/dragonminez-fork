@@ -77,13 +77,13 @@ import java.util.UUID;
 @OnlyIn(Dist.CLIENT)
 public class QuestTreeScreen extends BaseMenuScreen {
 
-	private static final ResourceLocation QUEST_MENU = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
+	private static final ResourceLocation QUEST_MENU = new ResourceLocation(Reference.MOD_ID,
 			"textures/gui/menu/questmenu.png");
-	private static final ResourceLocation BUTTONS_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
+	private static final ResourceLocation BUTTONS_TEXTURE = new ResourceLocation(Reference.MOD_ID,
 			"textures/gui/buttons/characterbuttons.png");
-	private static final ResourceLocation EXCLAMATION_MARK = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
+	private static final ResourceLocation EXCLAMATION_MARK = new ResourceLocation(Reference.MOD_ID,
 			"textures/gui/quest/exclamation_mark_quest.png");
-	private static final ResourceLocation REWARD_GENERIC_ICON = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
+	private static final ResourceLocation REWARD_GENERIC_ICON = new ResourceLocation(Reference.MOD_ID,
 			"textures/gui/quest/reward_generic.png");
 
 	private static final Style DMZ_STYLE = Style.EMPTY.withFont(DMZ_FONT);
@@ -1298,7 +1298,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 	@Override
 	public void render(@NonNull GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-		if (isNotAnimating()) this.renderBackground(graphics);
+		if (isNotAnimating()) this.renderBackground(graphics, mouseX, mouseY, partialTick);
 
 		navBar.clear();
 		descBar.clear();
@@ -2055,7 +2055,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		switch (reward.getType()) {
 			case ITEM -> {
 				if (reward instanceof ItemReward itemReward) {
-					Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(itemReward.getItemId()));
+					Item item = BuiltInRegistries.ITEM.get(new ResourceLocation(itemReward.getItemId()));
 					return new ItemStack(item, Math.max(1, itemReward.getCount()));
 				}
 				return null;
@@ -3224,7 +3224,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	}
 
 	@Override
-	public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+	public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double delta) {
 		if (shouldShowDifficultySelect()) {
 			double dsX = toUiX(mouseX);
 			double dsY = toUiY(mouseY);
@@ -3285,7 +3285,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 		PanelRect tree = getTreePanelRect();
 		if (!tree.contains(uiMouseX, uiMouseY)) {
-			return super.mouseScrolled(mouseX, mouseY, delta);
+			return super.mouseScrolled(mouseX, mouseY, scrollX, delta);
 		}
 
 		float oldZoom = zoom;

@@ -11,7 +11,7 @@ import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.event.network.CustomPayloadEvent;
 
 import java.util.function.Supplier;
 
@@ -36,9 +36,9 @@ public class TrainingRewardC2S {
 		buf.writeInt(levelsCleared);
 	}
 
-	public void handle(Supplier<NetworkEvent.Context> ctx) {
-		ctx.get().enqueueWork(() -> {
-			ServerPlayer player = ctx.get().getSender();
+	public void handle(CustomPayloadEvent.Context ctx) {
+		ctx.enqueueWork(() -> {
+			ServerPlayer player = ctx.getSender();
 			if (player == null || levelsCleared <= 0) return;
 
 			long now = player.level().getGameTime();
@@ -68,6 +68,6 @@ public class TrainingRewardC2S {
 				NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
 			});
 		});
-		ctx.get().setPacketHandled(true);
+		ctx.setPacketHandled(true);
 	}
 }

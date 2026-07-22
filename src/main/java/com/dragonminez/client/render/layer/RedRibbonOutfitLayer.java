@@ -12,7 +12,7 @@ import software.bernie.geckolib.renderer.GeoRenderer;
 import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 
 public class RedRibbonOutfitLayer<T extends RedRibbonSoldierEntity> extends GeoRenderLayer<T> {
-    private static final ResourceLocation OUTFIT_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/enemies/redribbon_outfit.png");
+    private static final ResourceLocation OUTFIT_TEXTURE = new ResourceLocation(Reference.MOD_ID, "textures/entity/enemies/redribbon_outfit.png");
 
     public RedRibbonOutfitLayer(GeoRenderer<T> renderer) {
         super(renderer);

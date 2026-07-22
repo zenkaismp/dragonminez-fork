@@ -8,7 +8,7 @@ import com.dragonminez.common.stats.techniques.KiAttackData;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.event.network.CustomPayloadEvent;
 
 import java.util.function.Supplier;
 
@@ -91,8 +91,8 @@ public class CreateTechniqueC2S {
 		buf.writeInt(this.secondaryDuration);
 	}
 
-	public boolean handle(Supplier<NetworkEvent.Context> supplier) {
-		NetworkEvent.Context context = supplier.get();
+	public boolean handle(CustomPayloadEvent.Context supplier) {
+		CustomPayloadEvent.Context context = supplier;
 		context.enqueueWork(() -> {
 			ServerPlayer player = context.getSender();
 			if (player == null) return;

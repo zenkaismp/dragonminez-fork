@@ -102,6 +102,9 @@ repositories {
         name = "Illusive Soulworks maven"
         url = uri("https://maven.theillusivec4.top/")
     }
+    // Locally staged 1.20.2 mod jars (GeckoLib/TerraBlender/Curios). flatDir gives them
+    // proper module coordinates so fg.deobf can deobfuscate them (raw files() cannot be).
+    flatDir { dirs("C:/Users/Nono/Desktop/cavalo/internet12002") }
     mavenCentral()
 }
 
@@ -172,12 +175,12 @@ dependencies {
     implementation("io.netty:netty-handler:4.2.7.Final") { because("Security/compat override requested.") }
     implementation("org.apache.commons:commons-compress:1.27.1") { because("Security/compat override requested.") }
 
-    // GeckoLib, Terrablender & Curios
-    implementation(fg.deobf("software.bernie.geckolib:geckolib-forge-1.20.1:4.8.3"))
+    // GeckoLib, Terrablender & Curios — local staged 1.20.2 jars via flatDir (deobf'd).
+    implementation(fg.deobf("software.bernie.geckolib:geckolib-forge-1.20.2:4.3.1"))
     implementation("com.eliotlash.mclib:mclib:20")
-    implementation(fg.deobf("com.github.glitchfiend:TerraBlender-forge:1.20.1-3.0.1.10"))
-    compileOnly(fg.deobf("top.theillusivec4.curios:curios-forge:5.14.1+1.20.1:api"))
-    runtimeOnly(fg.deobf("top.theillusivec4.curios:curios-forge:5.14.1+1.20.1"))
+    implementation(fg.deobf("com.github.glitchfiend:TerraBlender-forge:1.20.2-3.2.0.14"))
+    compileOnly(fg.deobf("top.theillusivec4.curios:curios-forge:6.1.0+1.20.2"))
+    runtimeOnly(fg.deobf("top.theillusivec4.curios:curios-forge:6.1.0+1.20.2"))
 
     // Lukas' Weapon Levelling
     compileOnly(fg.deobf("curse.maven:weapon-leveling-644704:8400008"))
@@ -208,9 +211,12 @@ dependencies {
     // Dev utility mods
     compileOnly(fg.deobf("mezz.jei:jei-$minecraftVersion-common-api:$jeiVersion"))
     compileOnly(fg.deobf("mezz.jei:jei-$minecraftVersion-forge-api:$jeiVersion"))
-    runtimeOnly(fg.deobf("curse.maven:worldedit-225608:4586218"))
-    runtimeOnly(fg.deobf("curse.maven:cyanide-541676:5778405"))
-    runtimeOnly(fg.deobf("curse.maven:spark-361579:4738952"))
+    // Dev-only 1.20.1 curse mods disabled for the 1.20.2 port: they are dev-runtime
+    // conveniences (no effect on the built artifact) and FML rejects their 1.20.1
+    // metadata during the mandatory runData step under MC 1.20.2.
+    // runtimeOnly(fg.deobf("curse.maven:worldedit-225608:4586218"))
+    // runtimeOnly(fg.deobf("curse.maven:cyanide-541676:5778405"))
+    // runtimeOnly(fg.deobf("curse.maven:spark-361579:4738952"))
 
     // Client-only visual/testing mods must stay off dedicated server and data runs.
     // Huge Structure Blocks in particular mixes into JigsawStructure's codec and
@@ -236,7 +242,7 @@ dependencies {
 
     // "Layers" mods for testing compatibility
     //runtimeOnly(fg.deobf("curse.maven:travelers-backpack-321117:7573110"))
-    runtimeOnly(fg.deobf("curse.maven:cosmetic-armor-reworked-237307:4600191"))
+    // runtimeOnly(fg.deobf("curse.maven:cosmetic-armor-reworked-237307:4600191")) // 1.20.1 dev-only, disabled for 1.20.2 port
     //runtimeOnly(fg.deobf("curse.maven:artifacts-312353:6399828"))
     //runtimeOnly(fg.deobf("curse.maven:cloth-config-api-348521:5729105"))
     //runtimeOnly(fg.deobf("curse.maven:architectury-api-419699:5137938"))

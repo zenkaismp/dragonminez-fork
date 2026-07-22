@@ -25,7 +25,7 @@ public class WeaponAttributesFallback {
 
             for (var fallbackOption : specifiers) {
                 if (WeaponRegistry.getAttributes(itemId) == null && PatternMatching.matches(itemId.toString(), fallbackOption.getItem_id_regex())) {
-                    var container = WeaponRegistry.containers.get(ResourceLocation.parse(fallbackOption.getWeapon_attributes()));
+                    var container = WeaponRegistry.containers.get(new ResourceLocation(fallbackOption.getWeapon_attributes()));
                     if (container != null) {
                         WeaponRegistry.resolveAndRegisterAttributes(itemId, container);
                         break;

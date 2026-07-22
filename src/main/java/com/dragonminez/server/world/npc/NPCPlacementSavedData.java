@@ -2,6 +2,7 @@ package com.dragonminez.server.world.npc;
 
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.world.level.saveddata.SavedData;
 import org.jetbrains.annotations.NotNull;
 
@@ -17,7 +18,7 @@ public class NPCPlacementSavedData extends SavedData {
 	private final Map<String, UUID> placements = new HashMap<>();
 
 	public static NPCPlacementSavedData get(ServerLevel level) {
-		return level.getDataStorage().computeIfAbsent(NPCPlacementSavedData::load, NPCPlacementSavedData::new, DATA_NAME);
+		return level.getDataStorage().computeIfAbsent(new SavedData.Factory<>(NPCPlacementSavedData::new, NPCPlacementSavedData::load, DataFixTypes.SAVED_DATA_MAP_INDEX), DATA_NAME);
 	}
 
 	public boolean hasPlacement(String placementId) {

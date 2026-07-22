@@ -26,7 +26,7 @@ import java.util.List;
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class TaiyokenFlashHandler {
 
-	private static final ResourceLocation EFFECT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "shaders/post/taiyoken_flash.json");
+	private static final ResourceLocation EFFECT = new ResourceLocation(Reference.MOD_ID, "shaders/post/taiyoken_flash.json");
 
 	private static PostChain shader = null;
 	private static int lastWidth = 0;

@@ -5,7 +5,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.event.network.CustomPayloadEvent;
 
 import java.util.HashMap;
 import java.util.List;
@@ -50,9 +50,9 @@ public class RadarSyncS2C {
 		return new RadarSyncS2C(earth, namek, positionsBySet);
 	}
 
-	public static void handle(RadarSyncS2C msg, Supplier<NetworkEvent.Context> ctx) {
-		ctx.get().enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
+	public static void handle(RadarSyncS2C msg, CustomPayloadEvent.Context ctx) {
+		ctx.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
 				() -> () -> ClientPacketHandler.handleRadarSyncPacket(msg.earthPositions, msg.namekPositions, msg.positionsBySet)));
-		ctx.get().setPacketHandled(true);
+		ctx.setPacketHandled(true);
 	}
 }

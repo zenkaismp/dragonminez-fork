@@ -6,6 +6,7 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.Level;
+import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.storage.DimensionDataStorage;
 
@@ -26,7 +27,7 @@ public class PartySavedData extends SavedData {
 
 	public static PartySavedData get(MinecraftServer server) {
 		DimensionDataStorage storage = server.getLevel(Level.OVERWORLD).getDataStorage();
-		return storage.computeIfAbsent(PartySavedData::load, PartySavedData::new, FILE_NAME);
+		return storage.computeIfAbsent(new SavedData.Factory<>(PartySavedData::new, PartySavedData::load, DataFixTypes.SAVED_DATA_MAP_INDEX), FILE_NAME);
 	}
 
 	public static PartySavedData load(CompoundTag tag) {
