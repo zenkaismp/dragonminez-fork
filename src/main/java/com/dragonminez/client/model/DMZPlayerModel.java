@@ -1,5 +1,7 @@
 package com.dragonminez.client.model;
 
+import com.dragonminez.Env;
+import com.dragonminez.LogUtil;
 import com.dragonminez.Reference;
 import com.dragonminez.client.animation.IPlayerAnimatable;
 import com.dragonminez.client.events.FlySkillEvent;
@@ -20,6 +22,7 @@ import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.core.animatable.model.CoreGeoBone;
 import software.bernie.geckolib.core.animation.AnimationState;
 import software.bernie.geckolib.core.molang.MolangParser;
+import software.bernie.geckolib.core.state.BoneSnapshot;
 import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.model.data.EntityModelData;
 
@@ -265,6 +268,30 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
         return ANIM_FALLBACKS;
     }
 
+    // ponytail: GeckoLib 4.3.1's default getAnimation() only searches getAnimationResource() (the
+    // movement file), so the combat/ki/transf/skp animations in ANIM_FALLBACKS come back "Unable to
+    // find animation" — the 4.4+ fallback hook above is never called. Re-implement the fallback lookup
+    // manually: try the primary file, then each fallback file. Purely additive; no behavior change for
+    // animations already in the primary file. Remove once GeckoLib >= 4.4 is available for this MC.
+    @Override
+    public software.bernie.geckolib.core.animation.Animation getAnimation(T animatable, String name) {
+        java.util.Map<ResourceLocation, software.bernie.geckolib.loading.object.BakedAnimations> cache =
+                software.bernie.geckolib.cache.GeckoLibCache.getBakedAnimations();
+        software.bernie.geckolib.loading.object.BakedAnimations primary = cache.get(getAnimationResource(animatable));
+        if (primary != null) {
+            software.bernie.geckolib.core.animation.Animation anim = primary.getAnimation(name);
+            if (anim != null) return anim;
+        }
+        for (ResourceLocation fallback : ANIM_FALLBACKS) {
+            software.bernie.geckolib.loading.object.BakedAnimations fb = cache.get(fallback);
+            if (fb != null) {
+                software.bernie.geckolib.core.animation.Animation anim = fb.getAnimation(name);
+                if (anim != null) return anim;
+            }
+        }
+        return null;
+    }
+
     @Override
     public void setCustomAnimations(T animatable, long instanceId, AnimationState<T> animationState) {
         super.setCustomAnimations(animatable, instanceId, animationState);
@@ -284,6 +311,14 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
         CoreGeoBone root = this.getAnimationProcessor().getBone("root");
         CoreGeoBone rightArm = this.getAnimationProcessor().getBone("right_arm");
         CoreGeoBone leftArm = this.getAnimationProcessor().getBone("left_arm");
+        CoreGeoBone rightLeg = this.getAnimationProcessor().getBone("right_leg");
+        CoreGeoBone leftLeg = this.getAnimationProcessor().getBone("left_leg");
+
+        // Ease GeckoLib's one-frame cross-controller pose snaps (combat "flick") before any procedural
+        // arm/head overrides below layer on top. Runs every frame; only true discontinuities are eased.
+        if (animatable instanceof IPlayerAnimatable slewAnim) {
+            slewAnim.dragonminez$smoothActionBones(root, waist, rightArm, leftArm, rightLeg, leftLeg);
+        }
 
         if (head != null && !skipHead) {
             EntityModelData entityModelData = animationState.getData(DataTickets.ENTITY_MODEL_DATA);
@@ -329,6 +364,39 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
         } catch (Exception ignored) {}
 
         applyBoobScale(animatable);
+
+        // Safety net: a single NaN/Inf in any bone transform (e.g. a GeckoLib divide-by-zero in the bone
+        // reset) propagates down the hierarchy and makes the whole model vanish for one frame. Replace any
+        // non-finite value with the bone's rest value so the model can never blink.
+        sanitizeNonFiniteBones();
+    }
+
+    private static volatile boolean DMZ_LOGGED_NONFINITE = false;
+
+    private void sanitizeNonFiniteBones() {
+        for (Object o : this.getAnimationProcessor().getRegisteredBones()) {
+            if (!(o instanceof CoreGeoBone bone)) continue;
+            boolean bad = !Float.isFinite(bone.getRotX()) || !Float.isFinite(bone.getRotY()) || !Float.isFinite(bone.getRotZ())
+                    || !Float.isFinite(bone.getPosX()) || !Float.isFinite(bone.getPosY()) || !Float.isFinite(bone.getPosZ())
+                    || !Float.isFinite(bone.getScaleX()) || !Float.isFinite(bone.getScaleY()) || !Float.isFinite(bone.getScaleZ());
+            if (!bad) continue;
+
+            BoneSnapshot init = bone.getInitialSnapshot();
+            if (!Float.isFinite(bone.getRotX())) bone.setRotX(init.getRotX());
+            if (!Float.isFinite(bone.getRotY())) bone.setRotY(init.getRotY());
+            if (!Float.isFinite(bone.getRotZ())) bone.setRotZ(init.getRotZ());
+            if (!Float.isFinite(bone.getPosX())) bone.setPosX(init.getOffsetX());
+            if (!Float.isFinite(bone.getPosY())) bone.setPosY(init.getOffsetY());
+            if (!Float.isFinite(bone.getPosZ())) bone.setPosZ(init.getOffsetZ());
+            if (!Float.isFinite(bone.getScaleX())) bone.setScaleX(init.getScaleX());
+            if (!Float.isFinite(bone.getScaleY())) bone.setScaleY(init.getScaleY());
+            if (!Float.isFinite(bone.getScaleZ())) bone.setScaleZ(init.getScaleZ());
+
+            if (!DMZ_LOGGED_NONFINITE) {
+                DMZ_LOGGED_NONFINITE = true;
+                LogUtil.warn(Env.CLIENT, "[DMZ] Sanitized non-finite transform on bone '{}' (prevented a 1-frame model flicker).", bone.getName());
+            }
+        }
     }
 
     private void applyBoobScale(T animatable) {

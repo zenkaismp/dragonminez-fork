@@ -31,6 +31,22 @@ public abstract class ScaledScreen extends Screen {
 		super(title);
 	}
 
+	// ponytail: DragonMineZ menus dim the world with the vanilla ~75-80%-opaque overlay
+	// (renderTransparentBackground), which reads as an almost-black backdrop and hurts menu
+	// readability. Use a gentler dim so the world stays visible behind the panels. If it's still
+	// too dark/light, tune the two alpha bytes below (0x66 = ~40%, 0x80 = ~50%).
+	private static final int MENU_DIM_TOP = 0x40101014;
+	private static final int MENU_DIM_BOTTOM = 0x55101014;
+
+	@Override
+	public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+		if (this.minecraft != null && this.minecraft.level != null) {
+			graphics.fillGradient(0, 0, this.width, this.height, MENU_DIM_TOP, MENU_DIM_BOTTOM);
+		} else {
+			super.renderBackground(graphics, mouseX, mouseY, partialTick);
+		}
+	}
+
 	protected void updateUiScale() {
 		if (this.minecraft == null) {
 			uiScale = 1.0f;

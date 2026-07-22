@@ -29,6 +29,7 @@ import net.minecraft.world.phys.Vec3;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
+import software.bernie.geckolib.core.animatable.model.CoreGeoBone;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.core.animation.AnimatableManager;
 import software.bernie.geckolib.core.animation.AnimationController;
@@ -89,6 +90,14 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 	@Unique private int dragonminez$lastKiTickRun = -1;
 	@Unique private String dragonminez$lastKiCtlAnim = null;
 	@Unique private static final int KI_FIRE_ONESHOT_TICKS = 14;
+
+	// Slew-limiter state: previous displayed rotation of the 6 action bones (root, waist, arms, legs),
+	// 3 axes each, plus the wall-clock of the last frame for framerate-independent easing.
+	@Unique private float[] dragonminez$prevActionRot = null;
+	@Unique private long dragonminez$lastSlewNanos = 0L;
+	// Max plausible angular speed of a real animation (rad/s). A keyframed punch peaks ~10-16 rad/s; a
+	// one-frame controller-handoff snap is 45-90 rad/s, so this cleanly passes real motion and clamps snaps.
+	@Unique private static final float ACTION_SLEW_RAD_PER_SEC = 25.0F;
 
 	@Unique
 	private boolean dragonminez$isActuallyMoving(AbstractClientPlayer player) {
@@ -237,6 +246,12 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 	@Override
 	public void registerControllers(AnimatableManager.ControllerRegistrar registrar) {
 		registrar.add(new AnimationController<>(this, "controller", 4, this::predicate));
+		// ponytail: the combat/action "flick" is a cross-controller reveal (attack_controller and the base
+		// "controller" both animate the arms; when attack stops, GeckoLib snaps to the base arm pose in one
+		// frame — transitionLength only smooths the ENTRY, never this exit). Instead of a transition (which
+		// also delays the punch start), the snap is killed downstream by a velocity slew-limiter on the
+		// action bones (dragonminez$smoothActionBones, called from DMZPlayerModel). Controllers stay at their
+		// original snappy 0-tick transitions.
 		registrar.add(new AnimationController<>(this, "attack_controller", 0, this::attackPredicate));
 		registrar.add(new AnimationController<>(this, "mining_controller", 0, this::miningPredicate));
 		registrar.add(new AnimationController<>(this, "block_controller", 3, this::blockPredicate));
@@ -722,7 +737,12 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 
 	@Override
 	public double getBoneResetTime() {
-		return (dragonminez$attackAnimTicks > 0 || dragonminez$combatGraceFrames > 0) ? 0.0D : 5.0D;
+		// ponytail: MUST stay > 0. GeckoLib 4.3.1's AnimationProcessor divides by this value in the
+		// bone-reset lerp: (animTime - lastResetTick) / resetTime. On the exact frame an animation stops
+		// on a bone, lastResetTick == animTime, so resetTime==0 gives 0/0 = NaN, which propagates through
+		// the bone hierarchy and blanks the whole model for a frame (the combat "flick"). 1.0 tick is
+		// effectively an instant snap for combat but avoids the divide-by-zero.
+		return (dragonminez$attackAnimTicks > 0 || dragonminez$combatGraceFrames > 0) ? 1.0D : 5.0D;
 	}
 
 	@Override
@@ -792,6 +812,61 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 	@Override
 	public boolean dragonminez$isAttackingWithOffhand() {
 		return this.dragonminez$isOffhandAttack;
+	}
+
+	@Override
+	public void dragonminez$smoothActionBones(CoreGeoBone root, CoreGeoBone waist, CoreGeoBone rightArm,
+	                                          CoreGeoBone leftArm, CoreGeoBone rightLeg, CoreGeoBone leftLeg) {
+		CoreGeoBone[] bones = { root, waist, rightArm, leftArm, rightLeg, leftLeg };
+		long now = System.nanoTime();
+
+		if (dragonminez$prevActionRot == null) {
+			dragonminez$prevActionRot = new float[bones.length * 3];
+			dragonminez$captureActionRot(bones);
+			dragonminez$lastSlewNanos = now;
+			return;
+		}
+
+		double dt = (now - dragonminez$lastSlewNanos) / 1.0e9;
+		dragonminez$lastSlewNanos = now;
+		// Paused game / off-screen player / first render after a gap: don't ease a stale pose, just re-seed.
+		if (dt <= 0.0 || dt > 0.2) {
+			dragonminez$captureActionRot(bones);
+			return;
+		}
+
+		float maxStep = (float) (ACTION_SLEW_RAD_PER_SEC * dt);
+		for (int i = 0; i < bones.length; i++) {
+			CoreGeoBone bone = bones[i];
+			if (bone == null) continue;
+			int base = i * 3;
+			bone.setRotX(dragonminez$slew(base, bone.getRotX(), maxStep));
+			bone.setRotY(dragonminez$slew(base + 1, bone.getRotY(), maxStep));
+			bone.setRotZ(dragonminez$slew(base + 2, bone.getRotZ(), maxStep));
+		}
+	}
+
+	// ponytail: plain (non-wrapping) delta — fine for the bounded arm/waist/leg ranges these anims use.
+	// If an animation ever crosses ±π on a slewed bone and shows a brief hitch, wrap the delta to shortest-path.
+	@Unique
+	private float dragonminez$slew(int idx, float live, float maxStep) {
+		float prev = dragonminez$prevActionRot[idx];
+		float delta = live - prev;
+		float out = Math.abs(delta) > maxStep ? prev + Math.copySign(maxStep, delta) : live;
+		dragonminez$prevActionRot[idx] = out;
+		return out;
+	}
+
+	@Unique
+	private void dragonminez$captureActionRot(CoreGeoBone[] bones) {
+		for (int i = 0; i < bones.length; i++) {
+			CoreGeoBone bone = bones[i];
+			if (bone == null) continue;
+			int base = i * 3;
+			dragonminez$prevActionRot[base] = bone.getRotX();
+			dragonminez$prevActionRot[base + 1] = bone.getRotY();
+			dragonminez$prevActionRot[base + 2] = bone.getRotZ();
+		}
 	}
 
 	@Override
