@@ -88,26 +88,77 @@ public class StorageManager {
 		}
 	}
 
+	/**
+	 * Players whose external storage lookup is still in flight. While a player is in here nobody may
+	 * tell the client "your data is loaded" — see {@link #isLoadPending(UUID)}.
+	 */
+	private static final java.util.Set<UUID> pendingLoads = ConcurrentHashMap.newKeySet();
+
+	/**
+	 * True between login and the moment the storage backend answers for this player.
+	 *
+	 * <p>Exists because the login sync would otherwise ship the DEFAULT stats to the client: the client
+	 * marks the data as loaded, sees {@code hasCreatedCharacter = false} and opens character creation on
+	 * top of a character that exists in the database. On a single server with a local {@code .dat} the
+	 * capability is already populated by login time and this never shows; across a network, where the
+	 * world folder has never seen the player, it shows every join.</p>
+	 */
+	public static boolean isLoadPending(UUID uuid) {
+		return pendingLoads.contains(uuid);
+	}
+
 	public static void loadPlayer(ServerPlayer player) {
-		if (activeStorage == null) return;
+		if (activeStorage == null) {
+			// NBT/vanilla: os dados vieram do .dat junto com o jogador, nao ha nada a esperar.
+			LogUtil.info(Env.SERVER, "[Load] {} — storage NBT (vanilla), nada a carregar.",
+					player.getName().getString());
+			return;
+		}
 
 		final UUID uuid = player.getUUID();
+		final String name = player.getName().getString();
+		pendingLoads.add(uuid);
+		LogUtil.info(Env.SERVER, "[Load] {} ({}) — consultando {}; criacao de personagem em espera.",
+				name, uuid, activeStorage.getName());
 
-		CompletableFuture.supplyAsync(() -> activeStorage.loadData(uuid), dbExecutor)
-				.thenAccept(loadedData -> {
-					ServerLifecycleHooks.getCurrentServer().execute(() -> {
-						if (loadedData != null && player.connection != null) {
-							applyLoadedData(player, loadedData);
+		CompletableFuture.supplyAsync(() -> activeStorage.load(uuid), dbExecutor)
+				.thenAccept(result -> ServerLifecycleHooks.getCurrentServer().execute(() -> {
+					pendingLoads.remove(uuid);
+					if (player.connection == null) {
+						LogUtil.info(Env.SERVER, "[Load] {} saiu antes da resposta do storage.", name);
+						return;
+					}
+					switch (result.status()) {
+						case LOADED -> {
+							LogUtil.info(Env.SERVER, "[Load] {} — dados encontrados, aplicando.", name);
+							applyLoadedData(player, result.data());
 						}
-					});
-				})
+						case ABSENT -> {
+							// O storage RESPONDEU que nao existe registro: jogador novo de verdade.
+							// Solta o sync que o login segurou, senao o cliente nunca sabe que pode
+							// abrir a criacao de personagem.
+							LogUtil.info(Env.SERVER, "[Load] {} — sem registro no storage: jogador novo, "
+									+ "liberando a criacao de personagem.", name);
+							NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+						}
+						case FAILED -> LogUtil.error(Env.SERVER, "[Load] {} — o storage NAO respondeu "
+								+ "(veja o erro acima). A criacao de personagem fica bloqueada para ele: "
+								+ "os dados podem existir e nao podem ser sobrescritos. Conserte o storage "
+								+ "e peca para ele reentrar.", name);
+					}
+				}))
 				.exceptionally(ex -> {
-					LogUtil.error(Env.SERVER, "Error loading data async for " + player.getName().getString(), ex);
+					// Rede de seguranca: load() ja converte falha em FAILED, entao so se chega aqui com
+					// algo inesperado. Mesma regra — nao libera nada.
+					ServerLifecycleHooks.getCurrentServer().execute(() -> pendingLoads.remove(uuid));
+					LogUtil.error(Env.SERVER, "[Load] " + name + " — erro inesperado carregando dados; "
+							+ "criacao de personagem bloqueada para ele.", ex);
 					return null;
 				});
 	}
 
 	private static void applyLoadedData(ServerPlayer player, CompoundTag loadedData) {
+		// Antes do load: quem quiser MEXER no NBT que sera aplicado tem esta janela.
 		MinecraftForge.EVENT_BUS.post(new DMZEvent.PlayerDataLoadEvent(player, loadedData));
 
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
@@ -123,6 +174,11 @@ public class StorageManager {
 
 			TransformationsHelper.ensureSelectedFormDefault(stats);
 			TransformationsHelper.ensureSelectedStackFormDefault(stats);
+
+			// Dados ja na capability e o sync ainda nao saiu: e AQUI que um addon concede/ajusta o que
+			// depende deles. Quem faz isso no login le os defaults e tem o proprio trabalho apagado
+			// por este load — e refaz tudo no login seguinte, para sempre.
+			MinecraftForge.EVENT_BUS.post(new DMZEvent.PlayerDataAppliedEvent(player));
 
 			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 			LogUtil.info(Env.SERVER, "Async data loaded for: " + player.getName().getString());

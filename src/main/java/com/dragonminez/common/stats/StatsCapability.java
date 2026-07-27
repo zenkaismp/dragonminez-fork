@@ -7,6 +7,7 @@ import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.stats.character.Cooldowns;
 import com.dragonminez.server.events.players.TickHandler;
+import com.dragonminez.server.storage.StorageManager;
 import com.dragonminez.common.network.S2C.ResourceSyncS2C;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.network.S2C.SyncQuestRegistryS2C;
@@ -117,7 +118,19 @@ public class StatsCapability {
 					repairedSkills.forEach((oldName, newName) -> LogUtil.info(Env.SERVER, "Repaired skill for {}: '{}' -> '{}'", serverPlayer.getGameProfile().getName(), oldName, newName));
 				}
 				data.getSkills().setSkillActive("kisense", false);
-				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
+				// Storage externo (MySQL/JSON) responde numa task, nao aqui. Ate ela voltar, este sync
+				// levaria os DEFAULTS pro cliente — que marcaria "dados carregados", veria
+				// hasCreatedCharacter=false e abriria a criacao de personagem por cima de um personagem
+				// que existe no banco. Nesse caso quem manda o sync e o proprio load, quando terminar.
+				if (StorageManager.isLoadPending(serverPlayer.getUUID())) {
+					LogUtil.info(Env.SERVER, "[Login] {} — sync inicial adiado: o storage ainda esta "
+							+ "respondendo (evita abrir a criacao de personagem por engano).",
+							serverPlayer.getName().getString());
+				} else {
+					LogUtil.info(Env.SERVER, "[Login] {} — sync inicial enviado (hasCreatedCharacter={}).",
+							serverPlayer.getName().getString(), data.getStatus().isHasCreatedCharacter());
+					NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
+				}
 			});
 		}
 		event.getEntity().refreshDimensions();

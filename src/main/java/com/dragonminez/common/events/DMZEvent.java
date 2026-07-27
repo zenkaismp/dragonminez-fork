@@ -403,6 +403,24 @@ public abstract class DMZEvent extends Event {
 
 	}
 
+	/**
+	 * Fired after stored data has been applied to the player's capability and BEFORE the sync packet
+	 * goes out — the point where an addon may grant, repair or adjust anything and still have it
+	 * travel in the same sync.
+	 *
+	 * <p>Addons that hook {@code PlayerLoggedInEvent} instead are reading defaults with an external
+	 * storage backend: the load is asynchronous and has not landed yet, so whatever they write is
+	 * overwritten moments later by the loaded data (and quietly re-granted on every single join).</p>
+	 */
+	@Getter
+	public static class PlayerDataAppliedEvent extends Event {
+		private final ServerPlayer player;
+
+		public PlayerDataAppliedEvent(ServerPlayer player) {
+			this.player = player;
+		}
+	}
+
 	/** Base for the per-second resource regeneration events. Modify {@link #amount} or cancel to suppress. */
 	@Getter
 	@Cancelable

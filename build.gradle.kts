@@ -69,6 +69,10 @@ extensions.configure<org.spongepowered.asm.gradle.plugins.MixinExtension>("mixin
 
 tasks.named<Jar>("jarJar").configure {
     archiveClassifier.set("")
+    // Nome FIXO de proposito: o jar novo sobrescreve o antigo no mods/ do servidor em vez de deixar
+    // dois com o mesmo modid (o Forge nao sobe assim), e nenhum script de deploy precisa saber a
+    // versao. A versao de verdade fica no mods.toml e aparece no /mods.
+    archiveFileName.set("dragonminez-2.1.3.jar")
     finalizedBy("reobfJarJar")
 }
 

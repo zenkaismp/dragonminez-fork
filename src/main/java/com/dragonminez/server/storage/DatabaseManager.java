@@ -123,7 +123,20 @@ public class DatabaseManager implements IDataStorage {
 
 	@Override
 	public CompoundTag loadData(UUID uuid) {
-		if (!isConnected || dataSource == null) return null;
+		return load(uuid).data();
+	}
+
+	/**
+	 * Reads one player, telling apart "no row" from "could not read". Every early return below used to
+	 * be a bare {@code null}, which the caller could only read as "new player" — so a dropped
+	 * connection or a corrupt blob looked exactly like a first join.
+	 */
+	@Override
+	public LoadResult load(UUID uuid) {
+		if (!isConnected || dataSource == null) {
+			LogUtil.error(Env.SERVER, "Load for " + uuid + " asked while the database is not connected.");
+			return LoadResult.failed();
+		}
 
 		String tableName = sanitizeTableName(ConfigManager.getServerConfig().getStorage().getTable());
 		String sql = "SELECT data FROM " + tableName + " WHERE uuid = ?";
@@ -133,20 +146,22 @@ public class DatabaseManager implements IDataStorage {
 			stmt.setString(1, uuid.toString());
 
 			try (ResultSet rs = stmt.executeQuery()) {
-				if (rs.next()) {
-					try (InputStream is = rs.getBinaryStream("data")) {
-						if (is != null) {
-							return NbtIo.readCompressed(is);
-						}
-					} catch (IOException e) {
-						LogUtil.error(Env.SERVER, "Error decompressing NBT for " + uuid + ": " + e.getMessage());
+				if (!rs.next()) return LoadResult.absent();     // consulta OK, jogador novo mesmo
+				try (InputStream is = rs.getBinaryStream("data")) {
+					if (is == null) {
+						LogUtil.error(Env.SERVER, "Row for " + uuid + " exists but its data column is NULL.");
+						return LoadResult.failed();            // linha existe: NAO e jogador novo
 					}
+					return LoadResult.loaded(NbtIo.readCompressed(is));
+				} catch (IOException e) {
+					LogUtil.error(Env.SERVER, "Error decompressing NBT for " + uuid + ": " + e.getMessage());
+					return LoadResult.failed();
 				}
 			}
 		} catch (SQLException e) {
 			LogUtil.error(Env.SERVER, "Failed to load player " + uuid + " from DB: " + e.getMessage());
+			return LoadResult.failed();
 		}
-		return null;
 	}
 
 	@Override

@@ -1627,7 +1627,11 @@ public class StatsData {
 		if (nbt.contains("DynamicGrowth")) dynamicGrowth.load(nbt.getCompound("DynamicGrowth"));
 		if (nbt.contains("HasInitializedHealth")) hasInitializedHealth = nbt.getBoolean("HasInitializedHealth");
 		if (character.getRaceName() != null && !character.getRaceName().isEmpty()) updateTransformationSkillLimits(character.getRaceName());
-		this.isDataLoaded = true;
+		// SO um NBT completo pode declarar os dados carregados. Este mesmo load atende syncs PARCIAIS
+		// (ProgressionSyncS2C manda stats/skills/tecnicas e NAO manda Status): marcar carregado ali
+		// deixava o cliente com isDataLoaded=true e hasCreatedCharacter=false — que e exatamente a
+		// condicao que abre a criacao de personagem, por cima de um personagem que existe.
+		if (nbt.contains("Status")) this.isDataLoaded = true;
 	}
 
 	public void copyFrom(StatsData other) {

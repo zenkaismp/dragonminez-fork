@@ -46,26 +46,38 @@ public class JsonStorage implements IDataStorage {
 
 	@Override
 	public CompoundTag loadData(UUID playerUUID) {
-		if (storageDir == null) return null;
+		return load(playerUUID).data();
+	}
+
+	/** Ver {@link DatabaseManager#load}: arquivo ausente e jogador novo; arquivo ilegivel NAO e. */
+	@Override
+	public LoadResult load(UUID playerUUID) {
+		if (storageDir == null) {
+			LogUtil.error(Env.SERVER, "Load for " + playerUUID + " asked before the storage dir was set.");
+			return LoadResult.failed();
+		}
 
 		Path file = storageDir.resolve(playerUUID.toString() + ".json");
-		if (!Files.exists(file)) return null;
+		if (!Files.exists(file)) return LoadResult.absent();
 
 		try (Reader reader = Files.newBufferedReader(file)) {
 			JsonElement json = GSON.fromJson(reader, JsonElement.class);
-			if (json == null) return null;
+			if (json == null) {
+				LogUtil.error(Env.SERVER, "Empty/unparseable JSON for " + playerUUID + ": " + file);
+				return LoadResult.failed();     // o arquivo existe — nao trate como jogador novo
+			}
 
 			if (json.isJsonObject()) {
 				JsonObject obj = json.getAsJsonObject();
 				if (obj.has("data") && obj.has("format") && "snbt".equals(obj.get("format").getAsString())) {
-					return TagParser.parseTag(obj.get("data").getAsString());
+					return LoadResult.loaded(TagParser.parseTag(obj.get("data").getAsString()));
 				}
 			}
 
-			return (CompoundTag) JsonOps.INSTANCE.convertTo(NbtOps.INSTANCE, json);
+			return LoadResult.loaded((CompoundTag) JsonOps.INSTANCE.convertTo(NbtOps.INSTANCE, json));
 		} catch (Exception e) {
 			LogUtil.error(Env.SERVER, "Failed to load JSON data for " + playerUUID, e);
-			return null;
+			return LoadResult.failed();
 		}
 	}
 
