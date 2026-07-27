@@ -1,5 +1,7 @@
 package com.dragonminez.common.network.C2S;
 
+import com.dragonminez.Env;
+import com.dragonminez.LogUtil;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.hair.CustomHair;
 import com.dragonminez.common.network.NetworkHandler;
@@ -165,6 +167,15 @@ public class CreateCharacterC2S {
 					player.setHealth(player.getMaxHealth());
 					NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 					MutantManager.rollForPlayer(player, data);
+				} else {
+					// Select com personagem JA existente: a tela de criacao abriu na janela do load
+					// assincrono (storage externo) e o dado real pousou antes do Select chegar. O
+					// personagem certo e o do banco — mas descartar MUDO deixava o cliente acreditando
+					// no que acabou de montar ate o proximo sync qualquer. Reenvia o estado real na
+					// hora, pro cliente voltar ao personagem verdadeiro imediatamente.
+					LogUtil.info(Env.SERVER, "[Login] {} sent a character create but already has one — re-sync sent, create discarded.",
+							player.getName().getString());
+					NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 				}
 			});
 		});
