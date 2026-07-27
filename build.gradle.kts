@@ -5,7 +5,7 @@ import java.time.format.DateTimeFormatter
 plugins {
     java
     idea
-    id("net.minecraftforge.gradle") version "6.0.30"
+    id("net.minecraftforge.gradle") version "7.0.31"
     id("org.parchmentmc.librarian.forgegradle") version "1.+"
     id("org.spongepowered.mixin") version "0.7.38"
 }
