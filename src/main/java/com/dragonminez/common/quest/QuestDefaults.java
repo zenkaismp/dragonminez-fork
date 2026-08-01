@@ -901,9 +901,11 @@ final class QuestDefaults {
 	// ========================================================================================
 
 	private static void createMoviesSagaQuests(Path questsDir) {
-		JsonObject prevSaiyan = prevQuest("saiyan_saga", 1);
+		// Zenkai: o gate de previousSaga so existe no client; o gate real do servidor e o
+		// prerequisite da quest 1. Movies e pos-Buu, entao ancora na ultima quest da Buu.
+		JsonObject prevBuu = prevQuest("buu_saga", 35);
 
-		writeSaga(questsDir.resolve("saga_movies"), "movies_saga", "saga_movies", prevSaiyan,
+		writeSaga(questsDir.resolve("saga_movies"), "movies_saga", "saga_movies", prevBuu,
 				step("movies", 1, "01_kamis_lookout_warning.json",
 						earthReq(25),
 						new JsonObject[]{

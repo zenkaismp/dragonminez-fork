@@ -52,11 +52,19 @@ public class DragonBallsHandler {
 
 		boolean isFirstSpawn = !data.isFirstSpawnComplete(setId);
 		int maxSets = definition.getCopies();
-		int setsToSpawn = isFirstSpawn ? maxSets : 1;
 
+		// @ RECONCILIA ATE O TETO, sempre. Antes o scatter fora do primeiro spawn repunha no
+		// maximo UMA copia por estrela, o que abre dois buracos num servidor de verdade:
+		//   1) subir dragonBallSets num mundo que ja rodou o primeiro spawn nunca alcancava o
+		//      novo teto (so ia somando 1 por estrela a cada pedido feito ao dragao);
+		//   2) esfera que sai de circulacao sem ser por pedido (guardada num bau pra sempre,
+		//      perdida na lava, item despawnado) nunca voltava, e o mundo ia secando ate a
+		//      progressao travar por falta de esfera.
+		// Como o alvo e um TETO e nao um incremento, refazer a conta toda e idempotente: com
+		// tudo cheio, missing = 0 e a chamada nao faz nada.
 		for (int star : definition.getStars()) {
 			int currentCount = active.get(star).size() + pending.get(star).size();
-			int actualToSpawn = Math.min(setsToSpawn, maxSets - currentCount);
+			int actualToSpawn = maxSets - currentCount;
 			for (int i = 0; i < actualToSpawn; i++) {
 				int x = spawnPos.getX() + random.nextInt(range * 2) - range;
 				int z = spawnPos.getZ() + random.nextInt(range * 2) - range;

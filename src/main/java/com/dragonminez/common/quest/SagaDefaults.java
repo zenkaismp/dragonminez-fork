@@ -38,7 +38,9 @@ final class SagaDefaults {
 		writeSagaManifest(dmzBase, sagaDir, "android_saga.json", "android_saga", "dmz.saga.android_saga", "frieza_saga", "saga_android");
 		writeSagaManifest(dmzBase, sagaDir, "future_saga.json", "future_saga", "dmz.saga.future_saga", "android_saga", "saga_future");
 		writeSagaManifest(dmzBase, sagaDir, "buu_saga.json", "buu_saga", "dmz.saga.buu_saga", "android_saga", "saga_buu");
-		writeSagaManifest(dmzBase, sagaDir, "movies_saga.json", "movies_saga", "dmz.saga.movies_saga", "", "saga_movies");
+		// Zenkai: a Movies e conteudo pos-Buu (curva 440k->1M); o upstream soltou ela como raiz
+		// no c47061e4 e as missoes pingavam durante as outras sagas. Revertido de proposito.
+		writeSagaManifest(dmzBase, sagaDir, "movies_saga.json", "movies_saga", "dmz.saga.movies_saga", "buu_saga", "saga_movies");
 	}
 
 	/**

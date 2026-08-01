@@ -470,10 +470,17 @@ public class ForgeCommonEvents {
 				ServerLevel targetLevel = event.getServer().getLevel(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.DIMENSION, definition.getValidDimensions().iterator().next()));
 				if (targetLevel == null) continue;
 				DragonBallSavedData data = DragonBallSavedData.get(targetLevel);
-				if (!data.isFirstSpawnComplete(definition.getId())) {
-					DragonBallsHandler.scatterDragonBalls(targetLevel, definition.getId());
-					LogUtil.info(Env.COMMON, "First DragonBalls Spawn setup for set: " + definition.getId());
-				}
+				boolean first = !data.isFirstSpawnComplete(definition.getId());
+				// @ O boot agora RECONCILIA sempre, nao so na estreia do mundo. O scatter e
+				// idempotente (repoe ate o teto de dragonBallSets), entao rodar todo start nao
+				// faz nada quando esta cheio — e e a UNICA saida do beco sem saida em que o
+				// mundo cai quando as esferas somem de circulacao: o outro gatilho de reposicao
+				// e o dragao indo embora, e pra invocar o dragao voce precisa justamente das
+				// esferas que nao existem mais. Tambem e o que faz um aumento de
+				// dragonBallSets valer num mundo que ja rodou a estreia.
+				DragonBallsHandler.scatterDragonBalls(targetLevel, definition.getId());
+				LogUtil.info(Env.COMMON, (first ? "First DragonBalls Spawn setup for set: "
+						: "DragonBalls replenished up to the configured cap for set: ") + definition.getId());
 			}
 		} else {
 			LogUtil.info(Env.COMMON, "DragonBalls generation is disabled in the config.");

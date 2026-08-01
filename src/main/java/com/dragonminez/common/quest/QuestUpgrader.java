@@ -21,7 +21,9 @@ import java.util.ArrayList;
 
 public final class QuestUpgrader {
 
-	public static final String DEFAULTS_VERSION = "2.1.2";
+	// Sufixo -zenkai.N: bump nosso em cima do 2.1.2 do upstream (comparacao e igualdade de
+	// string, nao semver). Baselines em previousQuests/ devem refletir o default ANTERIOR.
+	public static final String DEFAULTS_VERSION = "2.1.2-zenkai.1";
 
 	static final String VERSION_KEY = "defaultsVersion";
 
