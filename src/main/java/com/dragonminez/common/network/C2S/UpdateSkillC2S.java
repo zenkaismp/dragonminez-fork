@@ -111,13 +111,19 @@ public class UpdateSkillC2S {
 			if (charConfig == null) return -1;
 			Integer[] prices = charConfig.getFormSkillTpCosts(skillName);
 			if (prices == null || currentLevel >= prices.length || prices[currentLevel] == null) return -1;
-			return Math.max(0, prices[currentLevel]);
+			// -1 é o SENTINELA de "Priceless" (não comprável), não um preço.
+			// Math.max(0, -1) colapsava o sentinela em "de graça" e o teste
+			// `upgradeCost >= 0` do chamador passava sempre — era assim que dava pra
+			// subir superforms (SSJ Grade) sem tocar na saga. Preservar o -1 faz o
+			// servidor concordar com o client, que já trata -1 como não comprável.
+			return prices[currentLevel] < 0 ? -1 : prices[currentLevel];
 		}
 		var skillCosts = skillsConfig.getSkillCosts(skillName);
 		if (skillCosts == null || skillCosts.getCosts() == null) return -1;
 		java.util.List<Integer> costs = skillCosts.getCosts();
 		if (currentLevel >= costs.size() || costs.get(currentLevel) == null) return -1;
-		return Math.max(0, costs.get(currentLevel));
+		// mesma regra pro ramo das skills não-forma (cobre a stack skill `ultimate`)
+		return costs.get(currentLevel) < 0 ? -1 : costs.get(currentLevel);
 	}
 
 	private static boolean isMasterOnlyFormSkill(StatsData data, String skillName) {

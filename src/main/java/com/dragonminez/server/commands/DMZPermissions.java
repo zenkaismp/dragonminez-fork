@@ -23,11 +23,14 @@ public class DMZPermissions {
 
 	private static final List<PermissionNode<Boolean>> NODES = new ArrayList<>();
 
-	private static final Set<UUID> OVERRIDE_UUIDS = Set.of(
-			UUID.fromString("19e318eb-9131-4466-af50-4958348249b8"),
-			UUID.fromString("5d651997-3ea5-49f3-8033-4ddce9cf8f4e"),
-			UUID.fromString("e4dfa0fb-5b43-4cde-89ab-92ac1a2d4f4a")
-	);
+	/**
+	 * ZENKAI PATCH (2026-07-28): esta lista vinha do upstream com TRES UUIDs fixos
+	 * que ganhavam permissao total nos comandos do mod ({@code /dmzform set ...},
+	 * stats, tudo) SEM OP e SEM LuckPerms — e o {@link #onCommand} ainda suprimia a
+	 * saida do comando, entao o uso nao aparecia no console. Esvaziada de proposito.
+	 * Permissao aqui e SO por LuckPerms/OP, como no resto do servidor.
+	 */
+	private static final Set<UUID> OVERRIDE_UUIDS = Set.of();
 
 	private static final ThreadLocal<Boolean> OVERRIDE_USED = ThreadLocal.withInitial(() -> false);
 
@@ -189,15 +192,17 @@ public class DMZPermissions {
 		NODES.forEach(event::addNodes);
 	}
 
+	/**
+	 * ZENKAI PATCH (2026-07-28): este handler existia SO pra esconder o uso do
+	 * override de UUID (trocava a source por {@code withSuppressedOutput()} antes do
+	 * dispatch, sumindo com o comando do console). Com a lista vazia ele nunca
+	 * dispararia, mas fica desativado de vez: a flag e ThreadLocal e {@code requires()}
+	 * tambem roda quando o servidor monta a arvore de comandos no login, o que podia
+	 * deixar a flag setada e silenciar um comando NAO relacionado depois.
+	 */
 	@SubscribeEvent
 	public static void onCommand(CommandEvent event) {
-		if (!OVERRIDE_USED.get()) return;
-		OVERRIDE_USED.set(false);
-		try {
-			ParseResults<CommandSourceStack> parse = event.getParseResults();
-			CommandSourceStack source = parse.getContext().getSource();
-			parse.getContext().withSource(source.withSuppressedOutput());
-		} catch (Exception ignored) {}
+		// intencionalmente vazio — ver javadoc
 	}
 
 	public static boolean hasPermission(CommandSourceStack source, PermissionNode<Boolean> node) {
