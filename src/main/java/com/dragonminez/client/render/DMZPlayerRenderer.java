@@ -183,9 +183,46 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 		return super.getRenderType(animatable, texture, bufferSource, partialTick);
 	}
 
+	/**
+	 * @zenkai NAO delegar pro super aqui: o GeoEntityRenderer do GeckoLib 4.3.1 (a versao do 1.20.2)
+	 * exige {@code animatable == crosshairPickEntity && animatable.hasCustomName()}. Jogador nao tem
+	 * custom name, entao isso e SEMPRE false e a nametag de todo mundo some, junto com a vanilla,
+	 * porque o {@code EntityRenderer.render} so chama {@code renderNameTag} se isto passar.
+	 *
+	 * <p>Nao aparecia no 1.20.1 porque la o GeckoLib era 4.8.3, cujo {@code shouldShowName}
+	 * reimplementa a regra vanilla inteira. O porte pro 1.20.2 desceu a lib pra 4.3.1 e levou junto
+	 * a regra velha, entao o sintoma nasceu com o porte e nao com uma mudanca de nametag.</p>
+	 *
+	 * <p>O corpo abaixo e o {@code LivingEntityRenderer.shouldShowName} do vanilla, que e o que o
+	 * jogador seria se o DMZ nao trocasse o renderer. Reimplementar aqui e melhor do que forcar
+	 * {@code Event.Result.ALLOW} no RenderNameTagEvent: o ALLOW pula TODAS as regras de visibilidade
+	 * de uma vez, e nome de invisivel atravessando parede e pior que nome sumido.</p>
+	 */
 	@Override
 	public boolean shouldShowName(T animatable) {
 		if (animatable == Minecraft.getInstance().getCameraEntity()) return false;
-		return super.shouldShowName(animatable);
+
+		float cutoff = animatable.isDiscrete() ? 32.0F : 64.0F;
+		if (this.entityRenderDispatcher.distanceToSqr(animatable) >= (double) (cutoff * cutoff)) return false;
+
+		net.minecraft.client.player.LocalPlayer self = Minecraft.getInstance().player;
+		if (self == null) return false;
+		boolean visible = !animatable.isInvisibleTo(self);
+
+		if (animatable != self) {
+			net.minecraft.world.scores.Team team = animatable.getTeam();
+			net.minecraft.world.scores.Team myTeam = self.getTeam();
+			if (team != null) {
+				return switch (team.getNameTagVisibility()) {
+					case ALWAYS -> visible;
+					case NEVER -> false;
+					case HIDE_FOR_OTHER_TEAMS -> myTeam == null
+							? visible
+							: team.isAlliedTo(myTeam) && (team.canSeeFriendlyInvisibles() || visible);
+					case HIDE_FOR_OWN_TEAM -> myTeam == null ? visible : !team.isAlliedTo(myTeam) && visible;
+				};
+			}
+		}
+		return Minecraft.renderNames() && visible && !animatable.isVehicle();
 	}
 }

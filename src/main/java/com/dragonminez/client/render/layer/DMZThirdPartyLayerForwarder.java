@@ -40,6 +40,10 @@ public class DMZThirdPartyLayerForwarder<T extends AbstractClientPlayer & GeoAni
 	// Consertar a busca acorda todas de uma vez num servidor no ar, e render duplicado de Curios /
 	// cosmetico apareceria sem ninguem saber de onde veio. Enquanto isso nao for testado com calma,
 	// so o que o /heads precisa passa. Pra liberar geral: FORWARD_EVERYTHING = true.
+	// @zenkai INTERRUPTOR GERAL. false devolve o forwarder ao estado em que ele passou meses: sai
+	// antes de tocar em qualquer coisa. Existe pra dar bisect de UMA constante quando aparecer um
+	// bug de render depois de mexer aqui, sem precisar reverter commit nem caçar jar antigo.
+	private static final boolean ZENKAI_ENABLED = true;
 	private static final boolean FORWARD_EVERYTHING = false;
 	private static final Set<Class<?>> ZENKAI_FORWARDED = Set.of(CustomHeadLayer.class);
 
@@ -66,6 +70,7 @@ public class DMZThirdPartyLayerForwarder<T extends AbstractClientPlayer & GeoAni
 	@Override
 	@SuppressWarnings({"rawtypes", "unchecked"})
 	public void renderForBone(PoseStack poseStack, T animatable, GeoBone bone, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
+		if (!ZENKAI_ENABLED) return; // @zenkai
 		if (!"root".equals(bone.getName())) return;
 		var stats = StatsProvider.get(StatsCapability.INSTANCE, animatable).orElse(new StatsData(animatable));
 		if (stats.getCharacter().isOozaruCached()) return;
