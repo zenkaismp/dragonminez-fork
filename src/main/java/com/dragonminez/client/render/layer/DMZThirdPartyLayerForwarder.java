@@ -26,6 +26,10 @@ import java.util.Set;
 
 public class DMZThirdPartyLayerForwarder<T extends AbstractClientPlayer & GeoAnimatable> extends GeoRenderLayer<T> {
 
+	// @zenkai o CustomHeadLayer SAIU desta lista de pulados: e ele que desenha bloco/cranio no slot
+	// de capacete, e sem ele o cosmetico de cabeca (/heads do ZenkaiExtra) fica INVISIVEL, porque o
+	// PlayerRendererMixin cancela o renderer vanilla pra todo jogador com capability de stats (ou
+	// seja, todos) e o DMZPlayerRenderer nao tem camada de cabeca propria.
 	private static final Set<Class<?>> VANILLA_LAYER_CLASSES = Set.of(
 			HumanoidArmorLayer.class,
 			ItemInHandLayer.class,
@@ -33,7 +37,6 @@ public class DMZThirdPartyLayerForwarder<T extends AbstractClientPlayer & GeoAni
 			ArrowLayer.class,
 			Deadmau5EarsLayer.class,
 			CapeLayer.class,
-			CustomHeadLayer.class,
 			ElytraLayer.class,
 			ParrotOnShoulderLayer.class,
 			SpinAttackEffectLayer.class,
