@@ -171,8 +171,13 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 			boolean isSkillMaster = !TEXT_MASTERS.contains(npcId);
 
 			if (isTrainingMode && isSkillMaster) {
+				// Zenkai: o botao do clone aparece no modo treino de QUALQUER skill master, nao so
+				// do Popo — e todos mandam o mesmo NPCActionC2S("popo", 1). Foi assim que o Old Kai
+				// virou porta pro clone. A trava de verdade e nos dois pacotes (server-side); isto
+				// aqui e so pra nao existir botao que nao faz nada.
+				boolean shadowOk = com.dragonminez.common.init.entities.ShadowDummyEntity.ON_DEMAND_SPAWN_ENABLED;
 				if (minigameId != null) {
-					this.addRenderableWidget(new TexturedTextButton.Builder()
+					if (shadowOk) this.addRenderableWidget(new TexturedTextButton.Builder()
 							.position(panelX + 8, btnY)
 							.size(74, 20)
 							.texture(BUTTONS_TEXTURE)
@@ -195,7 +200,7 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 							.onPress(btn -> openMinigameScreen(minigameId))
 							.build());
 				} else {
-					this.addRenderableWidget(new TexturedTextButton.Builder()
+					if (shadowOk) this.addRenderableWidget(new TexturedTextButton.Builder()
 							.position(panelX + 8, btnY)
 							.size(74, 20)
 							.texture(BUTTONS_TEXTURE)
@@ -220,7 +225,11 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 							.onPress(btn -> openMasterScreen())
 							.build());
 
-					if (SERVICE_MASTERS.contains(npcId)) {
+					// Zenkai: master com balcao desligado nao ganha o botao "Services" — ele abriria
+					// uma tela vazia. Cai no "Train", que pro oldkai continua certo (ele ainda
+					// ensina as 3 skills dele por TP; o que morreu foi a Z Sword de graca).
+					if (SERVICE_MASTERS.contains(npcId)
+							&& !com.dragonminez.common.alignment.NpcDispositionService.isServiceDisabled(npcId)) {
 						this.addRenderableWidget(new TexturedTextButton.Builder()
 								.position(getUiWidth() / 2 - 74, btnY)
 								.size(74, 20)
@@ -244,7 +253,10 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 								})
 								.build());
 					}
-				} else {
+				// Zenkai: mesmo caso do ramo de cima, mas pros TEXT_MASTERS (guru, gero, babidi).
+				// Sem esta guarda o "Services" abriria a MasterTextScreen vazia. O que fica de pe e
+				// a LISTA DE QUESTS logo abaixo — o Guru continua entregando as 8 quests dele.
+				} else if (!com.dragonminez.common.alignment.NpcDispositionService.isServiceDisabled(npcId)) {
 					this.addRenderableWidget(new TexturedTextButton.Builder()
 							.position(panelX + 8, btnY)
 							.size(74, 20)

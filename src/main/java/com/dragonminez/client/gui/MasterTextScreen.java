@@ -57,6 +57,13 @@ public class MasterTextScreen extends Screen {
 		int buttonX = this.width / 2 - 120;
 		int buttonY = this.height - 23;
 
+		// Zenkai: balcao desligado nao desenha botao. A trava de verdade e server-side no
+		// getServiceBlocker — isto aqui e so pra nao existir botao que nao faz nada na tela.
+		// A fala do master continua: quem some e o botao, nao o dialogo.
+		if (com.dragonminez.common.alignment.NpcDispositionService.isServiceDisabled(masterName)) {
+			return;
+		}
+
 		StatsProvider.get(StatsCapability.INSTANCE, Minecraft.getInstance().player).ifPresent(stats -> {
 			switch (masterName) {
 				case "karin" -> initKarin(buttonX, buttonY, stats);
@@ -264,6 +271,9 @@ public class MasterTextScreen extends Screen {
 		boolean HTC = Minecraft.getInstance().player.level().dimension().equals(HTCDimension.HTC_KEY);
 
 		if (secondFunc) {
+			// Zenkai: clone sob demanda desligado (ver ShadowDummyEntity.ON_DEMAND_SPAWN_ENABLED).
+			// O botao do ritmo e o de treino da Sala do Tempo, logo abaixo, CONTINUAM.
+			if (com.dragonminez.common.init.entities.ShadowDummyEntity.ON_DEMAND_SPAWN_ENABLED)
 			this.addRenderableWidget(new TexturedTextButton.Builder()
 					.position(x, y)
 					.size(74, 20)

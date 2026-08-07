@@ -127,6 +127,10 @@ public class MinigamesScreen extends BaseMenuScreen {
 	}
 
 	private boolean hasShadowDummyAccess() {
+		// Zenkai: clone sob demanda desligado. Aqui em cima de proposito — este metodo e o portao
+		// unico do client (botao de play, setas de %), entao uma linha cobre a tela inteira. A
+		// trava de verdade e no handle do SummonPlayerShadowDummyC2S, server-side.
+		if (!com.dragonminez.common.init.entities.ShadowDummyEntity.ON_DEMAND_SPAWN_ENABLED) return false;
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.player == null) return false;
 		return StatsProvider.get(StatsCapability.INSTANCE, mc.player).map(d ->

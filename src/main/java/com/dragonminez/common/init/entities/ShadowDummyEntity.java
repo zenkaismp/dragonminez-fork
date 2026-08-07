@@ -23,6 +23,31 @@ import java.util.UUID;
 
 public class ShadowDummyEntity extends DBSagasEntity {
 
+	/**
+	 * Zenkai: o clone <b>sob demanda</b> esta desligado.
+	 *
+	 * <p>Ele nasce com os stats do proprio jogador e serve de saco de pancada infinito pra farmar
+	 * treino. Com todos os masters indo pra uma warp isso vira uma fabrica no spawn: o botao nao e
+	 * so do Popo — o modo treino de QUALQUER skill master desenha ele, e todos mandam o mesmo
+	 * {@code NPCActionC2S("popo", 1)}.</p>
+	 *
+	 * <p><b>A trava mora nos DOIS PACOTES, nao na entidade.</b> Cancelar por
+	 * {@code EntityJoinLevelEvent} parece mais simples e esta ERRADO: as quests 4 e 12 da saga
+	 * Android pedem MATAR 16 e 20 {@code dragonminez:shadow_dummy}, elas nascem pelo spawner de
+	 * quest, e o spawner marca a entidade com o MESMO {@code dmz_quest_owner} que o botao do Popo.
+	 * Nao da pra separar os dois olhando a entidade — bloquear ali mataria a saga Android.
+	 * Bloqueando no pacote, o spawner de quest passa por construcao: ele nao usa pacote nenhum.</p>
+	 *
+	 * <p>Os dois caminhos de jogador sao o {@code NPCActionC2S("popo", 1)} (botao do Popo e do modo
+	 * treino) e o {@code SummonPlayerShadowDummyC2S} (o clone com % de forca, da MinigamesScreen).
+	 * Uma linha aqui devolve os dois.</p>
+	 */
+	public static final boolean ON_DEMAND_SPAWN_ENABLED = false;
+
+	/** Recado unico dos dois caminhos, pra nao divergir. Ingles porque e texto de jogador. */
+	public static final String ON_DEMAND_DISABLED_MESSAGE =
+			"§eShadow clone sparring is disabled on this server.";
+
 	private static final int Bolita = 1;
 	private int kiBlastCooldown = 0;
 	private UUID ownerUUID;

@@ -67,6 +67,15 @@ public class NPCActionC2S {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				boolean shadowDummySpar = "popo".equals(packet.npcName) && packet.actionId == 1;
 
+				// Zenkai: clone sob demanda desligado. ANTES do getServiceBlocker de proposito — o
+				// botao do clone aparece no modo treino de QUALQUER skill master, mas todos mandam
+				// npcName="popo", entao a checagem por master nunca pegaria os outros.
+				if (shadowDummySpar && !ShadowDummyEntity.ON_DEMAND_SPAWN_ENABLED) {
+					player.displayClientMessage(
+							Component.literal(ShadowDummyEntity.ON_DEMAND_DISABLED_MESSAGE), true);
+					return;
+				}
+
 				Component blocker = NpcDispositionService.getServiceBlocker(player, packet.npcName);
 				if (blocker != null) {
 					if (shadowDummySpar) {

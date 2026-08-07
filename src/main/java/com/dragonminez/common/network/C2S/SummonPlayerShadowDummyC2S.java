@@ -49,6 +49,14 @@ public class SummonPlayerShadowDummyC2S {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				String playerName = player.getGameProfile().getName();
 
+				// Zenkai: o outro caminho de clone sob demanda. Ver o javadoc do flag no
+				// ShadowDummyEntity — bloquear so o botao do Popo deixaria esta porta aberta.
+				if (!ShadowDummyEntity.ON_DEMAND_SPAWN_ENABLED) {
+					player.displayClientMessage(
+							Component.literal(ShadowDummyEntity.ON_DEMAND_DISABLED_MESSAGE), true);
+					return;
+				}
+
 				boolean hasKill = data.getStatus().getShadowDummyKillCount() > 0;
 				boolean hasKiControl = data.getSkills().hasSkill("kicontrol");
 				boolean hasKiManip = data.getSkills().getSkillLevel("kimanipulation") >= 5;

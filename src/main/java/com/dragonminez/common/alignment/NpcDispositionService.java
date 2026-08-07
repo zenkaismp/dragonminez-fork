@@ -27,6 +27,31 @@ public final class NpcDispositionService {
 	private static final int GOOD_ALIGNMENT_MIN = 61;
 	private static final int EVIL_ALIGNMENT_MAX = 40;
 
+	/**
+	 * Zenkai: servicos de master DESLIGADOS no balcao do NPC.
+	 *
+	 * <p>Os quatro entregavam coisa permanente e forte de graca, e o servidor vai colocar todos
+	 * esses NPC numa warp — o que era "achar o Old Kai no Mundo Sagrado" viraria uma fila no
+	 * spawn. A marca Majin passa a sair de item ({@code zenkaismp:majin_mark}), o resto morre.</p>
+	 *
+	 * <p><b>Isto NAO fecha o dialogo.</b> A trava mora em {@link #getServiceBlocker}, que so e
+	 * consultada pelo pacote de acao (os botoes). O caminho de conversa e o
+	 * {@link #getDialogueBlocker}, intocado — senao o Guru levaria junto as 4 quests de FALAR e
+	 * as 8 que ele entrega, e o Old Kai levaria a sidequest old_kai_ritual.</p>
+	 *
+	 * <p><b>Antes de tirar o oldkai daqui, leia:</b> a quest 24 da saga Buu foi reescrita
+	 * (objetivos viraram DIMENSAO + FALAR) justamente porque os objetivos originais eram TER a
+	 * z_sword e TER a skill {@code ultimate}, e o Old Kai era a unica fonte das duas no jogo
+	 * inteiro. Reativar o servico sem reverter o yml devolve a espada gratis pra qualquer um —
+	 * o give dela estava FORA do {@code if} de alinhamento no {@code handleOldKai}.</p>
+	 */
+	private static final Set<String> DISABLED_SERVICES = Set.of("babidi", "gero", "oldkai", "guru");
+
+	/** True se o balcao deste master esta desligado. O client usa pra nem desenhar o botao. */
+	public static boolean isServiceDisabled(String masterName) {
+		return DISABLED_SERVICES.contains(normalizeNpcKey(masterName));
+	}
+
 	private NpcDispositionService() {}
 
 	public static boolean isInteractiveNpc(Entity entity) {
@@ -116,7 +141,32 @@ public final class NpcDispositionService {
 			return Component.translatable("message.dragonminez.npc.unavailable");
 		}
 
+		// Antes do alinhamento: o servico desligado nao depende de quem o jogador e. Fica aqui, e
+		// nao no handle* de cada master, porque este e o unico ponto por onde o pacote passa —
+		// client hackeado mandando o NPCActionC2S na mao bate aqui do mesmo jeito.
+		String disabled = disabledServiceBlocker(npcId);
+		if (disabled != null) {
+			return Component.literal(disabled);
+		}
+
 		return masterAlignmentBlocker(data, npcId);
+	}
+
+	@Nullable
+	private static String disabledServiceBlocker(String masterName) {
+		String key = normalizeNpcKey(masterName);
+		if (!DISABLED_SERVICES.contains(key)) {
+			return null;
+		}
+		// Texto cru e nao translatable: sao chaves que so existem no Zenkai, e um en_us do fork
+		// some no proximo merge do upstream. Ingles porque e texto de jogador.
+		return switch (key) {
+			case "guru" -> "§eYour potential is unlocked through the saga, not here.";
+			case "oldkai" -> "§eThe Elder Kai has nothing to hand out.";
+			case "gero" -> "§eDr. Gero is not performing conversions.";
+			case "babidi" -> "§eBabidi will not mark you. The mark is found elsewhere.";
+			default -> "§eThis service is not available.";
+		};
 	}
 
 	public static void markHostile(ServerPlayer player, Entity npc) {
