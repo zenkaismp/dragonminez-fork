@@ -81,6 +81,7 @@ public class DatabaseManager implements IDataStorage {
 				"uuid VARCHAR(36) PRIMARY KEY, " +
 				"name VARCHAR(64), " +
 				"data MEDIUMBLOB, " +
+				"rev BIGINT NOT NULL DEFAULT 0, " +
 				"last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP" +
 				");";
 
@@ -89,6 +90,38 @@ public class DatabaseManager implements IDataStorage {
 			stmt.execute();
 		} catch (SQLException e) {
 			LogUtil.error(Env.SERVER, "Error creating table: " + e.getMessage());
+			isConnected = false;
+			return;
+		}
+		ensureRevColumn(tableName);
+	}
+
+	/**
+	 * Migracao da coluna {@code rev} pra banco que ja existia antes do compare-and-swap.
+	 *
+	 * <p>O {@code CREATE TABLE IF NOT EXISTS} acima nao toca em tabela existente, entao sem isto
+	 * um servidor que ja rodava subiria com o SELECT novo pedindo uma coluna que nao existe e o
+	 * load falharia PRA TODO MUNDO — o pior resultado possivel numa mudanca cujo objetivo e
+	 * proteger dado.</p>
+	 *
+	 * <p>Aditivo e idempotente: linha antiga nasce com {@code rev = 0}, que e exatamente o valor
+	 * que o primeiro save espera. Roda uma vez por boot e custa uma consulta ao catalogo.</p>
+	 */
+	private void ensureRevColumn(String tableName) {
+		try (Connection conn = dataSource.getConnection()) {
+			try (ResultSet rs = conn.getMetaData().getColumns(conn.getCatalog(), null, tableName, "rev")) {
+				if (rs.next()) return;
+			}
+			try (PreparedStatement stmt = conn.prepareStatement(
+					"ALTER TABLE " + tableName + " ADD COLUMN rev BIGINT NOT NULL DEFAULT 0")) {
+				stmt.execute();
+				LogUtil.info(Env.SERVER, "[Storage] coluna 'rev' criada em " + tableName
+						+ " — save agora e compare-and-swap (dado velho nao sobrescreve o novo).");
+			}
+		} catch (SQLException e) {
+			LogUtil.error(Env.SERVER, "[Storage] NAO foi possivel criar a coluna 'rev' em " + tableName
+					+ ": " + e.getMessage() + ". O load vai falhar ate isso ser resolvido — rode a mao: "
+					+ "ALTER TABLE " + tableName + " ADD COLUMN rev BIGINT NOT NULL DEFAULT 0;");
 			isConnected = false;
 		}
 	}
@@ -139,7 +172,9 @@ public class DatabaseManager implements IDataStorage {
 		}
 
 		String tableName = sanitizeTableName(ConfigManager.getServerConfig().getStorage().getTable());
-		String sql = "SELECT data FROM " + tableName + " WHERE uuid = ?";
+		// A revisao vem JUNTO com o dado, na mesma consulta: e ela que o save devolve como
+		// condicao do UPDATE. Ler em duas queries abriria a propria corrida que isto conserta.
+		String sql = "SELECT data, rev FROM " + tableName + " WHERE uuid = ?";
 
 		try (Connection conn = dataSource.getConnection();
 			 PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -147,12 +182,13 @@ public class DatabaseManager implements IDataStorage {
 
 			try (ResultSet rs = stmt.executeQuery()) {
 				if (!rs.next()) return LoadResult.absent();     // consulta OK, jogador novo mesmo
+				long rev = rs.getLong("rev");
 				try (InputStream is = rs.getBinaryStream("data")) {
 					if (is == null) {
 						LogUtil.error(Env.SERVER, "Row for " + uuid + " exists but its data column is NULL.");
 						return LoadResult.failed();            // linha existe: NAO e jogador novo
 					}
-					return LoadResult.loaded(NbtIo.readCompressed(is));
+					return LoadResult.loaded(NbtIo.readCompressed(is), rev);
 				} catch (IOException e) {
 					LogUtil.error(Env.SERVER, "Error decompressing NBT for " + uuid + ": " + e.getMessage());
 					return LoadResult.failed();
@@ -161,6 +197,57 @@ public class DatabaseManager implements IDataStorage {
 		} catch (SQLException e) {
 			LogUtil.error(Env.SERVER, "Failed to load player " + uuid + " from DB: " + e.getMessage());
 			return LoadResult.failed();
+		}
+	}
+
+	/**
+	 * Save com compare-and-swap: so grava se a linha ainda estiver na revisao que ESTE servidor
+	 * leu. Nao custa consulta a mais — e o mesmo UPDATE, com uma condicao no WHERE.
+	 *
+	 * <p>Duas formas, escolhidas pelo que o load respondeu:</p>
+	 * <ul>
+	 *   <li>{@code expectedRev > 0} — a linha existe e eu li a versao dela. UPDATE condicional;
+	 *       0 linhas afetadas = outro backend gravou no meio, e o meu dado e o velho.</li>
+	 *   <li>{@code expectedRev == 0} — jogador novo (ABSENT). INSERT que NAO sobrescreve
+	 *       ({@code ON DUPLICATE KEY UPDATE uuid = uuid} e no-op): se a linha nasceu enquanto eu
+	 *       carregava, quem chegou primeiro fica, e isto vira CONFLICT em vez de apagar o dele.</li>
+	 * </ul>
+	 */
+	@Override
+	public SaveOutcome saveData(UUID uuid, String name, CompoundTag tag, long expectedRev) {
+		if (!isConnected || dataSource == null) return SaveOutcome.failed();
+
+		String tableName = sanitizeTableName(ConfigManager.getServerConfig().getStorage().getTable());
+		long newRev = expectedRev + 1;
+
+		try (Connection conn = dataSource.getConnection()) {
+			byte[] dataBytes = nbtToBytes(tag);
+
+			if (expectedRev <= 0) {
+				String sql = "INSERT INTO " + tableName + " (uuid, name, data, rev) VALUES (?, ?, ?, ?) "
+						+ "ON DUPLICATE KEY UPDATE uuid = uuid";
+				try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+					stmt.setString(1, uuid.toString());
+					stmt.setString(2, name);
+					stmt.setBytes(3, dataBytes);
+					stmt.setLong(4, newRev);
+					return stmt.executeUpdate() > 0 ? SaveOutcome.ok(newRev) : SaveOutcome.conflict();
+				}
+			}
+
+			String sql = "UPDATE " + tableName + " SET name = ?, data = ?, rev = ?, "
+					+ "last_updated = CURRENT_TIMESTAMP WHERE uuid = ? AND rev = ?";
+			try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+				stmt.setString(1, name);
+				stmt.setBytes(2, dataBytes);
+				stmt.setLong(3, newRev);
+				stmt.setString(4, uuid.toString());
+				stmt.setLong(5, expectedRev);
+				return stmt.executeUpdate() > 0 ? SaveOutcome.ok(newRev) : SaveOutcome.conflict();
+			}
+		} catch (SQLException e) {
+			LogUtil.error(Env.SERVER, "Failed to save player " + name + " to DB: " + e.getMessage());
+			return SaveOutcome.failed();
 		}
 	}
 

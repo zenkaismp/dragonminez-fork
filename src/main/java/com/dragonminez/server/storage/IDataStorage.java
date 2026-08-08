@@ -22,5 +22,32 @@ public interface IDataStorage {
 
 	boolean saveData(UUID playerUUID, String playerName, CompoundTag data);
 
+	/**
+	 * Grava SO se o registro ainda estiver na revisao {@code expectedRev} — o compare-and-swap
+	 * que impede um backend de sobrescrever dado mais novo de outro.
+	 *
+	 * <p>Devolve {@link SaveOutcome#CONFLICT} quando a revisao no banco ja avancou. Isso NAO e
+	 * erro de infraestrutura: e exatamente a protecao funcionando, e o certo e nao insistir —
+	 * o dado em memoria deste servidor esta velho.</p>
+	 *
+	 * <p>O default ignora a revisao e cai no {@link #saveData} de sempre, pra backend sem
+	 * suporte a revisao (JSON/NBT local) continuar funcionando igual.</p>
+	 */
+	default SaveOutcome saveData(UUID playerUUID, String playerName, CompoundTag data, long expectedRev) {
+		return saveData(playerUUID, playerName, data) ? SaveOutcome.ok(expectedRev + 1) : SaveOutcome.failed();
+	}
+
+	/** Resultado do save com revisao: OK (com a revisao nova), CONFLICT (dado velho) ou FAILED. */
+	record SaveOutcome(Kind kind, long newRev) {
+		public enum Kind { OK, CONFLICT, FAILED }
+
+		public static SaveOutcome ok(long newRev) { return new SaveOutcome(Kind.OK, newRev); }
+		public static SaveOutcome conflict() { return new SaveOutcome(Kind.CONFLICT, 0L); }
+		public static SaveOutcome failed() { return new SaveOutcome(Kind.FAILED, 0L); }
+
+		public boolean isOk() { return kind == Kind.OK; }
+		public boolean isConflict() { return kind == Kind.CONFLICT; }
+	}
+
 	String getName();
 }

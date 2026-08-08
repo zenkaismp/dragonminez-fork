@@ -29,7 +29,12 @@ public class DataSyncHandler {
 	public static void onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent event) {
 		if (event.getEntity().level().isClientSide) return;
 		if (event.getEntity() instanceof ServerPlayer player) {
-			StorageManager.savePlayer(player);
+			java.util.UUID uuid = player.getUUID();
+			// A revisao so pode ser esquecida DEPOIS que a escrita fecha: ela e a condicao do
+			// proprio save. Limpar antes faria este save comparar contra revisao nenhuma e virar
+			// um INSERT que nao sobrescreve — ou seja, o logout deixaria de salvar em silencio.
+			StorageManager.savePlayerAsync(player)
+					.whenComplete((v, ex) -> StorageManager.forgetRevision(uuid));
 		}
 	}
 }

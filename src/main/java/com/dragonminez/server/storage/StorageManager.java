@@ -8,6 +8,7 @@ import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.util.TransformationsHelper;
 import net.minecraft.nbt.CompoundTag;
@@ -23,6 +24,16 @@ public class StorageManager {
 	private static ScheduledExecutorService autoSaveScheduler;
 	private static ExecutorService dbExecutor;
 	private static final ConcurrentHashMap<UUID, CompletableFuture<Void>> saveChains = new ConcurrentHashMap<>();
+
+	/**
+	 * Revisao do registro que ESTE servidor leu, por jogador. E o outro lado do compare-and-swap:
+	 * o save so grava se o banco ainda estiver nesta revisao.
+	 *
+	 * <p>Some no logout ({@link #forgetRevision}) de proposito. Se o jogador voltar, ele carrega
+	 * de novo e traz a revisao ATUAL; manter a antiga faria o proximo save comparar contra um
+	 * numero que ja envelheceu e recusar uma escrita legitima.</p>
+	 */
+	private static final ConcurrentHashMap<UUID, Long> revisions = new ConcurrentHashMap<>();
 
 	public static void init() {
 		GeneralServerConfig.StorageConfig.StorageType type = ConfigManager.getServerConfig().getStorage().getStorageType();
@@ -103,6 +114,35 @@ public class StorageManager {
 	 * capability is already populated by login time and this never shows; across a network, where the
 	 * world folder has never seen the player, it shows every join.</p>
 	 */
+	/**
+	 * Esquece a revisao deste jogador. Chamado no logout, DEPOIS que o save termina — se rodar
+	 * antes, o proprio save do logout compararia contra revisao nenhuma.
+	 */
+	public static void forgetRevision(UUID uuid) {
+		revisions.remove(uuid);
+	}
+
+	/**
+	 * Portao opcional ANTES do load: espera enquanto outro backend ainda esta gravando este
+	 * jogador.
+	 *
+	 * <p>Numa rede, trocar de servidor e um logout seguido de um login em maquinas diferentes.
+	 * O save de la e o load de ca sao duas operacoes assincronas sem nada em comum, entao o
+	 * destino consultava o banco enquanto a origem ainda escrevia e carregava o estado anterior.
+	 * O compare-and-swap impede o dado velho de ser GRAVADO, mas nao impede ele de ser LIDO —
+	 * e um jogador com stats velhos na tela ja e o bug, mesmo que o banco fique intacto.</p>
+	 *
+	 * <p>O mod nao conhece Redis nem a topologia da rede, entao quem sabe esperar e o addon: ele
+	 * registra a espera aqui. Sem addon o default nao espera nada e o comportamento e o de
+	 * sempre.</p>
+	 */
+	private static volatile java.util.function.Function<UUID, CompletableFuture<Void>> loadGate =
+			uuid -> CompletableFuture.completedFuture(null);
+
+	public static void setLoadGate(java.util.function.Function<UUID, CompletableFuture<Void>> gate) {
+		loadGate = gate != null ? gate : uuid -> CompletableFuture.completedFuture(null);
+	}
+
 	public static boolean isLoadPending(UUID uuid) {
 		return pendingLoads.contains(uuid);
 	}
@@ -121,7 +161,15 @@ public class StorageManager {
 		LogUtil.info(Env.SERVER, "[Load] {} ({}) — consultando {}; criacao de personagem em espera.",
 				name, uuid, activeStorage.getName());
 
-		CompletableFuture.supplyAsync(() -> activeStorage.load(uuid), dbExecutor)
+		// O portao vem ANTES da consulta: esperar depois de ler nao adianta nada.
+		loadGate.apply(uuid)
+				.exceptionally(ex -> {
+					// Portao quebrado nao pode prender ninguem fora do jogo: segue pro load.
+					LogUtil.error(Env.SERVER, "[Load] " + name + " — o portao de load falhou; "
+							+ "seguindo direto pro storage.", ex);
+					return null;
+				})
+				.thenComposeAsync(v -> CompletableFuture.supplyAsync(() -> activeStorage.load(uuid), dbExecutor))
 				.thenAccept(result -> ServerLifecycleHooks.getCurrentServer().execute(() -> {
 					pendingLoads.remove(uuid);
 					if (player.connection == null) {
@@ -130,10 +178,16 @@ public class StorageManager {
 					}
 					switch (result.status()) {
 						case LOADED -> {
-							LogUtil.info(Env.SERVER, "[Load] {} — dados encontrados, aplicando.", name);
+							// Guarda a revisao ANTES de aplicar: e ela que autoriza o proximo save.
+							revisions.put(uuid, result.rev());
+							LogUtil.info(Env.SERVER, "[Load] {} — dados encontrados (rev {}), aplicando.",
+									name, result.rev());
 							applyLoadedData(player, result.data());
 						}
 						case ABSENT -> {
+							// Sem registro: o primeiro save entra como rev 1, e o INSERT nao
+							// sobrescreve caso a linha tenha nascido enquanto eu carregava.
+							revisions.put(uuid, 0L);
 							// O storage RESPONDEU que nao existe registro: jogador novo de verdade.
 							// Solta o sync que o login segurou, senao o cliente nunca sabe que pode
 							// abrir a criacao de personagem.
@@ -186,29 +240,63 @@ public class StorageManager {
 	}
 
 	public static void savePlayer(ServerPlayer player) {
-		if (activeStorage == null) return;
+		savePlayerAsync(player);
+	}
 
-		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
-			if (!stats.isDataLoaded() && !stats.getStatus().isHasCreatedCharacter()) return;
-			CompoundTag dataToSave = stats.save();
+	/**
+	 * Igual ao {@link #savePlayer}, mas devolve QUANDO a escrita terminou.
+	 *
+	 * <p>Existe pela troca de servidor. O save sempre foi disparado no
+	 * {@code PlayerLoggedOutEvent} e ninguem esperava por ele; quem manda o jogador pra outro
+	 * backend desconectava na hora, e o servidor de destino frequentemente consultava o banco
+	 * ANTES desta escrita pousar. Resultado: o destino carregava o estado anterior, e cinco
+	 * minutos depois o autosave DELE gravava esse estado velho por cima — o ganho sumia de vez.
+	 * Agora o caminho da troca encadeia o disconnect neste future.</p>
+	 *
+	 * <p>Nunca completa excepcionalmente: falha vira log e o future fecha mesmo assim, senao um
+	 * banco fora do ar prenderia o jogador no servidor de origem.</p>
+	 *
+	 * @return future que fecha no fim da escrita (ja completo se nao havia nada a salvar)
+	 */
+	public static CompletableFuture<Void> savePlayerAsync(ServerPlayer player) {
+		if (activeStorage == null) return CompletableFuture.completedFuture(null);
 
-			MinecraftForge.EVENT_BUS.post(new DMZEvent.PlayerDataSaveEvent(player, dataToSave));
+		StatsData stats = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
+		if (stats == null) return CompletableFuture.completedFuture(null);
+		if (!stats.isDataLoaded() && !stats.getStatus().isHasCreatedCharacter()) {
+			return CompletableFuture.completedFuture(null);
+		}
 
-			String name = player.getScoreboardName();
-			UUID uuid = player.getUUID();
+		CompoundTag dataToSave = stats.save();
+		MinecraftForge.EVENT_BUS.post(new DMZEvent.PlayerDataSaveEvent(player, dataToSave));
 
-			saveChains.compute(uuid, (id, previous) -> {
-				CompletableFuture<Void> previousStage = previous != null ? previous : CompletableFuture.completedFuture(null);
-				CompletableFuture<Void> chained = previousStage.thenRunAsync(() -> {
-					try {
-						activeStorage.saveData(uuid, name, dataToSave);
-					} catch (Exception e) {
-						LogUtil.error(Env.SERVER, "Failed to save data async for " + name, e);
+		String name = player.getScoreboardName();
+		UUID uuid = player.getUUID();
+
+		return saveChains.compute(uuid, (id, previous) -> {
+			CompletableFuture<Void> previousStage = previous != null ? previous : CompletableFuture.completedFuture(null);
+			CompletableFuture<Void> chained = previousStage.thenRunAsync(() -> {
+				try {
+					long expected = revisions.getOrDefault(uuid, 0L);
+					IDataStorage.SaveOutcome outcome = activeStorage.saveData(uuid, name, dataToSave, expected);
+					if (outcome.isOk()) {
+						revisions.put(uuid, outcome.newRev());
+					} else if (outcome.isConflict()) {
+						// A protecao funcionando: outro backend gravou depois de eu carregar, entao o
+						// que esta na minha memoria e o passado. Sobrescrever aqui e exatamente o bug
+						// que o compare-and-swap existe pra impedir — melhor perder ESTA escrita, que
+						// e a velha, do que apagar a nova.
+						LogUtil.error(Env.SERVER, "[Storage] save de " + name + " RECUSADO: o registro "
+								+ "avancou de revisao (eu tinha " + expected + "). Outro servidor gravou "
+								+ "depois do meu load — este backend esta com dado velho e NAO vai "
+								+ "sobrescrever. Se o jogador estiver online aqui, peca pra ele reentrar.");
 					}
-				}, dbExecutor);
-				chained.whenComplete((v, ex) -> saveChains.remove(uuid, chained));
-				return chained;
-			});
+				} catch (Exception e) {
+					LogUtil.error(Env.SERVER, "Failed to save data async for " + name, e);
+				}
+			}, dbExecutor);
+			chained.whenComplete((v, ex) -> saveChains.remove(uuid, chained));
+			return chained;
 		});
 	}
 
