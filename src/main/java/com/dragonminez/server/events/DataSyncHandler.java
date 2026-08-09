@@ -29,12 +29,11 @@ public class DataSyncHandler {
 	public static void onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent event) {
 		if (event.getEntity().level().isClientSide) return;
 		if (event.getEntity() instanceof ServerPlayer player) {
-			java.util.UUID uuid = player.getUUID();
-			// A revisao so pode ser esquecida DEPOIS que a escrita fecha: ela e a condicao do
-			// proprio save. Limpar antes faria este save comparar contra revisao nenhuma e virar
-			// um INSERT que nao sobrescreve — ou seja, o logout deixaria de salvar em silencio.
-			StorageManager.savePlayerAsync(player)
-					.whenComplete((v, ex) -> StorageManager.forgetRevision(uuid));
+			// A revisao NAO e limpa aqui de proposito. Todo login refaz revisions.put no load, e
+			// nenhum save roda antes do load (isDataLoaded barra). Um forget pos-save chegou a
+			// existir e era uma corrida: relog rapido carregava a revisao nova e o forget do
+			// logout ANTERIOR apagava por baixo — dai todo save seguinte virava CONFLICT.
+			StorageManager.savePlayerAsync(player);
 		}
 	}
 }

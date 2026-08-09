@@ -34,7 +34,18 @@ public interface IDataStorage {
 	 * suporte a revisao (JSON/NBT local) continuar funcionando igual.</p>
 	 */
 	default SaveOutcome saveData(UUID playerUUID, String playerName, CompoundTag data, long expectedRev) {
-		return saveData(playerUUID, playerName, data) ? SaveOutcome.ok(expectedRev + 1) : SaveOutcome.failed();
+		return saveData(playerUUID, playerName, data)
+				? SaveOutcome.ok(Math.max(0L, expectedRev) + 1)
+				: SaveOutcome.failed();
+	}
+
+	/**
+	 * Revisao ATUAL do registro no storage: -1 = nao existe, -2 = nao suportado/falhou.
+	 * Usada pra ressincronizar depois de um CONFLICT — sem isto o conflito era terminal e a
+	 * sessao inteira parava de salvar.
+	 */
+	default long fetchRev(UUID playerUUID) {
+		return -2L;
 	}
 
 	/** Resultado do save com revisao: OK (com a revisao nova), CONFLICT (dado velho) ou FAILED. */
