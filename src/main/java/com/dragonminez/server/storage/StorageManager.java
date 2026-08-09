@@ -447,15 +447,36 @@ public class StorageManager {
 		if (server == null) return;
 		server.execute(() -> {
 			if (stopping || activeStorage == null) return;
+			java.util.ArrayDeque<UUID> fila = new java.util.ArrayDeque<>();
 			java.util.Iterator<UUID> it = dirty.iterator();
 			while (it.hasNext()) {
-				UUID id = it.next();
-				it.remove();
-				ServerPlayer p = server.getPlayerList().getPlayer(id);
-				// offline: o save do logout dele ja cobriu — so tira da lista
-				if (p != null) savePlayerAsync(p);
+				fila.add(it.next());
+				it.remove(); // offline: o save do logout ja cobriu — sair da lista basta
 			}
+			saveSpread(server, fila);
 		});
+	}
+
+	/** Jogadores serializados por tick nos saves periodicos. 5 x ~0,5ms = ~2,5ms por tick, invisivel. */
+	private static final int SAVES_POR_TICK = 5;
+
+	/**
+	 * Salva a fila em FATIAS de {@link #SAVES_POR_TICK} por tick. O snapshot ({@code stats.save()})
+	 * tem que rodar na main thread (fora dela e o CME que ja matou autosave), mas rodar TODOS num
+	 * tick so e um pico: 60 online x ~0,5ms = ~30ms de um orcamento de 50ms — lag visivel a cada
+	 * varredura. Fatiado, o mesmo trabalho vira ~2,5ms por tick durante alguns ticks. A ESCRITA
+	 * continua no dbExecutor; so a serializacao e fatiada.
+	 */
+	private static void saveSpread(MinecraftServer server, java.util.ArrayDeque<UUID> fila) {
+		if (stopping || activeStorage == null) return;
+		for (int i = 0; i < SAVES_POR_TICK && !fila.isEmpty(); i++) {
+			ServerPlayer p = server.getPlayerList().getPlayer(fila.poll());
+			if (p != null) savePlayerAsync(p);
+		}
+		if (!fila.isEmpty()) {
+			server.tell(new net.minecraft.server.TickTask(server.getTickCount() + 1,
+					() -> saveSpread(server, fila)));
+		}
 	}
 
 	private static void performAutoSave() {
@@ -466,13 +487,15 @@ public class StorageManager {
 		// O SNAPSHOT roda na main thread de proposito. Na thread do scheduler, o stats.save()
 		// serializava a capability VIVA enquanto a main thread a mutava, e o getPlayers() era
 		// iterado fora da main — o mesmo CME que ja matou o autosave dos goals uma vez. So a
-		// ESCRITA continua async (savePlayerAsync manda pro dbExecutor). Bonus: com todos os
-		// chamadores na main thread, a ordem da fila de saves e a ordem dos snapshots.
+		// ESCRITA continua async (savePlayerAsync manda pro dbExecutor). E FATIADO em
+		// SAVES_POR_TICK, senao a correcao de thread viraria um pico de tick a cada autosave.
 		server.execute(() -> {
 			if (activeStorage == null) return; // shutdown entre o agendamento e a execucao
+			java.util.ArrayDeque<UUID> fila = new java.util.ArrayDeque<>();
 			for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-				savePlayerAsync(player);
+				fila.add(player.getUUID());
 			}
+			saveSpread(server, fila);
 		});
 	}
 }
