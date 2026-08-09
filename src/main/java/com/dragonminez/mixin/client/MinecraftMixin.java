@@ -253,7 +253,12 @@ public abstract class MinecraftMixin implements Minecraft_DMZ {
 		var event = new DMZClientEvent.PlayerAttackHit(player, upswingStack, targetResult.entities, cursorTarget);
 		MinecraftForge.EVENT_BUS.post(event);
 
-		int[] entityIds = targetResult.entities.stream().mapToInt(Entity::getId).toArray();
+		// Capado no MAX do pacote: numa sala lotada (farm, nuvem de ki volley) a varredura
+		// coleta 65+ alvos e o servidor kickava no decode. O TargetFinder ja poe os alvos
+		// relevantes primeiro, entao truncar aqui so descarta a borda da multidao.
+		int[] entityIds = targetResult.entities.stream()
+				.limit(com.dragonminez.common.network.C2S.CombatAttackRequestC2S.MAX_ENTITY_IDS)
+				.mapToInt(Entity::getId).toArray();
 
 		int comboCount = mcDMZ.getComboCount();
 		boolean sneaking = player.hasPose(Pose.CROUCHING);

@@ -33,7 +33,8 @@ import java.util.function.Supplier;
 @Getter
 public class CombatAttackRequestC2S {
 
-	private static final int MAX_ENTITY_IDS = 64;
+	/** Publico: o client (MinecraftMixin.executeAttack) capa a lista ANTES de enviar. */
+	public static final int MAX_ENTITY_IDS = 64;
 
 	private final int comboCount;
 	private final boolean isSneaking;
@@ -52,12 +53,22 @@ public class CombatAttackRequestC2S {
 		this.isSneaking = buffer.readBoolean();
 		this.selectedSlot = buffer.readInt();
 		int length = buffer.readInt();
-		if (length < 0 || length > MAX_ENTITY_IDS) {
+		// So e LIXO de verdade quando o tamanho nao bate com os bytes do pacote. Contagem alta
+		// mas consistente e jogo normal: numa sala de farm lotada (ou na nuvem de projeteis do
+		// ki volley) a varredura de melee coleta 65+ alvos, e o throw daqui virava KICK do
+		// jogador — "invalid entity id count 65" — por ele ter... atacado uma multidao.
+		if (length < 0 || (long) length * 4L > buffer.readableBytes()) {
 			throw new DecoderException("CombatAttackRequestC2S: invalid entity id count " + length);
 		}
-		this.entityIds = new int[length];
-		for (int i = 0; i < length; i++) {
+		// Excedente e TRUNCADO, nunca kickado: le os primeiros MAX (o TargetFinder ja ordena
+		// por relevancia) e drena o resto pra nao desalinhar o proximo campo do buffer.
+		int keep = Math.min(length, MAX_ENTITY_IDS);
+		this.entityIds = new int[keep];
+		for (int i = 0; i < keep; i++) {
 			this.entityIds[i] = buffer.readInt();
+		}
+		if (length > keep) {
+			buffer.skipBytes((length - keep) * 4);
 		}
 	}
 

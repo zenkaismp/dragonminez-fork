@@ -764,11 +764,14 @@ public class KiBlastEntity extends AbstractKiProjectile {
                             if (this.tickCount % 2 == 0) {
                                 for (int i = 0; i < 5; i++) {
                                     KiBlastEntity bullet = new KiBlastEntity(this.level(), owner);
+                                    // setupKiSmall JA faz addFreshEntity(this). O segundo add que
+                                    // existia aqui era recusado pelo vanilla com "UUID of added
+                                    // entity already exists" — 5 WARNs a cada 2 ticks POR JOGADOR
+                                    // usando volley, o flood inteiro do console.
                                     bullet.setupKiSmall(owner, this.getKiDamage(), this.getKiSpeed(), this.getColor());
                                     bullet.setTechniqueId(this.getTechniqueId());
 
                                     bullet.shootFromRotation(owner, owner.getXRot(), owner.getYRot(), 0.0F, this.getKiSpeed(), 6.0F);
-                                    this.level().addFreshEntity(bullet);
                                 }
 
                                 this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
@@ -789,8 +792,8 @@ public class KiBlastEntity extends AbstractKiProjectile {
                                     float randomPitch = (this.random.nextFloat() * 180.0F) - 90.0F;
                                     float randomYaw = this.random.nextFloat() * 360.0F;
 
+                                    // mesmo caso do volley acima: o setupKiSmall ja adicionou
                                     bullet.shootFromRotation(owner, randomPitch, randomYaw, 0.0F, this.getKiSpeed() / 3, 0.0F);
-                                    this.level().addFreshEntity(bullet);
                                 }
 
                                 this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
