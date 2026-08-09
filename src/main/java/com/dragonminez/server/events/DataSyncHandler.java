@@ -25,6 +25,19 @@ public class DataSyncHandler {
 		}
 	}
 
+	/**
+	 * Quest completa = progresso de saga que o jogador NAO quer refazer. Marca pra varredura de
+	 * 10s do storage: um kill seco logo depois de fechar uma missao perde no maximo esses
+	 * segundos, nao os ate 5 minutos do autosave (foi exatamente o relato do "a saga resetou").
+	 */
+	@SubscribeEvent
+	public static void onQuestCompleted(com.dragonminez.common.events.DMZEvent.QuestCompletedEvent event) {
+		ServerPlayer player = event.getPlayer();
+		if (player != null) {
+			StorageManager.markDirty(player.getUUID());
+		}
+	}
+
 	@SubscribeEvent
 	public static void onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent event) {
 		if (event.getEntity().level().isClientSide) return;

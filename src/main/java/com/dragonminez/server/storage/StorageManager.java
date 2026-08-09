@@ -36,6 +36,19 @@ public class StorageManager {
 	 */
 	private static final ConcurrentHashMap<UUID, Long> revisions = new ConcurrentHashMap<>();
 
+	/**
+	 * Jogadores com mudanca CRITICA ainda nao gravada (TP mudou, quest completou). O varredor
+	 * salva os marcados a cada 10s — contra kill seco/queda, a janela de perda desses eventos
+	 * cai de ate 5 minutos (autosave) pra ate ~10 segundos. Marcar e barato (Set.add); o custo
+	 * real e no maximo UM blob por jogador marcado a cada varredura, por mais que ele treine.
+	 */
+	private static final java.util.Set<UUID> dirty = ConcurrentHashMap.newKeySet();
+
+	/** Mudanca critica: entra na proxima varredura de 10s. Barato e thread-safe; pode chamar de qualquer lado. */
+	public static void markDirty(UUID uuid) {
+		if (uuid != null) dirty.add(uuid);
+	}
+
 	public static void init() {
 		stopping = false; // reload passa por shutdown()+init(): reabre os saves
 		GeneralServerConfig.StorageConfig.StorageType type = ConfigManager.getServerConfig().getStorage().getStorageType();
@@ -415,6 +428,34 @@ public class StorageManager {
 				LogUtil.error(Env.SERVER, "[Storage] autosave falhou nesta rodada (a proxima roda normal).", t);
 			}
 		}, 5, 5, TimeUnit.MINUTES);
+		// Varredor dos marcados (markDirty): kill seco perde no maximo ~10s de TP/quest, em vez
+		// dos ate 5 min do autosave. Mesma blindagem de try/catch — excecao que escapa cancela
+		// o agendamento pra sempre.
+		autoSaveScheduler.scheduleAtFixedRate(() -> {
+			try {
+				sweepDirty();
+			} catch (Throwable t) {
+				LogUtil.error(Env.SERVER, "[Storage] varredura de dirty falhou nesta rodada.", t);
+			}
+		}, 10, 10, TimeUnit.SECONDS);
+	}
+
+	/** Salva quem esta marcado e online; snapshot na MAIN thread, escrita no dbExecutor. */
+	private static void sweepDirty() {
+		if (stopping || activeStorage == null || dirty.isEmpty()) return;
+		MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+		if (server == null) return;
+		server.execute(() -> {
+			if (stopping || activeStorage == null) return;
+			java.util.Iterator<UUID> it = dirty.iterator();
+			while (it.hasNext()) {
+				UUID id = it.next();
+				it.remove();
+				ServerPlayer p = server.getPlayerList().getPlayer(id);
+				// offline: o save do logout dele ja cobriu — so tira da lista
+				if (p != null) savePlayerAsync(p);
+			}
+		});
 	}
 
 	private static void performAutoSave() {

@@ -97,6 +97,13 @@ public class Resources {
     public void setTrainingPoints(float points) {
         float clamped = Math.max(0, Math.min(Float.MAX_VALUE - 1, points));
         this.trainingPoints = truncateToInt(clamped);
+        // TP e o dado mais sensivel do jogador e ESTE setter e o funil de toda mudanca
+        // (comando, orbe, treino — o add delega pra ca). Marcar poe o jogador na varredura
+        // de 10s do storage: um kill seco perde no maximo esses segundos de TP, nao os ate
+        // 5 minutos do autosave. Barato: Set.add, e o varredor salva no maximo 1x/10s.
+        if (player instanceof ServerPlayer serverPlayer) {
+            com.dragonminez.server.storage.StorageManager.markDirty(serverPlayer.getUUID());
+        }
     }
 
     public void setPendingAttributePoints(int points) {
