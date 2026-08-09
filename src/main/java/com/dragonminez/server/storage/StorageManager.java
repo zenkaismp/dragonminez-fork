@@ -164,7 +164,11 @@ public class StorageManager {
 	 * Players whose external storage lookup is still in flight. While a player is in here nobody may
 	 * tell the client "your data is loaded" — see {@link #isLoadPending(UUID)}.
 	 */
-	private static final java.util.Set<UUID> pendingLoads = ConcurrentHashMap.newKeySet();
+	// CONTADOR, nao Set: relog rapido cria DOIS loads em voo pro mesmo uuid, e num Set o
+	// callback do primeiro (que so confere player.connection e sai) removia a entrada do
+	// segundo — isLoadPending virava false com load pendente, e o client recebia o sync
+	// default: a tela de criacao de personagem abrindo por cima de personagem existente.
+	private static final ConcurrentHashMap<UUID, Integer> pendingLoads = new ConcurrentHashMap<>();
 
 	/**
 	 * True between login and the moment the storage backend answers for this player.
@@ -206,7 +210,7 @@ public class StorageManager {
 	}
 
 	public static boolean isLoadPending(UUID uuid) {
-		return pendingLoads.contains(uuid);
+		return pendingLoads.containsKey(uuid);
 	}
 
 	public static void loadPlayer(ServerPlayer player) {
@@ -219,7 +223,7 @@ public class StorageManager {
 
 		final UUID uuid = player.getUUID();
 		final String name = player.getName().getString();
-		pendingLoads.add(uuid);
+		pendingLoads.merge(uuid, 1, Integer::sum);
 		LogUtil.info(Env.SERVER, "[Load] {} ({}) — consultando {}; criacao de personagem em espera.",
 				name, uuid, activeStorage.getName());
 
@@ -240,7 +244,7 @@ public class StorageManager {
 				})
 				.thenComposeAsync(v -> CompletableFuture.supplyAsync(() -> activeStorage.load(uuid), dbExecutor))
 				.thenAccept(result -> ServerLifecycleHooks.getCurrentServer().execute(() -> {
-					pendingLoads.remove(uuid);
+					pendingLoads.compute(uuid, (k, v) -> v == null || v <= 1 ? null : v - 1);
 					if (player.connection == null) {
 						LogUtil.info(Env.SERVER, "[Load] {} saiu antes da resposta do storage.", name);
 						return;
@@ -275,7 +279,8 @@ public class StorageManager {
 				.exceptionally(ex -> {
 					// Rede de seguranca: load() ja converte falha em FAILED, entao so se chega aqui com
 					// algo inesperado. Mesma regra — nao libera nada.
-					ServerLifecycleHooks.getCurrentServer().execute(() -> pendingLoads.remove(uuid));
+					ServerLifecycleHooks.getCurrentServer().execute(() ->
+							pendingLoads.compute(uuid, (k, v) -> v == null || v <= 1 ? null : v - 1));
 					LogUtil.error(Env.SERVER, "[Load] " + name + " — erro inesperado carregando dados; "
 							+ "criacao de personagem bloqueada para ele.", ex);
 					return null;
@@ -347,10 +352,23 @@ public class StorageManager {
 		String name = player.getScoreboardName();
 		UUID uuid = player.getUUID();
 
-		// Snapshot do executor: se o shutdown anular no meio (corrida rara), a escrita roda
-		// INLINE na thread de quem chamou em vez de NPEar — o NPE era exatamente como o /stop
-		// perdia dado. Runnable::run como Executor = executa na hora, sem fila.
-		java.util.concurrent.Executor saveExecutor = dbExecutor != null ? dbExecutor : Runnable::run;
+		// Borda do shutdown: executor ja anulado (corrida rara — a flag stopping cobre o caso
+		// comum). Roda INLINE e FORA do saveChains: um executor sincrono dentro do compute
+		// completava a cadeia ali mesmo, o whenComplete tentava remove() da MESMA chave, e
+		// compute reentrante em ConcurrentHashMap trava o bin — deadlock na thread do server,
+		// no meio do desligamento. O executor foi drenado antes de anular, entao nao ha cadeia
+		// pendente e a escrita inline sai na ordem certa.
+		java.util.concurrent.Executor saveExecutor = dbExecutor;
+		if (saveExecutor == null) {
+			try {
+				long expected = revisions.getOrDefault(uuid, -1L);
+				IDataStorage.SaveOutcome outcome = activeStorage.saveData(uuid, name, dataToSave, expected);
+				if (outcome.isOk()) revisions.put(uuid, outcome.newRev());
+			} catch (Exception e) {
+				LogUtil.error(Env.SERVER, "Failed to save data inline for " + name, e);
+			}
+			return CompletableFuture.completedFuture(null);
+		}
 		return saveChains.compute(uuid, (id, previous) -> {
 			CompletableFuture<Void> previousStage = previous != null ? previous : CompletableFuture.completedFuture(null);
 			CompletableFuture<Void> chained = previousStage.thenRunAsync(() -> {
