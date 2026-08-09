@@ -138,7 +138,12 @@ public final class QuestService {
 
 		int partySize = PartyManager.getAllPartyMembers(controller).size();
 		try {
-			spawnKillObjectives(requester, resolved, pqd, partySize, pqd.getQuestDifficulty(questKey));
+			int spawned = spawnKillObjectives(requester, resolved, pqd, partySize, pqd.getQuestDifficulty(questKey));
+			if (spawned == 0) {
+				// Nada nasceu porque os alvos pendentes JA estao vivos no mundo. Sem esta resposta o
+				// botao pareceria quebrado — o jogador clicava e "nao acontecia nada".
+				return Component.literal("Your target is still alive. Hunt it down!");
+			}
 		} catch (Exception exception) {
 			LogUtil.error(Env.SERVER, "Failed to re-summon kill objectives for quest '" + questKey
 					+ "' requested by " + requester.getGameProfile().getName(), exception);
@@ -586,10 +591,42 @@ public final class QuestService {
 		return questIndex >= 0 && QuestAvailabilityChecker.isSagaQuestAvailable(quest, resolved.saga(), questIndex, data);
 	}
 
-	private static void spawnKillObjectives(ServerPlayer requester, ResolvedQuest resolved, PlayerQuestData pqd,
+	/** @return quantos mobs realmente nasceram (0 = todos os alvos pendentes ja estao vivos no mundo). */
+	private static int spawnKillObjectives(ServerPlayer requester, ResolvedQuest resolved, PlayerQuestData pqd,
 											int partySize, Difficulty difficulty) {
 		Quest quest = resolved.quest();
 		String questKey = resolved.questKey();
+
+		// CENSO DOS VIVOS antes de spawnar qualquer coisa. O "quanto falta" era so
+		// required - progresso, sem olhar o MUNDO: cada RESUMMON criava a conta inteira de novo
+		// enquanto o mob da rodada anterior seguia vivo. Com 1 Cell exigido e 0 mortos, cada
+		// clique (limitado so pelo anti-spam de 1,5s) somava mais um Cell — e como o questTeam
+		// leva System.nanoTime(), cada rodada era um time diferente e eles brigavam entre si.
+		//
+		// O censo conta por OBJETIVO (quest key + indice) e por DONO, aceitando qualquer membro da
+		// party do requester: sem o filtro de dono, o Cell de outro jogador fazendo a MESMA quest
+		// do outro lado do mapa bloquearia o seu; sem a party inteira, o membro B duplicaria o mob
+		// que o membro A ja invocou. Mob em chunk descarregado escapa do censo — aceitavel: o
+		// caso do exploit e clicar de novo com o mob na frente.
+		java.util.Set<String> partyIds = new java.util.HashSet<>();
+		for (ServerPlayer member : PartyManager.getAllPartyMembers(requester)) {
+			partyIds.add(member.getStringUUID());
+		}
+		partyIds.add(requester.getStringUUID());
+		Map<Integer, Integer> aliveByObjective = new java.util.HashMap<>();
+		for (Entity existing : requester.serverLevel().getAllEntities()) {
+			if (!existing.isAlive()) {
+				continue;
+			}
+			var tags = existing.getPersistentData();
+			if (!questKey.equals(tags.getString(QUEST_KEY_TAG))) {
+				continue;
+			}
+			if (!partyIds.contains(tags.getString(QUEST_OWNER_TAG))) {
+				continue;
+			}
+			aliveByObjective.merge(tags.getInt(QUEST_OBJECTIVE_INDEX_TAG), 1, Integer::sum);
+		}
 
 		int totalToSpawn = 0;
 		for (int i = 0; i < quest.getObjectives().size(); i++) {
@@ -602,12 +639,13 @@ public final class QuestService {
 			}
 			int currentProgress = pqd.getObjectiveProgress(questKey, i);
 			int required = quest.getObjectiveRequired(pqd, questKey, i);
-			totalToSpawn += Math.max(0, required - currentProgress);
+			totalToSpawn += Math.max(0, required - currentProgress - aliveByObjective.getOrDefault(i, 0));
 		}
 
 		String questTeam = totalToSpawn > 1
 				? questKey + "@" + requester.getStringUUID() + "@" + System.nanoTime()
 				: null;
+		int spawned = 0;
 
 		for (int i = 0; i < quest.getObjectives().size(); i++) {
 			QuestObjective objective = quest.getObjectives().get(i);
@@ -620,7 +658,10 @@ public final class QuestService {
 
 			int currentProgress = pqd.getObjectiveProgress(questKey, i);
 			int required = quest.getObjectiveRequired(pqd, questKey, i);
-			int remaining = Math.max(0, required - currentProgress);
+			// Desconta os que JA estao vivos no mundo (censo la em cima): so nasce o que falta de
+			// verdade. E o que faz o RESUMMON servir pro que ele existe (recuperar mob perdido)
+			// sem servir de fabrica de boss.
+			int remaining = Math.max(0, required - currentProgress - aliveByObjective.getOrDefault(i, 0));
 			if (remaining <= 0) {
 				continue;
 			}
@@ -696,9 +737,12 @@ public final class QuestService {
 					mob.setTarget(requester);
 				}
 
-				requester.serverLevel().addFreshEntity(entity);
+				if (requester.serverLevel().addFreshEntity(entity)) {
+					spawned++;
+				}
 			}
 		}
+		return spawned;
 	}
 
 	// Quest-spawned enemies used to appear on top of the player. Instead, drop them ~10 blocks away in a
