@@ -394,18 +394,42 @@ public class StorageManager {
 						revisions.put(uuid, outcome.newRev());
 					} else if (outcome.isConflict()) {
 						// A protecao funcionando: outro backend gravou depois do meu load, entao ESTA
-						// escrita esta velha e nao entra. Mas conflito nao pode ser TERMINAL: sem
-						// ressincronizar a revisao, todo save da sessao (autosave e logout) seria
-						// recusado em silencio e a sessao inteira se perderia. Recarrega a revisao
-						// atual do banco — o RAM deste servidor e cumulativo, entao o proximo
-						// autosave leva tudo que esta escrita levaria, e passa.
-						long fresh = activeStorage.fetchRev(uuid);
-						if (fresh >= -1L) revisions.put(uuid, fresh);
-						LogUtil.error(Env.SERVER, "[Storage] save de " + name + " pulado por conflito de "
-								+ "revisao (eu tinha " + expected + ", banco esta em " + fresh + "): outro "
-								+ "servidor gravou depois do meu load. Revisao ressincronizada — o proximo "
-								+ "autosave grava. Se isto REPETIR pro mesmo jogador, ha duas sessoes "
-								+ "ativas dele na rede.");
+						// escrita esta velha e nao entra.
+						//
+						// CORRECAO: antes daqui so se fazia `revisions.put(uuid, fetchRev(uuid))`,
+						// com a justificativa de que "o RAM deste servidor e cumulativo, entao o
+						// proximo autosave leva tudo". Isso e FALSO exatamente no caso que produz o
+						// conflito: houve conflito PORQUE este servidor carregou ANTES da escrita do
+						// outro, ou seja o RAM daqui e a copia VELHA. Ressincronizar a revisao sem
+						// mais nada ARMAVA o proximo autosave pra gravar essa copia velha por cima
+						// da nova, agora sem conflito nenhum pra barrar. O CAS virava um adiamento
+						// da perda, nao a prevencao dela.
+						//
+						// O sentido certo e o inverso: RECARREGA o registro fresco do banco e aplica
+						// no jogador vivo. Dai a revisao e o estado passam a ser os do banco, e o
+						// proximo autosave escreve por cima de si mesmo, sem perder nada.
+						LoadResult fresco = activeStorage.load(uuid);
+						if (fresco.status() == LoadResult.Status.LOADED) {
+							revisions.put(uuid, fresco.rev());
+							net.minecraft.server.MinecraftServer srv = ServerLifecycleHooks.getCurrentServer();
+							if (srv != null) srv.execute(() -> {
+								ServerPlayer vivo = srv.getPlayerList().getPlayer(uuid);
+								if (vivo != null) applyLoadedData(vivo, fresco.data());
+							});
+							LogUtil.error(Env.SERVER, "[Storage] save de " + name + " recusado por conflito "
+									+ "(eu tinha " + expected + ", banco em " + fresco.rev() + "). O estado "
+									+ "deste servidor era o VELHO: recarreguei o do banco e reapliquei no "
+									+ "jogador. Se isto REPETIR pro mesmo jogador, ha duas sessoes ativas "
+									+ "dele na rede.");
+						} else {
+							// Nao consegui reler: NAO ressincroniza. Deixar a revisao velha faz os
+							// saves seguintes continuarem sendo recusados, que e barulhento mas
+							// seguro; ressincronizar aqui seria autorizar a escrita velha as cegas.
+							LogUtil.error(Env.SERVER, "[Storage] save de " + name + " recusado por conflito "
+									+ "e NAO consegui reler o registro (status " + fresco.status() + "). "
+									+ "A revisao fica travada de proposito: os proximos saves vao falhar "
+									+ "ate o jogador relogar, e isso e melhor que gravar dado velho.");
+						}
 					}
 				} catch (Exception e) {
 					LogUtil.error(Env.SERVER, "Failed to save data async for " + name, e);

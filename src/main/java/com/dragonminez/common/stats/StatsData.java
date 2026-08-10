@@ -1580,11 +1580,54 @@ public class StatsData {
 		getBonusStats().clearAllStats();
 		if (forceSaiyanTail) getCharacter().setHasSaiyanTail(true);
 
+		// ZENKAI: reset COMPLETO (sem percentual e sem manter skills) nao larga mais o jogador com
+		// zero de tudo. Ele volta pro PACOTE INICIAL: os stats de recomeco e as skills basicas de
+		// locomocao. Sem isto o resetado ficava pior que um personagem recem-criado — sem andar
+		// rapido, sem pular direito, sem voar e sem carregar ki, preso num personagem inutilizavel
+		// ate um admin socorrer. Vale pra QUALQUER porta de reset total (o Dende e o comando de
+		// staff), porque mora aqui e nao no NPC.
+		if (keepPercentage == null && !keepSkills) {
+			applyStarterPackage();
+		}
+
 		player.refreshDimensions();
 		player.setHealth(20.0F);
 		var attribute = player.getAttribute(Attributes.MAX_HEALTH);
 		if (attribute != null) attribute.removePermanentModifier(StatsEvents.DMZ_HEALTH_MODIFIER_UUID);
 		player.setHealth(20.0F);
+	}
+
+	/** Valor de recomeco de CADA um dos 6 atributos (1k em cada, decisao do dono do servidor). */
+	private static final int STARTER_STAT_EACH = 1000;
+
+	/** Skills que todo recomeco tem: as de locomocao que o tutorial apresenta. Nivel 1. */
+	private static final String[] STARTER_SKILLS = {"jump", "sprint", "fly", "kicontrol"};
+
+	/**
+	 * O pacote inicial de um reset completo: {@value #STARTER_STAT_EACH} em CADA um dos 6
+	 * atributos, as skills de locomocao no nivel 1, e as barras cheias.
+	 *
+	 * <p>E "1k em cada", nao "1k somado" — a primeira versao distribuiu 1000 no total e o dono
+	 * corrigiu na hora. Plano igual em todos os atributos: previsivel, tudo utilizavel, e o
+	 * jogador remodela a build com o proprio TP dali em diante.</p>
+	 */
+	private void applyStarterPackage() {
+		var s = getStats();
+		s.setStrength(STARTER_STAT_EACH);
+		s.setStrikePower(STARTER_STAT_EACH);
+		s.setResistance(STARTER_STAT_EACH);
+		s.setVitality(STARTER_STAT_EACH);
+		s.setKiPower(STARTER_STAT_EACH);
+		s.setEnergy(STARTER_STAT_EACH);
+
+		for (String skill : STARTER_SKILLS) {
+			getSkills().setSkillLevel(skill, 1);
+		}
+
+		// Barras cheias DEPOIS dos stats novos: os maximos derivam deles.
+		getResources().setCurrentEnergy(getMaxEnergy());
+		getResources().setCurrentStamina(getMaxStamina());
+		getResources().setCurrentPoise(getMaxPoise());
 	}
 
 	public void tick() {
