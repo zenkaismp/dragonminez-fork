@@ -1435,33 +1435,10 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	}
 
 	private void renderHardModeIndicator(GuiGraphics graphics, PanelRect tree, int mouseX, int mouseY) {
-		Difficulty difficulty = statsData != null ? statsData.getPlayerQuestData().getDifficulty() : Difficulty.NORMAL;
+		// ZENKAI: sem escolha de dificuldade nao ha o que indicar; badge e tooltip desligados
+		// (o tooltip ja e gateado por hardModeIndicatorShown).
 		hardModeToggleable = false;
-		hardModeIndicatorShown = true;
-
-		Component label = tr("gui.dragonminez.quest_tree.difficulty.label");
-		Component state = difficultyLabel(difficulty);
-
-		int labelWidth = this.font.width(label);
-		int totalWidth = labelWidth + 3 + this.font.width(state);
-		int x = tree.right() - totalWidth - 6;
-		int y = tree.bottom() - 12;
-		int stateX = x + labelWidth + 3;
-
-		hardModeHitX = x;
-		hardModeHitY = y - 1;
-		hardModeHitW = totalWidth;
-		hardModeHitH = this.font.lineHeight + 1;
-
-		boolean hovered = mouseX >= hardModeHitX && mouseX <= hardModeHitX + hardModeHitW
-				&& mouseY >= hardModeHitY && mouseY <= hardModeHitY + hardModeHitH;
-		boolean highlight = hovered && hardModeToggleable;
-
-		int labelColor = hovered ? 0xFFFFFFFF : 0xFFAAAAAA;
-		int stateColor = difficultyColor(difficulty, highlight);
-
-		TextUtil.drawStringWithBorder(graphics, this.font, label, x, y, labelColor);
-		TextUtil.drawStringWithBorder(graphics, this.font, state, stateX, y, stateColor);
+		hardModeIndicatorShown = false;
 	}
 
 	private boolean renderHardModeTooltip(GuiGraphics graphics, int mouseX, int mouseY) {
@@ -2840,10 +2817,8 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	private static final Difficulty[] DIFFICULTY_OPTIONS = { Difficulty.EASY, Difficulty.NORMAL, Difficulty.HARD };
 
 	private boolean shouldShowDifficultySelect() {
-		if (statsData == null) return false;
-		PlayerQuestData pqd = statsData.getPlayerQuestData();
-		if (pqd.isDifficultyChosen()) return false;
-		return !pqd.isInParty() || isLocalPartyLeader();
+		// ZENKAI: escolha de dificuldade removida (server trava no NORMAL); o overlay nunca abre.
+		return false;
 	}
 
 	private PanelRect getDifficultySelectRect() {

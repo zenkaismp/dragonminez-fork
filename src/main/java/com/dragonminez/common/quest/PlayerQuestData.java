@@ -78,13 +78,13 @@ public class PlayerQuestData {
     private Difficulty difficulty = Difficulty.NORMAL;
 
     /**
-     * Whether this player has made their one-time difficulty choice. Until chosen, the quest
-     * tree shows the difficulty selection overlay. The change-difficulty wish resets this to
-     * {@code false} to reopen the selection without touching quest progress.
+     * ZENKAI: a escolha de dificuldade saiu do jogo (historia travada no NORMAL, a base 1.0
+     * que o autobalanceador calibra). Nasce e persiste {@code true} pra tela de selecao
+     * nunca abrir, inclusive em client antigo sem o patch de UI.
      */
     @Getter
     @Setter
-    private boolean difficultyChosen = false;
+    private boolean difficultyChosen = true;
 
     /** Active party identifier for synchronized story progress. */
     @Getter
@@ -193,20 +193,21 @@ public class PlayerQuestData {
     }
 
     /**
-     * Sets the active story difficulty. Progress is a single shared tree independent of difficulty,
-     * so this only changes the scaling/reward label.
+     * ZENKAI: dificuldade TRAVADA no NORMAL (multiplicadores 1.0, o formato que o
+     * autobalanceador calibra; o "easy" e o "hard" sairam do jogo). No-op de proposito:
+     * neutraliza de uma vez o SetStoryDifficultyC2S, o merge de party e qualquer
+     * chamador legado, sem mexer em registro de pacote.
      */
     public void setDifficulty(Difficulty newDifficulty) {
-        if (newDifficulty == null || newDifficulty == difficulty) return;
-        difficulty = newDifficulty;
+        difficulty = Difficulty.NORMAL;
     }
 
     /**
-     * Reopens the one-time difficulty selection without touching quest progress
-     * (used by the change-difficulty Dragon wish).
+     * ZENKAI: escolha de dificuldade removida; o wish de troca nao reabre mais a
+     * selecao (e o overlay nem existe mais no client do fork).
      */
     public void requestDifficultyReselect() {
-        this.difficultyChosen = false;
+        // no-op
     }
 
     /**
@@ -319,12 +320,13 @@ public class PlayerQuestData {
     }
 
     public void setQuestDifficulty(String questId, Difficulty difficulty) {
-        getOrCreateProgress(questId).setDifficulty(difficulty != null ? difficulty : Difficulty.NORMAL);
+        // ZENKAI: snapshot por quest tambem travado no NORMAL
+        getOrCreateProgress(questId).setDifficulty(Difficulty.NORMAL);
     }
 
     public Difficulty getQuestDifficulty(String questId) {
-        QuestProgress progress = quests.get(questId);
-        return progress != null ? progress.getDifficulty() : Difficulty.NORMAL;
+        // ZENKAI: cobre quest em andamento iniciada em easy/hard num save antigo
+        return Difficulty.NORMAL;
     }
 
     public int getQuestFailureCount(String questId) {
@@ -455,7 +457,7 @@ public class PlayerQuestData {
     public void mergeQuestStateFrom(PlayerQuestData other) {
         if (other == null) return;
 
-        this.difficulty = other.difficulty;
+        this.difficulty = Difficulty.NORMAL; // ZENKAI: dificuldade travada, nada a herdar
 
         for (QuestProgress otherProgress : other.quests.values()) {
             QuestProgress own = quests.get(otherProgress.getQuestId());
@@ -648,7 +650,10 @@ public class PlayerQuestData {
      */
     public void deserializeNBT(CompoundTag tag) {
         deserializeFullQuestState(tag);
-        difficultyChosen = tag.getBoolean("difficultyChosen");
+        // ZENKAI: migra save antigo na leitura, trava no NORMAL e fecha o overlay de escolha
+        // ate em client sem o patch de UI (o valor sincado e o que gateia a tela)
+        difficulty = Difficulty.NORMAL;
+        difficultyChosen = true;
 
         activePartyId = null;
         partyLeaderId = null;
@@ -759,7 +764,7 @@ public class PlayerQuestData {
             if (other == null) return;
             if (statusRank(other.status) > statusRank(this.status)) {
                 this.status = other.status;
-                this.difficulty = other.difficulty;
+                this.difficulty = Difficulty.NORMAL; // ZENKAI: dificuldade travada, nada a herdar
             }
             for (Map.Entry<Integer, Integer> entry : other.objectiveProgress.entrySet()) {
                 int current = objectiveProgress.getOrDefault(entry.getKey(), 0);

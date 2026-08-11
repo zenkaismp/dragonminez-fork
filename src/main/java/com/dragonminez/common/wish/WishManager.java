@@ -135,7 +135,7 @@ public class WishManager {
 
 		defaultWishes.add(new PassiveResetWish("wish.shenron.racialskillreset.name", "wish.shenron.racialskillreset.desc"));
 		defaultWishes.add(new ReCustomizeWish("wish.shenron.customization.name", "wish.shenron.customization.desc"));
-		defaultWishes.add(new ChangeDifficultyWish("wish.shenron.changedifficulty.name", "wish.shenron.changedifficulty.desc"));
+		// ZENKAI: wish de troca de dificuldade fora da seed (a escolha saiu do jogo)
 		defaultWishes.add(new ResetStoryWish("wish.shenron.resetstory.name", "wish.shenron.resetstory.desc"));
 
 		List<GenericItemDTO> materials = new ArrayList<>();
@@ -176,7 +176,7 @@ public class WishManager {
 		defaultWishes.add(new PassiveResetWish("wish.porunga.racialskillreset.name", "wish.porunga.racialskillreset.desc"));
 		defaultWishes.add(new ReCustomizeWish("wish.porunga.customization.name", "wish.porunga.customization.desc"));
 		defaultWishes.add(new RelocateStatsWish("wish.porunga.relocatestats.name", "wish.porunga.relocatestats.desc"));
-		defaultWishes.add(new ChangeDifficultyWish("wish.porunga.changedifficulty.name", "wish.porunga.changedifficulty.desc"));
+		// ZENKAI: wish de troca de dificuldade fora da seed (a escolha saiu do jogo)
 		defaultWishes.add(new ResetStoryWish("wish.porunga.resetstory.name", "wish.porunga.resetstory.desc"));
 
 		List<GenericItemDTO> materials = new ArrayList<>();
