@@ -40,16 +40,21 @@ import java.util.UUID;
  *
  * <h2>Os dois degraus (proporcao fixa pra toda quest, derivada de T)</h2>
  * <ul>
- *   <li><b>Degrau 1</b> aos 2xT: cura de 5,5% da vida maxima a cada T/4 segundos. Piso
- *       matematico: quem faz menos de ~22% do DPS de referencia nunca mais mata o mob.</li>
- *   <li><b>Degrau 2</b> aos 4xT: cura ADICIONAL de 11% a cada T/6 segundos. Os dois degraus
- *       ficam ativos JUNTOS, entao o piso total depois de 4xT e ~88% do DPS de referencia
- *       (22% do degrau 1 + 66% do degrau 2). A tabela do spec publica a parcela isolada de
- *       cada degrau; o valor combinado e este.</li>
+ *   <li><b>Degrau 1</b> aos 2xT: regen de 66% do DPS de referencia da quest (o DPS que mata o
+ *       mob em exatamente T). Piso matematico: quem faz menos de 66% do dano esperado nunca
+ *       mais mata o mob depois que o degrau 1 arma.</li>
+ *   <li><b>Degrau 2</b> aos 4xT: a regen TOTAL sobe pra 100% do DPS de referencia. Empatar com
+ *       o jogador de referencia vira derrota: so mata quem faz MAIS dano que ele.</li>
  * </ul>
  *
- * <p>Os gatilhos originais do doc 64 eram 3,5xT e 5xT; o dono apertou pra 2xT e 4xT em
- * 2026-08-10 depois do primeiro teste in-game.</p>
+ * <p>A cura pulsa a cada varredura (1 segundo), com o valor por segundo da taxa: mesma
+ * quantidade total dos pulsos grandes de antes (5,5%/T4 e 11%/T6), so continua e suave. Isso
+ * tambem eliminou a contabilidade de intervalo (lastHeal e o agendamento por soma), que era
+ * fonte de deriva de quantizacao apontada na revisao.</p>
+ *
+ * <p>Historico de tuning: doc 64 fechou 3,5xT/5xT com 22%/88% de piso; o dono apertou os
+ * gatilhos pra 2xT/4xT em 2026-08-10 e subiu os pisos pra 66%/100% em 2026-08-11, com a cura
+ * espalhada em pulsos de 1s.</p>
  *
  * <p>O relogio NAO corre a partir do spawn: ele so arma no PRIMEIRO dano vindo de player
  * ({@code dmz_fight_engaged}). Sem isso, um mob esquecido queimando numa fogueira armava os
@@ -99,27 +104,29 @@ public final class QuestOvertimeRegen {
 	private static final String WARNED_TIER1_TAG = "dmz_fight_warned1";
 	private static final String WARNED_TIER2_TAG = "dmz_fight_warned2";
 
-	/** 5,5% e 11%: o meio das faixas fechadas no design (5-6% e 10-12%). */
-	private static final float TIER1_HEAL_PCT = 0.055f;
-	private static final float TIER2_HEAL_PCT = 0.11f;
+	/**
+	 * Taxas em fracao do DPS DE REFERENCIA da quest (que por definicao e {@code maxHP / T} por
+	 * segundo). Degrau 1 sozinho = 66%; com o degrau 2 somado = 100% exato. A cura por segundo
+	 * de cada degrau sai de {@code maxHP * FRACAO / T}.
+	 */
+	private static final double TIER1_DPS_FRACTION = 0.66;
+	private static final double TIER2_EXTRA_DPS_FRACTION = 0.34;
 
 	private static final int SCAN_EVERY_TICKS = 20;
 	/** 5 varreduras (~5s) sem achar a entidade = chunk descarregou; o join event re-registra. */
 	private static final int EVICT_AFTER_MISSES = 5;
 
-	/** Estado em memoria de UMA luta rastreada. O que precisa sobreviver a reload mora no NBT. */
+	/**
+	 * Estado em memoria de UMA luta rastreada. O que precisa sobreviver a reload mora no NBT.
+	 * Sem contabilidade de cura: o pulso e por varredura (1s), entao "quando curei por ultimo"
+	 * deixou de existir como estado.
+	 */
 	private static final class Fight {
 		final ResourceKey<Level> dim;
-		long lastHeal1;
-		long lastHeal2;
 		int misses;
 
-		Fight(ResourceKey<Level> dim, long now) {
+		Fight(ResourceKey<Level> dim) {
 			this.dim = dim;
-			// Comeca "agora" de proposito: a primeira cura vem um intervalo INTEIRO depois do
-			// degrau armar (ou do re-registro pos chunk load), nunca de estalo e nunca retroativa.
-			this.lastHeal1 = now;
-			this.lastHeal2 = now;
 		}
 	}
 
@@ -142,7 +149,7 @@ public final class QuestOvertimeRegen {
 		if (!pd.contains(FIGHT_START_TAG) || pd.getInt(FIGHT_T_TAG) <= 0) {
 			return;
 		}
-		ACTIVE.put(le.getUUID(), new Fight(level.dimension(), level.getGameTime()));
+		ACTIVE.put(le.getUUID(), new Fight(level.dimension()));
 	}
 
 	/**
@@ -246,17 +253,14 @@ public final class QuestOvertimeRegen {
 				pd.remove(ARMED_TIER2_TAG);
 				pd.remove(WARNED_TIER1_TAG);
 				pd.remove(WARNED_TIER2_TAG);
-				f.lastHeal1 = now;
-				f.lastHeal2 = now;
 				continue;
 			}
 
-			// ---- degrau 1 (3,5xT): 5,5% a cada T/4 ----
+			// ---- degrau 1 (2xT): regen continua de 66% do DPS de referencia ----
 			if (!pd.getBoolean(ARMED_TIER1_TAG)) {
 				pd.putBoolean(ARMED_TIER1_TAG, true);
-				f.lastHeal1 = now; // a primeira cura vem T/4 depois de armar, nao junto
 				LogUtil.info(Env.SERVER, "[OvertimeRegen] degrau 1 armado: {} ({}), T={}s, "
-								+ "luta ja dura {}s.",
+								+ "luta ja dura {}s, regen de 66% do DPS de referencia.",
 						le.getName().getString(), pd.getString(QuestService.QUEST_KEY_TAG),
 						t, elapsed / 20L);
 			}
@@ -269,25 +273,14 @@ public final class QuestOvertimeRegen {
 					.withStyle(ChatFormatting.YELLOW))) {
 				pd.putBoolean(WARNED_TIER1_TAG, true);
 			}
-			if (now - f.lastHeal1 >= tTicks / 4L) {
-				curar(le, TIER1_HEAL_PCT);
-				// Agenda por SOMA, nao por "agora": a varredura e de 20 em 20 ticks e T/4 quase
-				// nunca e multiplo disso; marcar "agora" atrasava ate 19 ticks POR CURA e o
-				// periodo real derivava pra cima. Somar mantem o periodo medio exato. O clamp
-				// evita rajada de recuperacao depois de um congelamento longo (chunk sem tick).
-				f.lastHeal1 += tTicks / 4L;
-				if (now - f.lastHeal1 >= tTicks / 4L) {
-					f.lastHeal1 = now;
-				}
-			}
 
-			// ---- degrau 2 (5xT): +11% a cada T/6, SOMADO ao degrau 1 ----
-			if (elapsed >= tier2At) {
+			// ---- degrau 2 (4xT): a taxa TOTAL sobe pra 100% do DPS de referencia ----
+			boolean tier2 = elapsed >= tier2At;
+			if (tier2) {
 				if (!pd.getBoolean(ARMED_TIER2_TAG)) {
 					pd.putBoolean(ARMED_TIER2_TAG, true);
-					f.lastHeal2 = now;
 					LogUtil.info(Env.SERVER, "[OvertimeRegen] degrau 2 armado: {} ({}), T={}s, "
-									+ "luta ja dura {}s.",
+									+ "luta ja dura {}s, regen total de 100% do DPS de referencia.",
 							le.getName().getString(), pd.getString(QuestService.QUEST_KEY_TAG),
 							t, elapsed / 20L);
 				}
@@ -297,26 +290,13 @@ public final class QuestOvertimeRegen {
 						.withStyle(ChatFormatting.RED))) {
 					pd.putBoolean(WARNED_TIER2_TAG, true);
 				}
-				if (now - f.lastHeal2 >= tTicks / 6L) {
-					curar(le, TIER2_HEAL_PCT);
-					f.lastHeal2 += tTicks / 6L;
-					if (now - f.lastHeal2 >= tTicks / 6L) {
-						f.lastHeal2 = now;
-					}
-				}
 			}
-		}
-	}
 
-	/**
-	 * {@code setHealth} direto, NUNCA {@code heal()}: o heal dispara {@code LivingHealEvent} e o
-	 * {@code EntityStatDebuffHandler} do proprio mod multiplica cura de mob por debuff de
-	 * HP_REGEN de tecnica ki (ate -50%). A regen dos degraus e regra do autobalanceador, nao uma
-	 * cura comum: nenhum modificador pode reduzi-la, senao o piso matematico do design cai.
-	 * O setHealth clampa no maximo internamente.
-	 */
-	private static void curar(LivingEntity le, float pct) {
-		le.setHealth(le.getHealth() + (float) (le.getMaxHealth() * pct));
+			// UM pulso por varredura (1s), com o valor por segundo da taxa do momento. O DPS de
+			// referencia e maxHP/T por segundo, entao a cura por segundo e maxHP * fracao / T.
+			double fracao = tier2 ? TIER1_DPS_FRACTION + TIER2_EXTRA_DPS_FRACTION : TIER1_DPS_FRACTION;
+			le.setHealth(le.getHealth() + (float) (le.getMaxHealth() * fracao / t));
+		}
 	}
 
 	/**
