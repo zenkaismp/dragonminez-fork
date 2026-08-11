@@ -1767,17 +1767,33 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
             }
             newEntity.setKiBlastDamage((float) scaledKiDamage);
 
+            double scaledMelee;
+            if (pd.contains("dmz_quest_tf_melee_abs")) {
+                scaledMelee = pd.getDouble("dmz_quest_tf_melee_abs") * difficulty.damageMultiplier();
+            } else {
+                double meleeMult = pd.contains("dmz_quest_tf_melee_mult")
+                        ? pd.getDouble("dmz_quest_tf_melee_mult")
+                        : transformCfg.meleeMultiplierOr(1.5D);
+                scaledMelee = this.getAttributeValue(Attributes.ATTACK_DAMAGE) * meleeMult;
+            }
             if (newEntity.getAttributes().hasAttribute(Attributes.ATTACK_DAMAGE)) {
-                double scaledMelee;
-                if (pd.contains("dmz_quest_tf_melee_abs")) {
-                    scaledMelee = pd.getDouble("dmz_quest_tf_melee_abs") * difficulty.damageMultiplier();
-                } else {
-                    double meleeMult = pd.contains("dmz_quest_tf_melee_mult")
-                            ? pd.getDouble("dmz_quest_tf_melee_mult")
-                            : transformCfg.meleeMultiplierOr(1.5D);
-                    scaledMelee = this.getAttributeValue(Attributes.ATTACK_DAMAGE) * meleeMult;
-                }
                 newEntity.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(scaledMelee);
+            }
+
+            // As tags dmz_quest_* atravessam a transformacao: a forma nova e OUTRA entidade,
+            // e sem dmz_quest_hp no atacante o SagaNpcDamage do ZenkaiExtra nao arma o bypass
+            // de mitigacao. Resultado: o boss transformado batia, o player mitigava TUDO
+            // (dano zero, som de block) e a luta inteira pos-transform ficava inofensiva.
+            // Valores PRE-dificuldade de proposito (contrato da tag: o join multiplica pela
+            // dificuldade; aqui o atributo ja foi setado com ela embutida e o join da forma
+            // nova nem roda por causa do dmz_stats_configured acima).
+            if (pd.contains("dmz_quest_hp")) {
+                newEntity.getPersistentData().putDouble("dmz_quest_hp",
+                        scaledMaxHealth / difficulty.hpMultiplier());
+                newEntity.getPersistentData().putDouble("dmz_quest_melee",
+                        scaledMelee / difficulty.damageMultiplier());
+                newEntity.getPersistentData().putDouble("dmz_quest_ki",
+                        scaledKiDamage / difficulty.damageMultiplier());
             }
 
             if (fullHealth) {
