@@ -1,0 +1,343 @@
+package com.dragonminez.common.quest;
+
+import com.dragonminez.Env;
+import com.dragonminez.LogUtil;
+import com.dragonminez.Reference;
+import net.minecraft.ChatFormatting;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.Level;
+import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.entity.EntityJoinLevelEvent;
+import net.minecraftforge.event.entity.living.LivingHurtEvent;
+import net.minecraftforge.event.server.ServerStoppingEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.server.ServerLifecycleHooks;
+
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+
+/**
+ * Regeneracao por tempo dos mobs de quest (o "anti covarde" do autobalanceador).
+ *
+ * <h2>O problema que isto fecha</h2>
+ * Sem gate de stat minimo (decisao de 2026-07-25), um build de quase so VIT nao morre nunca e
+ * mata qualquer boss na base do desgaste: bate, corre, volta. O NPC nao regenera, entao a luta
+ * calibrada pra 60 segundos vira meia hora de bater e fugir. Isto NAO adiciona regeneracao
+ * passiva: o NPC so comeca a curar quando a luta ja passou MUITO do tempo que o autobalanceador
+ * calculou pra ela ({@code duracao-da-luta} do YAML, emitido no JSON como {@code fight_duration}).
+ *
+ * <h2>Os dois degraus (proporcao fixa pra toda quest, derivada de T)</h2>
+ * <ul>
+ *   <li><b>Degrau 1</b> aos 2xT: cura de 5,5% da vida maxima a cada T/4 segundos. Piso
+ *       matematico: quem faz menos de ~22% do DPS de referencia nunca mais mata o mob.</li>
+ *   <li><b>Degrau 2</b> aos 4xT: cura ADICIONAL de 11% a cada T/6 segundos. Os dois degraus
+ *       ficam ativos JUNTOS, entao o piso total depois de 4xT e ~88% do DPS de referencia
+ *       (22% do degrau 1 + 66% do degrau 2). A tabela do spec publica a parcela isolada de
+ *       cada degrau; o valor combinado e este.</li>
+ * </ul>
+ *
+ * <p>Os gatilhos originais do doc 64 eram 3,5xT e 5xT; o dono apertou pra 2xT e 4xT em
+ * 2026-08-10 depois do primeiro teste in-game.</p>
+ *
+ * <p>O relogio NAO corre a partir do spawn: ele so arma no PRIMEIRO dano vindo de player
+ * ({@code dmz_fight_engaged}). Sem isso, um mob esquecido queimando numa fogueira armava os
+ * degraus sem luta nenhuma, e o dono recebia "you took too long" sem nunca ter encostado.</p>
+ *
+ * <p>A cura usa {@code setHealth}, nunca {@code heal()}: o {@code heal()} dispara
+ * {@code LivingHealEvent} e o proprio mod tem um debuff de HP_REGEN por tecnica de ki
+ * ({@code EntityStatDebuffHandler}) que cortaria a cura em ate 50%. O piso matematico dos
+ * degraus e a regra do sistema; nenhum modificador externo pode mexer nela.</p>
+ *
+ * <h2>Por que isto nao pesa com 130 players (o requisito de projeto)</h2>
+ * <ul>
+ *   <li><b>Nenhuma varredura de mundo.</b> O mob entra no mapa quando o
+ *       {@link EntityJoinLevelEvent} ve os tags que o {@link QuestService} gravou ANTES do
+ *       {@code addFreshEntity}: isso cobre o spawn inicial, o chunk load e a entidade nova da
+ *       transformacao com o MESMO codigo. Custo fora de luta: um {@code contains()} de NBT por
+ *       entidade carregada, so no load dela, e um {@code contains()} por evento de dano.</li>
+ *   <li><b>O tick e 1x por segundo sobre um mapa que so tem lutas de quest vivas</b> (dezenas de
+ *       entradas no pior caso, nunca milhares), e o caso comum (mapa vazio) sai no primeiro
+ *       {@code isEmpty()}. Por entrada: um lookup por UUID e meia duzia de comparacoes de long.
+ *       Nada aloca, nada sai da main thread, nada toca banco.</li>
+ *   <li><b>Chunk descarregado nao vaza memoria:</b> a entrada e descartada depois de 5 leituras
+ *       vazias; quando o chunk volta, o join event re-registra sozinho, com o relogio intacto no
+ *       NBT do mob. Chunk carregado mas SEM entity ticking (borda de FULL) nao cura nem avisa:
+ *       mob congelado nao esta em luta.</li>
+ * </ul>
+ *
+ * <h2>O reset por vida cheia</h2>
+ * Quando os degraus ja estao ativos e o mob volta pra vida CHEIA, o relogio desarma e volta a
+ * esperar o proximo hit de player. Quem abandona a luta e deixa a regen encher o mob comeca uma
+ * luta nova ao voltar, sem regen ligada de saida. A forma nova de uma transformacao tambem nasce
+ * com relogio zerado (o {@code DBSagasEntity} copia o T mas zera o start e o engaged).
+ */
+@Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
+public final class QuestOvertimeRegen {
+
+	/** Duracao de referencia da luta em segundos (int), JA escalada pela dificuldade no spawn. */
+	public static final String FIGHT_T_TAG = "dmz_fight_t";
+	/** Game time (ticks) em que o relogio desta luta comecou a contar. */
+	public static final String FIGHT_START_TAG = "dmz_fight_start";
+	/** Primeiro dano de player ja aconteceu: o relogio esta correndo. */
+	public static final String FIGHT_ENGAGED_TAG = "dmz_fight_engaged";
+	/** Degrau armado (a regen esta ativa). Separado do aviso: armar nao depende de dono online. */
+	private static final String ARMED_TIER1_TAG = "dmz_fight_armed1";
+	private static final String ARMED_TIER2_TAG = "dmz_fight_armed2";
+	/** Aviso ENTREGUE ao dono. Se ele estava offline, tenta de novo a cada varredura. */
+	private static final String WARNED_TIER1_TAG = "dmz_fight_warned1";
+	private static final String WARNED_TIER2_TAG = "dmz_fight_warned2";
+
+	/** 5,5% e 11%: o meio das faixas fechadas no design (5-6% e 10-12%). */
+	private static final float TIER1_HEAL_PCT = 0.055f;
+	private static final float TIER2_HEAL_PCT = 0.11f;
+
+	private static final int SCAN_EVERY_TICKS = 20;
+	/** 5 varreduras (~5s) sem achar a entidade = chunk descarregou; o join event re-registra. */
+	private static final int EVICT_AFTER_MISSES = 5;
+
+	/** Estado em memoria de UMA luta rastreada. O que precisa sobreviver a reload mora no NBT. */
+	private static final class Fight {
+		final ResourceKey<Level> dim;
+		long lastHeal1;
+		long lastHeal2;
+		int misses;
+
+		Fight(ResourceKey<Level> dim, long now) {
+			this.dim = dim;
+			// Comeca "agora" de proposito: a primeira cura vem um intervalo INTEIRO depois do
+			// degrau armar (ou do re-registro pos chunk load), nunca de estalo e nunca retroativa.
+			this.lastHeal1 = now;
+			this.lastHeal2 = now;
+		}
+	}
+
+	/** So main thread (join event, hurt event e tick de servidor). HashMap comum, sem lock. */
+	private static final Map<UUID, Fight> ACTIVE = new HashMap<>();
+
+	private QuestOvertimeRegen() {
+	}
+
+	@SubscribeEvent
+	public static void onEntityJoin(EntityJoinLevelEvent event) {
+		if (event.getLevel().isClientSide() || !(event.getLevel() instanceof ServerLevel level)) {
+			return;
+		}
+		if (!(event.getEntity() instanceof LivingEntity le)) {
+			return;
+		}
+		CompoundTag pd = le.getPersistentData();
+		// Um contains() por entidade carregada. Quem nao e mob de quest calibrado sai aqui.
+		if (!pd.contains(FIGHT_START_TAG) || pd.getInt(FIGHT_T_TAG) <= 0) {
+			return;
+		}
+		ACTIVE.put(le.getUUID(), new Fight(level.dimension(), level.getGameTime()));
+	}
+
+	/**
+	 * O relogio arma no primeiro dano de PLAYER, nunca no spawn. {@code getSource().getEntity()}
+	 * ja resolve o dono de projetil (flecha, blast de ki), entao luta a distancia tambem arma.
+	 * Custo: um {@code contains()} por evento de dano do servidor inteiro.
+	 */
+	@SubscribeEvent
+	public static void onHurt(LivingHurtEvent event) {
+		LivingEntity le = event.getEntity();
+		if (le.level().isClientSide()) {
+			return;
+		}
+		CompoundTag pd = le.getPersistentData();
+		if (!pd.contains(FIGHT_T_TAG) || pd.getBoolean(FIGHT_ENGAGED_TAG)) {
+			return;
+		}
+		if (event.getSource().getEntity() instanceof ServerPlayer) {
+			pd.putBoolean(FIGHT_ENGAGED_TAG, true);
+			pd.putLong(FIGHT_START_TAG, le.level().getGameTime());
+		}
+	}
+
+	@SubscribeEvent
+	public static void onServerStopping(ServerStoppingEvent event) {
+		ACTIVE.clear();
+	}
+
+	@SubscribeEvent
+	public static void onServerTick(TickEvent.ServerTickEvent event) {
+		// A ordem dos guards e o custo do caso comum: sem luta de quest viva, isto e UM isEmpty()
+		// por tick e mais nada.
+		if (event.phase != TickEvent.Phase.END || ACTIVE.isEmpty()) {
+			return;
+		}
+		MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+		if (server == null || server.getTickCount() % SCAN_EVERY_TICKS != 0) {
+			return;
+		}
+
+		Iterator<Map.Entry<UUID, Fight>> it = ACTIVE.entrySet().iterator();
+		while (it.hasNext()) {
+			Map.Entry<UUID, Fight> entry = it.next();
+			Fight f = entry.getValue();
+			ServerLevel level = server.getLevel(f.dim);
+			if (level == null) {
+				it.remove();
+				continue;
+			}
+			Entity raw = level.getEntity(entry.getKey());
+			if (raw == null) {
+				// Chunk descarregado (ou mob removido com o chunk). Descarta rapido: se o chunk
+				// voltar, o EntityJoinLevelEvent recria a entrada com o relogio do NBT.
+				if (++f.misses >= EVICT_AFTER_MISSES) {
+					it.remove();
+				}
+				continue;
+			}
+			f.misses = 0;
+			if (!(raw instanceof LivingEntity le) || !le.isAlive()) {
+				it.remove();
+				continue;
+			}
+			// Chunk carregado mas sem entity ticking (borda): o mob esta CONGELADO. Curar ou
+			// avisar aqui seria mexer numa luta que nao esta acontecendo. A entrada fica; o
+			// fluxo volta sozinho quando o chunk tickar de novo.
+			if (!level.isPositionEntityTicking(raw.blockPosition())) {
+				continue;
+			}
+
+			CompoundTag pd = le.getPersistentData();
+			// Ninguem bateu ainda: o relogio nem esta correndo (o onHurt e quem da a partida).
+			if (!pd.getBoolean(FIGHT_ENGAGED_TAG)) {
+				continue;
+			}
+			int t = pd.getInt(FIGHT_T_TAG);
+			if (t <= 0) {
+				it.remove();
+				continue;
+			}
+			long tTicks = t * 20L;
+			long tier1At = tTicks * 2L; // 2 x T (era 3,5x; apertado em 2026-08-10 a pedido do dono)
+			long tier2At = tTicks * 4L; // 4 x T (era 5x)
+			long now = level.getGameTime();
+			long elapsed = now - pd.getLong(FIGHT_START_TAG);
+			if (elapsed < tier1At) {
+				continue; // dentro do tempo: o sistema nao existe pro jogador
+			}
+
+			// Vida cheia com degrau ativo = luta reiniciada (ver javadoc da classe). Desarma tudo
+			// e volta a esperar o proximo hit de player.
+			if (le.getHealth() >= le.getMaxHealth() - 0.01f) {
+				if (pd.getBoolean(ARMED_TIER1_TAG)) {
+					LogUtil.info(Env.SERVER, "[OvertimeRegen] {} ({}) voltou pra vida cheia; "
+									+ "relogio desarmado ate o proximo hit de player.",
+							le.getName().getString(), pd.getString(QuestService.QUEST_KEY_TAG));
+				}
+				pd.putLong(FIGHT_START_TAG, now);
+				pd.remove(FIGHT_ENGAGED_TAG);
+				pd.remove(ARMED_TIER1_TAG);
+				pd.remove(ARMED_TIER2_TAG);
+				pd.remove(WARNED_TIER1_TAG);
+				pd.remove(WARNED_TIER2_TAG);
+				f.lastHeal1 = now;
+				f.lastHeal2 = now;
+				continue;
+			}
+
+			// ---- degrau 1 (3,5xT): 5,5% a cada T/4 ----
+			if (!pd.getBoolean(ARMED_TIER1_TAG)) {
+				pd.putBoolean(ARMED_TIER1_TAG, true);
+				f.lastHeal1 = now; // a primeira cura vem T/4 depois de armar, nao junto
+				LogUtil.info(Env.SERVER, "[OvertimeRegen] degrau 1 armado: {} ({}), T={}s, "
+								+ "luta ja dura {}s.",
+						le.getName().getString(), pd.getString(QuestService.QUEST_KEY_TAG),
+						t, elapsed / 20L);
+			}
+			// Armar e avisar sao coisas separadas: com o dono offline o aviso fica pendente e e
+			// reentregue na primeira varredura em que ele estiver online, sem atrasar a regen.
+			if (!pd.getBoolean(WARNED_TIER1_TAG) && avisar(server, le, pd, Component.empty()
+					.append(Component.literal("You took too long! "))
+					.append(le.getDisplayName().copy())
+					.append(Component.literal(" is now regenerating health."))
+					.withStyle(ChatFormatting.YELLOW))) {
+				pd.putBoolean(WARNED_TIER1_TAG, true);
+			}
+			if (now - f.lastHeal1 >= tTicks / 4L) {
+				curar(le, TIER1_HEAL_PCT);
+				// Agenda por SOMA, nao por "agora": a varredura e de 20 em 20 ticks e T/4 quase
+				// nunca e multiplo disso; marcar "agora" atrasava ate 19 ticks POR CURA e o
+				// periodo real derivava pra cima. Somar mantem o periodo medio exato. O clamp
+				// evita rajada de recuperacao depois de um congelamento longo (chunk sem tick).
+				f.lastHeal1 += tTicks / 4L;
+				if (now - f.lastHeal1 >= tTicks / 4L) {
+					f.lastHeal1 = now;
+				}
+			}
+
+			// ---- degrau 2 (5xT): +11% a cada T/6, SOMADO ao degrau 1 ----
+			if (elapsed >= tier2At) {
+				if (!pd.getBoolean(ARMED_TIER2_TAG)) {
+					pd.putBoolean(ARMED_TIER2_TAG, true);
+					f.lastHeal2 = now;
+					LogUtil.info(Env.SERVER, "[OvertimeRegen] degrau 2 armado: {} ({}), T={}s, "
+									+ "luta ja dura {}s.",
+							le.getName().getString(), pd.getString(QuestService.QUEST_KEY_TAG),
+							t, elapsed / 20L);
+				}
+				if (!pd.getBoolean(WARNED_TIER2_TAG) && avisar(server, le, pd, Component.empty()
+						.append(le.getDisplayName().copy())
+						.append(Component.literal(" is regenerating even faster now!"))
+						.withStyle(ChatFormatting.RED))) {
+					pd.putBoolean(WARNED_TIER2_TAG, true);
+				}
+				if (now - f.lastHeal2 >= tTicks / 6L) {
+					curar(le, TIER2_HEAL_PCT);
+					f.lastHeal2 += tTicks / 6L;
+					if (now - f.lastHeal2 >= tTicks / 6L) {
+						f.lastHeal2 = now;
+					}
+				}
+			}
+		}
+	}
+
+	/**
+	 * {@code setHealth} direto, NUNCA {@code heal()}: o heal dispara {@code LivingHealEvent} e o
+	 * {@code EntityStatDebuffHandler} do proprio mod multiplica cura de mob por debuff de
+	 * HP_REGEN de tecnica ki (ate -50%). A regen dos degraus e regra do autobalanceador, nao uma
+	 * cura comum: nenhum modificador pode reduzi-la, senao o piso matematico do design cai.
+	 * O setHealth clampa no maximo internamente.
+	 */
+	private static void curar(LivingEntity le, float pct) {
+		le.setHealth(le.getHealth() + (float) (le.getMaxHealth() * pct));
+	}
+
+	/**
+	 * Avisa o dono da quest e a party dele. {@code false} = dono offline neste servidor; o
+	 * chamador NAO marca o aviso como entregue e tenta de novo na proxima varredura.
+	 */
+	private static boolean avisar(MinecraftServer server, LivingEntity mob, CompoundTag pd, Component msg) {
+		ServerPlayer owner = null;
+		try {
+			owner = server.getPlayerList().getPlayer(UUID.fromString(pd.getString(QuestService.QUEST_OWNER_TAG)));
+		} catch (IllegalArgumentException ignored) {
+			// tag ausente ou corrompida: sem dono pra avisar, o log da classe ja cobre o debug
+		}
+		if (owner == null) {
+			return false;
+		}
+		Set<ServerPlayer> destinatarios = new HashSet<>(PartyManager.getAllPartyMembers(owner));
+		destinatarios.add(owner);
+		for (ServerPlayer p : destinatarios) {
+			p.sendSystemMessage(msg);
+		}
+		return true;
+	}
+}

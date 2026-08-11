@@ -43,6 +43,18 @@ public class Quest {
 	@Setter
 	private int currentObjectiveIndex;
 
+	/**
+	 * Duracao de referencia da luta em SEGUNDOS (o {@code duracao-da-luta} que o autobalanceador
+	 * usou pra calibrar os stats do mob). {@code 0} = quest sem calibragem, e o sistema de
+	 * regeneracao por tempo ({@link QuestOvertimeRegen}) fica desligado pra ela.
+	 *
+	 * <p>Setter em vez de parametro no construtor de proposito: o construtor "universal" ja tem
+	 * quinze argumentos e varios chamadores; um campo opcional com default 0 nao justifica quebrar
+	 * todos eles. Segue o idioma dos outros campos mutaveis desta classe.</p>
+	 */
+	@Setter
+	private int fightDurationSeconds;
+
 	private final String category;
 	private final boolean parallelObjectives;
 	private final boolean partyScaling;

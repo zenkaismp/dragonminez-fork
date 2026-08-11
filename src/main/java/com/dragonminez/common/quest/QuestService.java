@@ -695,6 +695,22 @@ public final class QuestService {
 				entity.getPersistentData().putDouble("dmz_quest_hp", quest.getScaledKillHealth(killObjective, partySize));
 				entity.getPersistentData().putDouble("dmz_quest_melee", quest.getScaledKillMeleeDamage(killObjective, partySize));
 				entity.getPersistentData().putDouble("dmz_quest_ki", quest.getScaledKillKiDamage(killObjective, partySize));
+				// Regeneracao por tempo (anti-covarde): o T calibrado da quest e o instante do
+				// spawn vao no NBT do proprio mob. Nenhum registro manual aqui: estes tags entram
+				// ANTES do addFreshEntity, entao o EntityJoinLevelEvent do QuestOvertimeRegen ja ve
+				// o mob marcado e o rastreia sozinho, no spawn E em todo chunk load dai em diante.
+				//
+				// O T e ESCALADO pelo multiplicador de HP da dificuldade: o HARD dobra a vida do
+				// mob (EntitiesEvents), entao a mesma luta legitimamente demora ~2x mais. Sem o
+				// escalonamento, os gatilhos de 2T/4T punham o jogador de HARD no degrau 1 no
+				// meio de uma luta perfeitamente dentro do ritmo esperado.
+				if (quest.getFightDurationSeconds() > 0) {
+					Difficulty d = difficulty != null ? difficulty : Difficulty.NORMAL;
+					int tEscalado = (int) Math.max(1, Math.round(quest.getFightDurationSeconds() * d.hpMultiplier()));
+					entity.getPersistentData().putInt(QuestOvertimeRegen.FIGHT_T_TAG, tEscalado);
+					entity.getPersistentData().putLong(QuestOvertimeRegen.FIGHT_START_TAG,
+							requester.serverLevel().getGameTime());
+				}
 				if (killObjective.getTextureVariant() >= 0) {
 					entity.getPersistentData().putInt("dmz_quest_texture_variant", killObjective.getTextureVariant());
 				}

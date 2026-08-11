@@ -1832,6 +1832,20 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 				}
 			}
 
+			// O anti-covarde atravessa a transformacao: a forma nova e OUTRA entidade, e sem o T
+			// copiado ela ficaria fora do rastreio pra sempre. Mas o START e ZERADO, nao copiado:
+			// varias formas nascem com MEIA vida (SagaVegeta MidSSJ, SagaFrieza, SagaGoku...), e
+			// nessas o reset por vida cheia nunca dispararia — a fase nova comecaria com o relogio
+			// da fase velha ja estourado e a regen ligada de saida. Fase nova, relogio novo, e o
+			// engaged fica de fora de proposito: o relogio so volta a correr no primeiro hit de
+			// player NA FORMA NOVA.
+			if (pd.contains(com.dragonminez.common.quest.QuestOvertimeRegen.FIGHT_T_TAG)) {
+				newEntity.getPersistentData().putInt(com.dragonminez.common.quest.QuestOvertimeRegen.FIGHT_T_TAG,
+						pd.getInt(com.dragonminez.common.quest.QuestOvertimeRegen.FIGHT_T_TAG));
+				newEntity.getPersistentData().putLong(com.dragonminez.common.quest.QuestOvertimeRegen.FIGHT_START_TAG,
+						level.getGameTime());
+			}
+
 			if (this.transformationDisabled || pd.getBoolean("dmz_quest_no_transform")) {
 				newEntity.setTransformationDisabled(true);
 				newEntity.getPersistentData().putBoolean("dmz_quest_no_transform", true);

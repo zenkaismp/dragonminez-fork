@@ -90,8 +90,20 @@ public class QuestParser {
 		List<QuestObjective> objectives = parseObjectiveList(json);
 		List<QuestReward> rewards = parseRewardList(json);
 
-		return new Quest(numericId, stringId, type, title, description, category, parallelObjectives, partyScaling,
+		Quest quest = new Quest(numericId, stringId, type, title, description, category, parallelObjectives, partyScaling,
 				objectives, rewards, prerequisites, startRequirements, questGiver, turnIn, secret, claimMode);
+		// Duracao de referencia da luta (segundos), emitida pelo saga compiler a partir do
+		// duracao-da-luta do jogador-referencia. Ausente ou invalida = 0 = regeneracao por
+		// tempo desligada pra esta quest. Math.max porque um valor negativo no JSON viraria
+		// um threshold no passado e ligaria a regen no primeiro tick da luta.
+		if (json.has("fight_duration") && !json.get("fight_duration").isJsonNull()) {
+			try {
+				quest.setFightDurationSeconds(Math.max(0, json.get("fight_duration").getAsInt()));
+			} catch (Exception ignored) {
+				// valor nao numerico: fica 0, quest funciona como sempre funcionou
+			}
+		}
+		return quest;
 	}
 
 	private static QuestPrerequisites parseConditionsBlock(JsonObject json, String key) {
@@ -493,7 +505,7 @@ public class QuestParser {
 	private static final Set<String> QUEST_KEYS = Set.of(
 			"id", "title", "type", "description", "category", "parallel_objectives", "party_scaling",
 			"quest_giver", "turn_in", "secret", "claim_mode", "prerequisites", "requirements",
-			"objectives", "rewards", "defaultsVersion");
+			"objectives", "rewards", "defaultsVersion", "fight_duration");
 
 	private static final Set<String> CONDITION_BLOCK_KEYS = Set.of("operator", "conditions");
 	private static final Set<String> STRUCTURE_HINT_KEYS = Set.of("dimension", "x", "y", "z");
