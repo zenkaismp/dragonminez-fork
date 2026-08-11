@@ -82,11 +82,15 @@ import java.util.UUID;
  *       mob congelado nao esta em luta.</li>
  * </ul>
  *
- * <h2>O reset por vida cheia</h2>
- * Quando os degraus ja estao ativos e o mob volta pra vida CHEIA, o relogio desarma e volta a
- * esperar o proximo hit de player. Quem abandona a luta e deixa a regen encher o mob comeca uma
- * luta nova ao voltar, sem regen ligada de saida. A forma nova de uma transformacao tambem nasce
- * com relogio zerado (o {@code DBSagasEntity} copia o T mas zera o start e o engaged).
+ * <h2>Armou, fica armado ate a morte</h2>
+ * NAO existe reset por vida cheia. A primeira versao tinha, e em producao ele virou a saida do
+ * covarde: a propria regen enchia o mob, o reset desarmava tudo, e o proximo hit ganhava uma
+ * janela limpa de 2xT sem punicao (piso real de ~50% em ciclos, e mob de T curto morria dentro
+ * da janela). Como o mob de quest e PESSOAL (QUEST_OWNER_TAG), nao ha jogador inocente herdando
+ * boss armado: quem volta e o dono que estourou o tempo, e a resposta correta a "voltei mais
+ * forte" e vencer o piso, nao zera-lo. A unica "luta nova" legitima e a forma nova da
+ * transformacao, que nasce com relogio zerado e sem os tags de armado (o {@code DBSagasEntity}
+ * copia so o T).
  */
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class QuestOvertimeRegen {
@@ -239,22 +243,12 @@ public final class QuestOvertimeRegen {
 				continue; // dentro do tempo: o sistema nao existe pro jogador
 			}
 
-			// Vida cheia com degrau ativo = luta reiniciada (ver javadoc da classe). Desarma tudo
-			// e volta a esperar o proximo hit de player.
-			if (le.getHealth() >= le.getMaxHealth() - 0.01f) {
-				if (pd.getBoolean(ARMED_TIER1_TAG)) {
-					LogUtil.info(Env.SERVER, "[OvertimeRegen] {} ({}) voltou pra vida cheia; "
-									+ "relogio desarmado ate o proximo hit de player.",
-							le.getName().getString(), pd.getString(QuestService.QUEST_KEY_TAG));
-				}
-				pd.putLong(FIGHT_START_TAG, now);
-				pd.remove(FIGHT_ENGAGED_TAG);
-				pd.remove(ARMED_TIER1_TAG);
-				pd.remove(ARMED_TIER2_TAG);
-				pd.remove(WARNED_TIER1_TAG);
-				pd.remove(WARNED_TIER2_TAG);
-				continue;
-			}
+			// SEM reset por vida cheia. Existiu (ate 2026-08-11) e era FARMAVEL: a propria regen
+			// enchia o mob, o reset desarmava tudo, e o proximo hit ganhava uma janela limpa de
+			// 2xT sem punicao — o piso de 66% caia pra ~50% na pratica, e com T curto o mob
+			// morria dentro da janela. Como o mob de quest e PESSOAL (QUEST_OWNER_TAG), nao
+			// existe "proximo jogador inocente" que mereca luta limpa: quem volta e o mesmo dono
+			// que estourou o tempo. Armou, fica armado ate o mob morrer.
 
 			// ---- degrau 1 (2xT): regen continua de 66% do DPS de referencia ----
 			if (!pd.getBoolean(ARMED_TIER1_TAG)) {
@@ -294,8 +288,11 @@ public final class QuestOvertimeRegen {
 
 			// UM pulso por varredura (1s), com o valor por segundo da taxa do momento. O DPS de
 			// referencia e maxHP/T por segundo, entao a cura por segundo e maxHP * fracao / T.
-			double fracao = tier2 ? TIER1_DPS_FRACTION + TIER2_EXTRA_DPS_FRACTION : TIER1_DPS_FRACTION;
-			le.setHealth(le.getHealth() + (float) (le.getMaxHealth() * fracao / t));
+			// Mob ja cheio pula o pulso (o setHealth so clamparia), mas os degraus SEGUEM armados.
+			if (le.getHealth() < le.getMaxHealth()) {
+				double fracao = tier2 ? TIER1_DPS_FRACTION + TIER2_EXTRA_DPS_FRACTION : TIER1_DPS_FRACTION;
+				le.setHealth(le.getHealth() + (float) (le.getMaxHealth() * fracao / t));
+			}
 		}
 	}
 
