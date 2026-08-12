@@ -615,6 +615,7 @@ public final class QuestService {
 			partyIds.add(member.getStringUUID());
 		}
 		partyIds.add(requester.getStringUUID());
+		String rosterAtual = PartyManager.partyRosterCsv(requester);
 		Map<Integer, Integer> aliveByObjective = new java.util.HashMap<>();
 		for (Entity existing : requester.serverLevel().getAllEntities()) {
 			if (!existing.isAlive()) {
@@ -626,6 +627,20 @@ public final class QuestService {
 			}
 			if (!partyIds.contains(tags.getString(QUEST_OWNER_TAG))) {
 				continue;
+			}
+			// TROCA DE ELENCO com o mob intocado: o re-summon substitui em vez de recusar. Sem
+			// isto o fluxo "convidei mais um, re-invoquei" caia num loop: o guard mandava
+			// re-invocar, o censo recusava porque o mob de escala velha estava vivo, e o novo
+			// membro ficava trancado pra fora. So vale pro mob PRISTINO (vida cheia e relogio do
+			// anti-covarde nunca armado): com a luta em andamento a troca continua exigindo matar
+			// o mob, senao re-invocar viraria o botao de reset do relogio e um jogador de 50-65%
+			// do DPS de referencia limparia a punicao de graca a cada re-summon.
+			boolean intocado = !tags.getBoolean(QuestOvertimeRegen.FIGHT_ENGAGED_TAG)
+					&& existing instanceof net.minecraft.world.entity.LivingEntity vivo
+					&& vivo.getHealth() >= vivo.getMaxHealth() - 0.01f;
+			if (intocado && !rosterAtual.equals(tags.getString(QuestMobGuard.PARTY_STAMP_TAG))) {
+				existing.discard();
+				continue; // nao conta: o lugar dele e do spawn novo, na escala do elenco de agora
 			}
 			aliveByObjective.merge(tags.getInt(QUEST_OBJECTIVE_INDEX_TAG), 1, Integer::sum);
 		}
