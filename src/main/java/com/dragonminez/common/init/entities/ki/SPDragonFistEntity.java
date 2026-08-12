@@ -144,6 +144,12 @@ public class SPDragonFistEntity extends AbstractKiProjectile implements GeoEntit
         List<Entity> targets = this.level().getEntities(this, hitbox, this::shouldDamage);
 
         for (Entity target : targets) {
+            // O grab segura o alvo mesmo com o dano cancelado: mob de quest dos outros ficava
+            // preso no punho de um estranho. Quem nao pode ferir, nao pode segurar.
+            if (target instanceof net.minecraft.world.entity.LivingEntity le
+                    && com.dragonminez.common.quest.QuestMobGuard.isBlocked(le, owner)) {
+                continue;
+            }
             if (target.invulnerableTime <= 0) {
                 boolean hit = target.hurt(MainDamageTypes.strikeAttack(this.level(), owner, "dragon_fist"), this.getDamagePerHit());
 

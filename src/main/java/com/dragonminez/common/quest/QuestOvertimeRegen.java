@@ -82,6 +82,14 @@ import java.util.UUID;
  *       mob congelado nao esta em luta.</li>
  * </ul>
  *
+ * <h2>Party e a regen (decisao consciente, nao esquecimento)</h2>
+ * Em party a vida do mob escala x N e a regen escala JUNTO (ela e fracao de maxHP/T): o piso
+ * continua 66%/100% do DPS de referencia POR MEMBRO, identico ao solo. A revisao sugeriu
+ * dividir o pulso pelo tamanho da party e a sugestao foi REJEITADA: dividir derrubava o piso
+ * pra 66/N por cabeca e transformava a party na brecha do anti-covarde (dois fracos pela
+ * metade do custo). O preco assumido: elenco com gente offline enfrenta regen dimensionada pro
+ * elenco cheio; e o mesmo compromisso do roster na escala de vida.
+ *
  * <h2>Armou, fica armado ate a morte</h2>
  * NAO existe reset por vida cheia. A primeira versao tinha, e em producao ele virou a saida do
  * covarde: a propria regen enchia o mob, o reset desarmava tudo, e o proximo hit ganhava uma

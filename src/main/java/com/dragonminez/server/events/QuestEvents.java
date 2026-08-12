@@ -13,6 +13,7 @@ import com.dragonminez.common.quest.PlayerQuestData;
 import com.dragonminez.common.quest.Quest;
 import com.dragonminez.common.quest.QuestAvailabilityChecker;
 import com.dragonminez.common.quest.QuestLocationHelper;
+import com.dragonminez.common.quest.QuestMobGuard;
 import com.dragonminez.common.quest.QuestObjective;
 import com.dragonminez.common.quest.QuestRegistry;
 import com.dragonminez.common.quest.QuestService;
@@ -268,6 +269,13 @@ public class QuestEvents {
 
 	private static void processKillObjectives(ServerPlayer player, PlayerQuestData pqd, String questKey, Quest quest,
 											LivingEntity killedEntity, List<ServerPlayer> partyMembers) {
+		// Mob carimbado (QuestMobGuard) so credita quem esta no CARIMBO, o elenco do spawn.
+		// Quem entrou na party depois nao pode bater neste mob, entao tambem nao progride por
+		// ele: ganha os dois direitos juntos no proximo spawn.
+		String stamp = killedEntity.getPersistentData().getString(QuestMobGuard.PARTY_STAMP_TAG);
+		if (!stamp.isEmpty() && !QuestMobGuard.stampContains(stamp, player.getStringUUID())) {
+			return;
+		}
 		for (int i = 0; i < quest.getObjectives().size(); i++) {
 			QuestObjective objective = quest.getObjectives().get(i);
 			int currentProgress = pqd.getObjectiveProgress(questKey, i);

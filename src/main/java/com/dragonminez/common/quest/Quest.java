@@ -148,9 +148,20 @@ public class Quest {
 		}
 	}
 
+	/**
+	 * VIDA multiplica pelo TAMANHO da party (2 players = 2x, 3 = 3x): sao N jogadores fazendo
+	 * ~N vezes o DPS de referencia, entao a luta so mantem a duracao calibrada (o T do
+	 * autobalanceador) com a vida acompanhando linearmente. O knob enemyHealthPerPartyPlayer
+	 * deixou de valer pra vida (dava so +25% por membro extra e a party diluia a luta).
+	 *
+	 * <p>O DANO continua no knob (1.1 = +10% por membro extra, decisao do dono 2026-08-11): o
+	 * NPC foca UM alvo por vez, entao dano x N nao distribui, concentra — mataria o focado.</p>
+	 */
 	public double getScaledKillHealth(KillObjective objective, int partySize) {
-		return objective.getHealth() * enemyPartyMultiplier(partySize,
-				ConfigManager.getServerConfig().getGameplay().getEnemyHealthPerPartyPlayer());
+		if (!partyScaling) {
+			return objective.getHealth();
+		}
+		return objective.getHealth() * Math.max(1, partySize);
 	}
 
 	public double getScaledKillMeleeDamage(KillObjective objective, int partySize) {
@@ -165,8 +176,11 @@ public class Quest {
 
 	public Double getScaledTransformHealth(KillObjective objective, int partySize) {
 		Double base = objective.getTransformHealth();
-		return base == null ? null : base * enemyPartyMultiplier(partySize,
-				ConfigManager.getServerConfig().getGameplay().getEnemyHealthPerPartyPlayer());
+		if (base == null) {
+			return null;
+		}
+		// Mesma regra da vida base: x tamanho da party (a forma transformada e a mesma luta).
+		return partyScaling ? base * Math.max(1, partySize) : base;
 	}
 
 	public Double getScaledTransformMeleeDamage(KillObjective objective, int partySize) {
@@ -195,13 +209,9 @@ public class Quest {
 			return roundUpCount(Math.max(baseRequired, scaled), resolveItemCountStep(baseRequired));
 		}
 
-		if (objective instanceof KillObjective) {
-			if (baseRequired <= 1) {
-				return baseRequired;
-			}
-			double scaled = baseRequired * Math.pow(configuredMultiplier, extraMembers * 0.75);
-			return Math.max(baseRequired, (int) Math.ceil(scaled));
-		}
+		// KILL nao escala mais a CONTAGEM: a vida do mob ja multiplica pelo tamanho da party
+		// (getScaledKillHealth), e escalar as duas coisas cobrava a party duas vezes (contagem
+		// por 1.45^0.75 por extra EM CIMA de vida por N chegava a 3x de esforco por pessoa).
 
 		return baseRequired;
 	}

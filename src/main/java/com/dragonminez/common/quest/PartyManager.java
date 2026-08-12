@@ -73,6 +73,7 @@ public final class PartyManager {
         party = data.createParty(player.getUUID());
         addToMinecraftTeam(player.getServer(), party.getPartyId(), player);
         syncPartyToOnlineMembers(player.getServer(), party);
+        registerLevelSeen(player); // o criador e o primeiro nivel "visto" da ancora
         return party.getPartyId();
     }
 
@@ -162,6 +163,55 @@ public final class PartyManager {
         return members;
     }
 
+    /** Registra o nivel do jogador como "ja visto" na party dele (ancora do gate). */
+    private static void registerLevelSeen(ServerPlayer p) {
+        PartySavedData data = PartySavedData.get(p.getServer());
+        PartySavedData.PartyInstance party = data.getPartyOf(p.getUUID());
+        if (party == null) return;
+        StatsData sd = getStatsData(p);
+        if (sd != null && sd.getLevel() > party.getMaxLevelSeen()) {
+            party.setMaxLevelSeen(sd.getLevel());
+            data.setDirty();
+        }
+    }
+
+    /**
+     * Tamanho do ELENCO da party (offline incluso). E o numero da escala de vida do mob: o
+     * roster e o compromisso. Contar so os online abriria o exploit de "3 deslogam no spawn,
+     * mob nasce com 1x de vida, os 4 batem".
+     */
+    public static int getPartyRosterSize(ServerPlayer player) {
+        PartySavedData.PartyInstance p = PartySavedData.get(player.getServer()).getPartyOf(player.getUUID());
+        return p == null ? 1 : Math.max(1, p.getMembers().size());
+    }
+
+    /** CSV dos UUIDs do elenco (solo = so o proprio). Vira o carimbo de autorizacao do mob. */
+    public static String partyRosterCsv(ServerPlayer player) {
+        PartySavedData.PartyInstance p = PartySavedData.get(player.getServer()).getPartyOf(player.getUUID());
+        if (p == null || p.getMembers().isEmpty()) return player.getStringUUID();
+        StringBuilder sb = new StringBuilder();
+        for (UUID m : p.getMembers()) {
+            if (sb.length() > 0) sb.append(',');
+            sb.append(m);
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Tolerancia RELATIVA do gate de nivel: 20% do nivel do mais forte. E o "um pouco acima ou
+     * um pouco abaixo" pedido pelo design; o valor absoluto da config vira um PISO pro early
+     * game, onde 20% de um nivel baixo seria zero na pratica.
+     */
+    private static final double LEVEL_GAP_RELATIVE = 0.20;
+
+    /**
+     * O bug que este metodo tinha: comparar por gap ABSOLUTO numa escala que nao e absoluta.
+     * O {@code getLevel()} mapeia o total de stats no intervalo [1, maxValue], e no servidor
+     * maxValue e 1.000.000: o nivel vira ~totalStats/6, e o gap de 500 da config equivale a
+     * ~3.000 pontos de stats TOTAIS. Dois jogadores na mesma quest com 0,3% de diferenca de
+     * poder reprovavam com "level too different". Agora passa quem estiver dentro do gap
+     * absoluto OU dentro de 20% do nivel do mais forte, o que for mais generoso.
+     */
     private static boolean validateLevelGap(ServerPlayer leader, ServerPlayer target) {
         int maxGap = ConfigManager.getServerConfig().getGameplay().getPartyMaxLevelGap();
         if (maxGap == -1) return true;
@@ -174,7 +224,14 @@ public final class PartyManager {
         int leaderLevel = leaderData.getLevel();
         int targetLevel = targetData.getLevel();
 
-        return Math.abs(leaderLevel - targetLevel) <= maxGap;
+        // A ancora inclui o MAIOR nivel que ja passou pela party (nao so o lider atual):
+        // transferir a lideranca pra um membro fraco nao reancora o gate pra baixo.
+        long ancora = Math.max(leaderLevel, targetLevel);
+        PartySavedData.PartyInstance partyDoLider = PartySavedData.get(leader.getServer()).getPartyOf(leader.getUUID());
+        if (partyDoLider != null) ancora = Math.max(ancora, partyDoLider.getMaxLevelSeen());
+
+        long allowed = Math.max(maxGap, Math.round(LEVEL_GAP_RELATIVE * ancora));
+        return Math.abs((long) leaderLevel - targetLevel) <= allowed;
     }
 
     public static InviteRequestResult requestInvite(ServerPlayer inviter, ServerPlayer invitee) {
@@ -239,9 +296,6 @@ public final class PartyManager {
 
         if (invite == null) return InviteAcceptResult.INVALID;
 
-        ServerPlayer resolvedLeader = isInParty(invitee) ? getPartyLeader(invitee) : invitee;
-        if (resolvedLeader != null && !validateLevelGap(resolvedLeader, invitee)) return InviteAcceptResult.LEVEL_GAP;
-
         if (invite.isExpired()) {
             inviteeQuestData.clearPendingPartyInvite();
             syncSelf(invitee);
@@ -254,6 +308,13 @@ public final class PartyManager {
             syncSelf(invitee);
             return InviteAcceptResult.INVALID;
         }
+
+        // Compara com o LIDER DO CONVITE, resolvido logo acima. A versao anterior montava
+        // "resolvedLeader = isInParty(invitee) ? getPartyLeader(invitee) : invitee" — e quem
+        // aceita um convite NUNCA esta em party (o requestInvite barra), entao o gate comparava
+        // o convidado COM ELE MESMO e nao validava nada. O nivel dos dois pode ter mudado entre
+        // o convite e o aceite, entao revalidar aqui e necessario, so que contra a pessoa certa.
+        if (!validateLevelGap(leader, invitee)) return InviteAcceptResult.LEVEL_GAP;
 
         int maxMembers = ConfigManager.getServerConfig().getGameplay().getPartyMaxMembers();
         if (maxMembers != -1 && getAllPartyMembers(leader).size() >= maxMembers) {
@@ -344,6 +405,10 @@ public final class PartyManager {
     }
 
     public static void beginFusionParty(ServerPlayer leader, ServerPlayer partner) {
+        // A fusao criava party SEM o gate de nivel: era a porta dos fundos do convite. Sem a
+        // party de quest a fusao em si continua funcionando; o que ela deixa de fazer e fundir
+        // o progresso de dois jogadores que o convite normal recusaria.
+        if (!validateLevelGap(leader, partner)) return;
         snapshotFusionParty(leader);
         snapshotFusionParty(partner);
 
@@ -407,6 +472,7 @@ public final class PartyManager {
         data.addPlayerToParty(targetPartyId, mover.getUUID());
         addToMinecraftTeam(server, targetPartyId, mover);
         updateTeamFriendlyFire(server, targetPartyId, party.isPvpEnabled());
+        registerLevelSeen(mover);
 
         if (restoreLeadership) {
             party.setLeaderId(mover.getUUID());
@@ -494,6 +560,8 @@ public final class PartyManager {
         addToMinecraftTeam(leader.getServer(), partyId, leader);
         addToMinecraftTeam(leader.getServer(), partyId, member);
         updateTeamFriendlyFire(leader.getServer(), partyId, party.isPvpEnabled());
+        registerLevelSeen(leader);
+        registerLevelSeen(member);
 
         syncPartyToOnlineMembers(leader.getServer(), party);
     }

@@ -47,6 +47,8 @@ public class PartySavedData extends SavedData {
 			}
 
 			PartyInstance instance = new PartyInstance(partyId, leaderId, members, pvpEnabled);
+			// Save antigo nao tem a chave: getInt devolve 0 e a ancora cai nos niveis atuais.
+			instance.setMaxLevelSeen(partyTag.getInt("MaxLevelSeen"));
 			data.parties.put(partyId, instance);
 			for (UUID memberId : members) {
 				data.playerPartyMap.put(memberId, partyId);
@@ -63,6 +65,7 @@ public class PartySavedData extends SavedData {
 			partyTag.putUUID("PartyId", instance.getPartyId());
 			partyTag.putUUID("LeaderId", instance.getLeaderId());
 			partyTag.putBoolean("PvpEnabled", instance.isPvpEnabled());
+			partyTag.putInt("MaxLevelSeen", instance.getMaxLevelSeen());
 
 			ListTag membersList = new ListTag();
 			for (UUID memberId : instance.getMembers()) {
@@ -125,6 +128,17 @@ public class PartySavedData extends SavedData {
 		private final List<UUID> members;
 		@Setter
 		private boolean pvpEnabled;
+
+		/**
+		 * Maior nivel que JA passou por esta party. E a ancora do gate de nivel: sem ela, dava
+		 * pra descer a escada (o lider transfere a lideranca pro membro mais fraco, que convida
+		 * alguem 20% abaixo DELE, e assim por diante). Monotono de proposito: stats nunca
+		 * regridem, entao o teto historico e a referencia honesta do poder da party.
+		 */
+		@Setter
+		private int maxLevelSeen;
+
+		public int getMaxLevelSeen() { return maxLevelSeen; }
 
 		public PartyInstance(UUID partyId, UUID leaderId, List<UUID> members, boolean pvpEnabled) {
 			this.partyId = partyId;

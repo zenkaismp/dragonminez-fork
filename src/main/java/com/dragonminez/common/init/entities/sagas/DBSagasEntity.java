@@ -1495,6 +1495,12 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 
         if (!this.level().isClientSide && pAmount >= this.getHealth()) {
             if (this.canTransform() && !isAbsoluteDeath) {
+                // Este ramo sai ANTES do super.hurt, e o LivingAttackEvent (onde o QuestMobGuard
+                // mora) so nasce la dentro: um hit forte de um estranho forcava a transformacao
+                // do boss dos outros sem o guard ver. Posta o evento a mao; cancelado = nada.
+                if (!net.minecraftforge.common.ForgeHooks.onLivingAttack(this, pSource, pAmount)) {
+                    return false;
+                }
                 this.setHealth(1.0F);
                 this.startTransformation();
                 return false;
@@ -1814,6 +1820,12 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 			}
 			if (this.getPersistentData().contains("dmz_quest_owner")) {
 				newEntity.getPersistentData().putString("dmz_quest_owner", this.getPersistentData().getString("dmz_quest_owner"));
+			}
+			// O carimbo de autorizacao atravessa a transformacao junto com o dono: sem ele a
+			// forma nova cairia no fallback de party viva e reabriria o exploit na fase 2.
+			if (this.getPersistentData().contains(com.dragonminez.common.quest.QuestMobGuard.PARTY_STAMP_TAG)) {
+				newEntity.getPersistentData().putString(com.dragonminez.common.quest.QuestMobGuard.PARTY_STAMP_TAG,
+						this.getPersistentData().getString(com.dragonminez.common.quest.QuestMobGuard.PARTY_STAMP_TAG));
 			}
 			if (this.getPersistentData().contains(QuestService.QUEST_KEY_TAG)) {
 				newEntity.getPersistentData().putString(QuestService.QUEST_KEY_TAG, this.getPersistentData().getString(QuestService.QUEST_KEY_TAG));

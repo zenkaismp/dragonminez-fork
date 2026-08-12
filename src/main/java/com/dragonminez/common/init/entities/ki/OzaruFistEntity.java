@@ -109,6 +109,11 @@ public class OzaruFistEntity extends AbstractKiProjectile implements GeoEntity {
         double holdHeight = 2.0D;
 
         for (Entity target : targets) {
+            // Mesmo motivo do Dragon Fist: quem nao pode ferir, nao pode erguer.
+            if (target instanceof net.minecraft.world.entity.LivingEntity le
+                    && com.dragonminez.common.quest.QuestMobGuard.isBlocked(le, owner)) {
+                continue;
+            }
             if (this.applyContinuousDamage(target)) {
                 this.onSuccessfulHit(target);
                 this.applyStrikeStun(target);

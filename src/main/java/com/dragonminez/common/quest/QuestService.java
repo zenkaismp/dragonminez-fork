@@ -136,7 +136,9 @@ public final class QuestService {
 		}
 		resummonAntiSpam.put(requester.getUUID(), now);
 
-		int partySize = PartyManager.getAllPartyMembers(controller).size();
+		// ROSTER, nao online: a escala de vida e por elenco. Contar so os presentes abria o
+		// exploit de deslogar 3 no resummon e voltar pra bater em mob de 1x de vida.
+		int partySize = PartyManager.getPartyRosterSize(controller);
 		try {
 			int spawned = spawnKillObjectives(requester, resolved, pqd, partySize, pqd.getQuestDifficulty(questKey));
 			if (spawned == 0) {
@@ -350,7 +352,7 @@ public final class QuestService {
 			return Component.translatable("message.dragonminez.quest.start.unavailable");
 		}
 
-		int partySize = partyMembers.size();
+		int partySize = PartyManager.getPartyRosterSize(requester); // roster, nao online (ver resummon)
 		pqd.acceptQuest(questKey);
 		quest.initializeObjectiveRequirements(pqd, questKey, partySize);
 		pqd.setQuestDifficulty(questKey, startEvent.getDifficulty());
@@ -688,7 +690,15 @@ public final class QuestService {
 
 				entity.getPersistentData().putString(QUEST_KEY_TAG, questKey);
 				entity.getPersistentData().putInt(QUEST_OBJECTIVE_INDEX_TAG, i);
-				entity.getPersistentData().putString(QUEST_OWNER_TAG, requester.getStringUUID());
+				// O dono do mob e o CONTROLADOR da quest (o lider, em party): e a identidade que
+				// o guard, o censo e o aviso do anti-covarde usam, e ela nao pode depender de QUEM
+				// clicou o resummon.
+				entity.getPersistentData().putString(QUEST_OWNER_TAG,
+						PartyManager.resolveQuestController(requester).getStringUUID());
+				// Carimbo de autorizacao (QuestMobGuard): o ELENCO deste spawn. A vida foi
+				// escalada por este numero de pessoas, entao sao estas pessoas que podem bater.
+				entity.getPersistentData().putString(QuestMobGuard.PARTY_STAMP_TAG,
+						PartyManager.partyRosterCsv(requester));
 				if (questTeam != null) {
 					entity.getPersistentData().putString(QUEST_TEAM_TAG, questTeam);
 				}

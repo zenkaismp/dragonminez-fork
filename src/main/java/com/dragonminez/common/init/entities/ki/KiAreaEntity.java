@@ -131,13 +131,17 @@ public class KiAreaEntity extends AbstractKiProjectile {
         for (LivingEntity target : targets) {
             if (this.isHeal()) {
                 if (target == this.getOwner() || !this.shouldDamage(target)) {
-                    this.applyDamageOrHeal(target, this.getDamagePerHit());
-                    this.onSuccessfulHit(target);
+                    if (this.applyDamageOrHeal(target, this.getDamagePerHit())) {
+                        this.onSuccessfulHit(target);
+                    }
                 }
             } else {
                 if (target != this.getOwner() && this.shouldDamage(target)) {
-                    this.applyDamageOrHeal(target, this.getDamagePerHit());
-                    this.onSuccessfulHit(target);
+                    // XP e debuff so quando o dano ENTROU: com o hit cancelado (QuestMobGuard,
+                    // arena, regiao protegida), a AREA creditava XP e debufava de graca.
+                    if (this.applyDamageOrHeal(target, this.getDamagePerHit())) {
+                        this.onSuccessfulHit(target);
+                    }
                 }
             }
         }
