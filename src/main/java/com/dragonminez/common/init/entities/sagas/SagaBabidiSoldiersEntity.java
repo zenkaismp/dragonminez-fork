@@ -1,6 +1,5 @@
 package com.dragonminez.common.init.entities.sagas;
 
-import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.init.entities.IBattlePower;
 import com.dragonminez.common.stats.StatsCapability;
@@ -70,6 +69,13 @@ public class SagaBabidiSoldiersEntity {
                 StatsProvider.get(StatsCapability.INSTANCE, serverPlayer).ifPresent(data -> {
                     if (!data.getStatus().isHasCreatedCharacter()) return;
 
+                    // ZENKAI: o "comer luz" ficou so no dreno de ki. O upstream tambem
+                    // limpava a forma ativa do player a CADA hit (clearActiveForm +
+                    // clearActiveStackForm), e a quest 12 da saga Buu e balanceada pelo
+                    // autobalanceador contra um jogador-referencia TRANSFORMADO: perder os
+                    // multiplicadores no meio da luta, toda vez que o mob acerta um soco,
+                    // tornava a missao desproporcional ao resto da escada. O dreno de 3%
+                    // do ki maximo preserva o tema do Yakon sem resetar o build do player.
                     double currentKi = data.getResources().getCurrentEnergy();
                     double maxKi = data.getMaxEnergy();
 
@@ -77,17 +83,6 @@ public class SagaBabidiSoldiersEntity {
 
                     double newKi = Math.max(0, currentKi - drainAmount);
                     data.getResources().setCurrentEnergy((float) newKi);
-
-                    if (data.getCharacter().hasActiveForm() || data.getCharacter().hasActiveStackForm()) {
-                        float dmg = (float) (ConfigManager.getCombatConfig().getBaselineFormDrain() * (data.getTotalMultiplier(
-                                data.getMeleeDamage() > data.getKiDamage() ? "STR" : data.getKiDamage() > data.getStrikeDamage() ? "PWR" : "SKP")) / 4);
-
-                        data.getCharacter().clearActiveForm(this);
-                        data.getCharacter().clearActiveStackForm(this);
-
-                        this.hurt(damageSources().magic(), dmg);
-                    }
-
                 });
             }
 
