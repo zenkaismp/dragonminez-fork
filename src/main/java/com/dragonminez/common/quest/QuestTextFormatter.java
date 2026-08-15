@@ -63,6 +63,27 @@ public final class QuestTextFormatter {
 			Map.entry("dragonminez:time_chamber", "Hyperbolic Time Chamber")
 	);
 
+	/**
+	 * ZENKAI: como CHEGAR na dimensao, anexado em amarelo ao requisito e ao objetivo de
+	 * dimensao em toda superficie da UI (tracker compacto, arvore, detalhes).
+	 *
+	 * <p>A dica de warp que morava na DESCRICAO da quest nao aparecia no tracker, que so
+	 * mostra titulo/prerequisito/requisito: o player via "Dimension: Hyperbolic Time
+	 * Chamber" em vermelho e nao tinha como saber o caminho. Aqui e a unica costura por
+	 * onde TODAS as superficies passam. Warp novo pra dimensao nova = uma entrada aqui.</p>
+	 */
+	private static final Map<String, String> DIMENSION_TRAVEL_HINTS = Map.ofEntries(
+			Map.entry("dragonminez:time_chamber", "/warp timechamber"),
+			Map.entry("dragonminez:otherworld", "/warp otherworld")
+	);
+
+	private static MutableComponent appendTravelHint(MutableComponent base, String dimensionId) {
+		String hint = DIMENSION_TRAVEL_HINTS.get(dimensionId);
+		if (hint == null) return base;
+		// Estilo proprio no filho: sobrevive ao vermelho/verde que o caller pinta no pai.
+		return base.append(Component.literal(" (" + hint + ")").withStyle(ChatFormatting.YELLOW));
+	}
+
 	private QuestTextFormatter() {
 	}
 
@@ -96,7 +117,9 @@ public final class QuestTextFormatter {
 			return Component.translatable(OBJECTIVE_GO_TO, resolveBiomeName(biome.getBiomeId()));
 		}
 		if (objective instanceof DimensionObjective dimension) {
-			return Component.translatable(OBJECTIVE_GO_TO, resolveDimensionName(dimension.getDimensionId()));
+			return appendTravelHint(
+					Component.translatable(OBJECTIVE_GO_TO, resolveDimensionName(dimension.getDimensionId())),
+					dimension.getDimensionId());
 		}
 		if (objective instanceof CoordsObjective coords) {
 			return Component.translatable(OBJECTIVE_GO_TO, Component.literal(
@@ -134,10 +157,11 @@ public final class QuestTextFormatter {
 					resolveBiomeName(condition.getBiomeId())
 			);
 			case STRUCTURE -> buildStructureRequirement(condition);
-			case DIMENSION -> Component.translatable(
-					"gui.dragonminez.quests.requirement.dimension",
-					resolveDimensionName(condition.getDimensionId())
-			);
+			case DIMENSION -> appendTravelHint(
+					Component.translatable(
+							"gui.dragonminez.quests.requirement.dimension",
+							resolveDimensionName(condition.getDimensionId())),
+					condition.getDimensionId());
 			case TIME -> buildTimeRequirement(condition, context);
 			case ALIGNMENT -> buildAlignmentRequirement(condition);
 			case SKILL -> Component.translatable(
