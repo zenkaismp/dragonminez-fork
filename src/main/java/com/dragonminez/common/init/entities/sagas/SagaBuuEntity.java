@@ -243,7 +243,20 @@ public class SagaBuuEntity {
             this.setAuraColor(0xFF82F3);
             this.setKiBlastSpeed(2.2f);
 
-            this.setAllowedCombos(60, ComboType.GUM_PUNCH, ComboType.AIR, ComboType.BASIC, ComboType.GUM_EXPAND, ComboType.RAPID_KICKS, ComboType.SLEEP_RECOVERY);
+            // SLEEP_RECOVERY REMOVIDO (18/08). O combo 7 cura 5% da vida maxima a cada 10
+            // ticks por 100 ticks: 50% DA VIDA por uso. Com cooldown de 60 ticks e sorteio
+            // uniforme entre os combos, ele saia ~1 em 6 vezes, ou seja o Kid Buu recuperava
+            // metade da barra a cada meio minuto de luta.
+            //
+            // Alem de brutal sozinho, ele brigava de frente com o anti-covarde: o jogador que
+            // estourou o tempo enfrenta a regen POR TEMPO do QuestOvertimeRegen (66% e depois
+            // 100% do DPS de referencia) E ainda levava 50% de cura de brinde, o que tornava a
+            // luta matematicamente impossivel em vez de so punitiva.
+            //
+            // Os outros cinco combos continuam iguais: o Kid Buu nao perdeu nenhum ataque, so
+            // a cura. Pra devolver, basta acrescentar ComboType.SLEEP_RECOVERY na lista abaixo
+            // (o handleSleepRecovery do ComboManager continua intacto, nada foi apagado la).
+            this.setAllowedCombos(60, ComboType.GUM_PUNCH, ComboType.AIR, ComboType.BASIC, ComboType.GUM_EXPAND, ComboType.RAPID_KICKS);
 
             this.addKiSkill(KiSkillType.KI_SMALL, 40, 1.5F, 0xFF82F3, 0xFF1AEC);
             this.addKiSkill(KiSkillType.GENERIC_KI_WAVE, 400, 2.0F, 0xFF82F3, 0xFF1AEC, 0xDE0BCD);
