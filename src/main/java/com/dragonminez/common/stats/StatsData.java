@@ -1693,6 +1693,12 @@ public class StatsData {
 		this.hasInitializedHealth = other.hasInitializedHealth;
 		if (character.getRaceName() != null && !character.getRaceName().isEmpty())
 			updateTransformationSkillLimits(character.getRaceName());
-		this.isDataLoaded = true;
+		// ZENKAI (auditoria do TP zerado, 2026-08-18): NUNCA cravar true aqui. O clone da
+		// morte copiava caps DEFAULT (load do banco ainda em voo) e o `true` incondicional
+		// carimbava o vazio como "carregado": a unica guarda do save passava e o CAS gravava
+		// TP=0 com revisao valida — wipe total do jogador. A copia propaga a VERDADE da
+		// origem: clone de nao-carregado continua nao-carregado e o save fica barrado ate o
+		// load pousar (que agora tambem acha a entidade nova, ver StorageManager).
+		this.isDataLoaded = other.isDataLoaded;
 	}
 }

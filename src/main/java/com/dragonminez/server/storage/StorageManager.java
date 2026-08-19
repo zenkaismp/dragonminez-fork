@@ -258,7 +258,16 @@ public class StorageManager {
 				.thenComposeAsync(v -> CompletableFuture.supplyAsync(() -> activeStorage.load(uuid), dbExecutor))
 				.thenAccept(result -> ServerLifecycleHooks.getCurrentServer().execute(() -> {
 					pendingLoads.compute(uuid, (k, v) -> v == null || v <= 1 ? null : v - 1);
-					if (player.connection == null) {
+					// ZENKAI (auditoria do TP zerado): re-busca o jogador VIVO por UUID em vez de
+					// usar a referencia capturada no login. Se o jogador MORREU durante o load, a
+					// referencia antiga e a entidade morta: `connection` continua preenchida (o
+					// vanilla transfere pro clone sem anular o campo do morto) e as caps foram
+					// invalidadas — o apply virava no-op MUDO, o dado bom do banco era descartado
+					// e a revisao ja armada validava o save do clone vazio. O caminho de CONFLICT
+					// ja re-buscava; agora o caminho feliz tambem.
+					ServerPlayer vivo = ServerLifecycleHooks.getCurrentServer()
+							.getPlayerList().getPlayer(uuid);
+					if (vivo == null) {
 						LogUtil.info(Env.SERVER, "[Load] {} saiu antes da resposta do storage.", name);
 						return;
 					}
@@ -268,7 +277,7 @@ public class StorageManager {
 							revisions.put(uuid, result.rev());
 							LogUtil.info(Env.SERVER, "[Load] {} — dados encontrados (rev {}), aplicando.",
 									name, result.rev());
-							applyLoadedData(player, result.data());
+							applyLoadedData(vivo, result.data());
 						}
 						case ABSENT -> {
 							// Sem registro: -1 = "nao havia linha". O save vira INSERT puro, e chave
@@ -281,12 +290,19 @@ public class StorageManager {
 							// abrir a criacao de personagem.
 							LogUtil.info(Env.SERVER, "[Load] {} — sem registro no storage: jogador novo, "
 									+ "liberando a criacao de personagem.", name);
-							NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+							NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(vivo), vivo);
 						}
-						case FAILED -> LogUtil.error(Env.SERVER, "[Load] {} — o storage NAO respondeu "
+						case FAILED -> {
+							// ZENKAI: desarma a revisao cacheada de sessao anterior. Se algum save
+							// escapar mesmo com o load falho, expected=-1 vira INSERT -> duplicata ->
+							// CONFLICT barulhento que ressincroniza e CURA — nunca um UPDATE
+							// silencioso com rev velha gravando estado nao-confiavel por cima.
+							revisions.remove(uuid);
+							LogUtil.error(Env.SERVER, "[Load] {} — o storage NAO respondeu "
 								+ "(veja o erro acima). A criacao de personagem fica bloqueada para ele: "
 								+ "os dados podem existir e nao podem ser sobrescritos. Conserte o storage "
 								+ "e peca para ele reentrar.", name);
+						}
 					}
 				}))
 				.exceptionally(ex -> {
@@ -303,6 +319,16 @@ public class StorageManager {
 	private static void applyLoadedData(ServerPlayer player, CompoundTag loadedData) {
 		// Antes do load: quem quiser MEXER no NBT que sera aplicado tem esta janela.
 		MinecraftForge.EVENT_BUS.post(new DMZEvent.PlayerDataLoadEvent(player, loadedData));
+
+		// ZENKAI: capability ausente aqui significa entidade invalidada (morto/clone) — o
+		// dado do banco seria DESCARTADO. Isso ja causou wipe total em silencio; se voltar
+		// a acontecer, tem que gritar no log.
+		if (!StatsProvider.get(StatsCapability.INSTANCE, player).isPresent()) {
+			LogUtil.error(Env.SERVER, "[Load] " + player.getScoreboardName()
+					+ " — capability INDISPONIVEL na hora de aplicar os dados do storage; dado "
+					+ "do banco descartado. Entidade invalidada? Investigar.", new IllegalStateException());
+			return;
+		}
 
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
 			try {
@@ -355,6 +381,15 @@ public class StorageManager {
 
 		StatsData stats = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
 		if (stats == null) return CompletableFuture.completedFuture(null);
+		// ZENKAI (auditoria do TP zerado): load em voo = a RAM ainda NAO e autoridade sobre
+		// este jogador; salvar agora gravaria o pre-load (default ou .dat local) por cima do
+		// banco. Vale pro save da troca de proxy, pro logout e pro sweeper. A cerca do
+		// destino espera o pendingSave, que devolve completo quando nada foi enfileirado.
+		if (isLoadPending(player.getUUID())) {
+			LogUtil.info(Env.SERVER, "[Save] {} — recusado: load ainda em voo, nada confiavel "
+					+ "a gravar.", player.getScoreboardName());
+			return CompletableFuture.completedFuture(null);
+		}
 		if (!stats.isDataLoaded() && !stats.getStatus().isHasCreatedCharacter()) {
 			return CompletableFuture.completedFuture(null);
 		}
