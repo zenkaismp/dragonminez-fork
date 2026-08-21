@@ -22,6 +22,9 @@ import java.util.List;
 
 public class StructureLocator {
 
+	/** Uma vez por boot: o aviso de busca adiada nao pode virar spam de log. */
+	private static volatile boolean warnedOffThreadSearch = false;
+
 	@Nullable
 	public static BlockPos locateStructure(ServerLevel level, ResourceKey<Structure> structureKey, BlockPos searchFrom) {
 		var structureRegistry = level.registryAccess().registryOrThrow(Registries.STRUCTURE);
@@ -56,6 +59,22 @@ public class StructureLocator {
 
 		if (best != null) {
 			return best;
+		}
+
+		// FALLBACK CARO E NAO-THREAD-SAFE: findNearestMapStructure varre o mundo pelo
+		// StructureCheck do vanilla, que guarda o resultado em mapas fastutil SEM
+		// sincronizacao e ainda le region file. Chamar isso fora da main thread e corrida
+		// de verdade (o QuestStructureHints resolve os hints no backgroundExecutor).
+		// Fora da main devolvemos null: o chamador ja trata (o placement pode nao ter
+		// posicao) e o hint e re-resolvido depois, do lado seguro.
+		if (level.getServer() != null && !level.getServer().isSameThread()) {
+			if (!warnedOffThreadSearch) {
+				warnedOffThreadSearch = true;
+				com.dragonminez.LogUtil.warn(com.dragonminez.Env.COMMON,
+						"StructureLocator: scan search requested off the main thread for '"
+								+ structureKey.location() + "'; deferring (vanilla is not thread-safe here).");
+			}
+			return null;
 		}
 
 		HolderSet<Structure> holderSet = HolderSet.direct(structureRegistry.getHolderOrThrow(structureKey));

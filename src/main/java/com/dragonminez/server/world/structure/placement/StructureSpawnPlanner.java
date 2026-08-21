@@ -282,8 +282,19 @@ public final class StructureSpawnPlanner {
 		final Map<Integer, String> structureNames = buildStructureNames(state);
 		final List<Holder<StructureSet>> avoid = collectAvoidableSets(state);
 
+		// SNAPSHOT sob lock: REGISTERED e NEAR_SPAWN_RESERVED sao TreeMaps mutados pelo
+		// register()/registerReservation() quando o codec desserializa placements (reload de
+		// datapack). Iterar direto aqui, fora do lock, e ConcurrentModificationException no
+		// meio de um build de plano. O mesmo padrao ja e usado no expectedSalts().
+		final List<UniqueNearSpawnPlacement> reservedSnapshot;
+		final List<BiomeAwareUniquePlacement> registeredSnapshot;
+		synchronized (StructureSpawnPlanner.class) {
+			reservedSnapshot = new ArrayList<>(NEAR_SPAWN_RESERVED.values());
+			registeredSnapshot = new ArrayList<>(REGISTERED.values());
+		}
+
 		final List<ChunkPos> reservedBaseline = new ArrayList<>();
-		for (UniqueNearSpawnPlacement reserved : NEAR_SPAWN_RESERVED.values()) {
+		for (UniqueNearSpawnPlacement reserved : reservedSnapshot) {
 			ChunkPos pos = reserved.getStructureChunk(worldSeed);
 			if (pos != null) reservedBaseline.add(pos);
 		}
@@ -298,7 +309,7 @@ public final class StructureSpawnPlanner {
 		}
 
 		final List<BiomeAwareUniquePlacement> targets = new ArrayList<>();
-		for (BiomeAwareUniquePlacement placement : REGISTERED.values()) {
+		for (BiomeAwareUniquePlacement placement : registeredSnapshot) {
 			if (structureBiomes.get(placement.placementSalt()) == null) continue;
 			if (!biomeSourceHasAny(biomeSource, placement.getValidBiomes())) continue;
 			if (existing != null && existing.containsKey(placement.placementSalt())) continue;

@@ -98,18 +98,32 @@ public class DragonBallsHandler {
 		}
 	}
 
+	/**
+	 * ChunkEvent.Load pode chegar FORA da main thread (o load de chunk e assincrono por
+	 * natureza, e mods de performance de chunk chegam a promover o evento em worker). Por
+	 * isso este handler nao toca em NADA aqui dentro: captura so o ChunkPos (imutavel) e
+	 * empurra a varredura inteira pra fila, que o tick drena na main.
+	 *
+	 * <p>O que era corrida antes: o proprio {@code DragonBallSavedData.get} passa pelo
+	 * DimensionDataStorage (HashMap sem sincronizacao) e as listas de posicoes pendentes sao
+	 * mutaveis; ler isso de duas threads corrompe o SavedData das esferas em silencio.</p>
+	 */
 	@SubscribeEvent
 	public static void onChunkLoad(ChunkEvent.Load event) {
 		if (!(event.getLevel() instanceof ServerLevel level)) return;
-		DragonBallSavedData data = DragonBallSavedData.get(level);
 		ChunkPos chunkPos = event.getChunk().getPos();
+		generationQueue.add(() -> scanChunkForPendingBalls(level, chunkPos));
+	}
 
+	/** Roda SEMPRE na main (fila drenada no tick): aqui pode tocar SavedData a vontade. */
+	private static void scanChunkForPendingBalls(ServerLevel level, ChunkPos chunkPos) {
+		DragonBallSavedData data = DragonBallSavedData.get(level);
 		for (DragonBallSetDefinition definition : DragonBallDefinitions.getBallSetsForDimension(level.dimension())) {
 			Map<Integer, List<BlockPos>> pending = data.getPendingBalls(definition.getId());
 			pending.forEach((star, targets) -> {
 				for (BlockPos target : new ArrayList<>(targets)) {
 					if (chunkPos.x == (target.getX() >> 4) && chunkPos.z == (target.getZ() >> 4)) {
-						generationQueue.add(() -> generateBallSafely(level, definition, star, target));
+						generateBallSafely(level, definition, star, target);
 					}
 				}
 			});
