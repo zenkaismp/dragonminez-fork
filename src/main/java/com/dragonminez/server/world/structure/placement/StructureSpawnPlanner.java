@@ -64,7 +64,8 @@ public final class StructureSpawnPlanner {
 	private static volatile PlanHolder lastHolder = null;
 	private static volatile int planEpoch = 0;
 
-	private static Field biomeSourceField = null;
+	/** Uma unica reclamacao por boot: o getBiomeSourceReflection roda por chunk. */
+	private static final AtomicBoolean BIOME_SOURCE_FAILURE_LOGGED = new AtomicBoolean(false);
 
 	private StructureSpawnPlanner() {}
 
@@ -673,23 +674,79 @@ public final class StructureSpawnPlanner {
 		return null;
 	}
 
+	/**
+	 * Le o campo privado {@code biomeSource} do ChunkGeneratorStructureState. O vanilla
+	 * 1.20.2 nao expoe getter pra ele (conferido no bytecode do forge-1.20.2-48.1.0:
+	 * so existem randomState(), getLevelSeed() e possibleStructureSets()), entao a
+	 * reflexao e obrigatoria.
+	 *
+	 * <p>THREAD SAFETY: com geracao de chunk paralela este metodo passa a ser chamado por
+	 * varias threads ao mesmo tempo (isPlacementChunk). O cache antigo era um
+	 * {@code static Field} sem volatile, preenchido no primeiro uso, e com o setAccessible
+	 * acontecendo na mesma sequencia da publicacao: outra thread podia enxergar a
+	 * referencia do Field SEM enxergar o efeito do setAccessible (ou pior, meio escrita),
+	 * a leitura estourava e o metodo devolvia null. Null aqui nao quebra nada visivel:
+	 * a estrutura do DMZ apenas nao gera, em silencio.</p>
+	 *
+	 * <p>O cache agora vive no holder {@link BiomeSourceAccessor}. A JVM inicializa a
+	 * classe do holder uma unica vez, sob lock, e garante que TODA escrita feita durante
+	 * essa inicializacao (inclusive o override do setAccessible) e visivel pra qualquer
+	 * thread que depois leia o campo final. Zero sincronizacao por chamada.</p>
+	 */
 	static BiomeSource getBiomeSourceReflection(ChunkGeneratorStructureState state) {
 		if (state == null) return null;
+		Field field = BiomeSourceAccessor.FIELD;
+		if (field == null) return null;
 		try {
-			if (biomeSourceField == null) {
+			return (BiomeSource) field.get(state);
+		} catch (Throwable t) {
+			logBiomeSourceFailureOnce("leitura falhou: " + t);
+			return null;
+		}
+	}
+
+	/**
+	 * Holder do cache reflexivo: inicializacao preguicosa (so quando o primeiro chunk
+	 * precisa) e ao mesmo tempo idempotente e com publicacao segura, garantidas pelo
+	 * proprio mecanismo de inicializacao de classe da JVM.
+	 *
+	 * <p>A busca e por TIPO, nao por nome, de proposito: assim continua funcionando se o
+	 * mapeamento do campo mudar de nome. So existe um campo BiomeSource na classe.</p>
+	 */
+	private static final class BiomeSourceAccessor {
+		static final Field FIELD = resolve();
+
+		private static Field resolve() {
+			try {
 				for (Field f : ChunkGeneratorStructureState.class.getDeclaredFields()) {
 					if (BiomeSource.class.isAssignableFrom(f.getType())) {
+						// setAccessible ANTES do return: quem ler FIELD ja recebe o campo pronto pra uso.
 						f.setAccessible(true);
-						biomeSourceField = f;
-						break;
+						return f;
 					}
 				}
+			} catch (Throwable t) {
+				logBiomeSourceFailureOnce("lookup falhou: " + t);
+				return null;
 			}
-			if (biomeSourceField != null) return (BiomeSource) biomeSourceField.get(state);
-		} catch (Exception e) {
-			System.err.println("[DMZ] StructureSpawnPlanner could not reflect BiomeSource: " + e.getMessage());
+			logBiomeSourceFailureOnce("nenhum campo BiomeSource em ChunkGeneratorStructureState");
+			return null;
 		}
-		return null;
+	}
+
+	/**
+	 * Falhar aqui apaga TODA estrutura unica do DMZ do mundo sem erro nenhum, entao o log
+	 * precisa ser barulhento. Uma vez so, porque o caminho e por chunk.
+	 */
+	private static void logBiomeSourceFailureOnce(String detail) {
+		if (!BIOME_SOURCE_FAILURE_LOGGED.compareAndSet(false, true)) return;
+		try {
+			LogUtil.error(Env.SERVER, "[DMZ] StructureSpawnPlanner could not reflect BiomeSource ("
+					+ detail + "). DMZ unique structures will NOT generate.");
+		} catch (Throwable ignored) {
+			// Log quebrado nao pode derrubar a geracao de chunk nem a init do holder.
+			System.err.println("[DMZ] StructureSpawnPlanner could not reflect BiomeSource (" + detail + ").");
+		}
 	}
 
 	private static final class SampleCache {

@@ -18,7 +18,6 @@ import net.minecraft.world.level.levelgen.structure.placement.StructurePlacement
 import net.minecraft.world.level.levelgen.structure.placement.StructurePlacementType;
 import org.jspecify.annotations.NonNull;
 
-import java.lang.reflect.Field;
 import java.util.Optional;
 
 @Getter
@@ -35,8 +34,6 @@ public class BiomeAwareUniquePlacement extends StructurePlacement {
 	private final HolderSet<Biome> validBiomes;
 	private final Rotation rotation;
 
-	private static Field biomeSourceField = null;
-
 	public BiomeAwareUniquePlacement(Vec3i locateOffset, FrequencyReductionMethod frequencyReductionMethod, float frequency, int salt, Optional<ExclusionZone> exclusionZone, HolderSet<Biome> validBiomes, Rotation rotation) {
 		super(locateOffset, frequencyReductionMethod, frequency, salt, exclusionZone);
 		this.validBiomes = validBiomes;
@@ -52,28 +49,26 @@ public class BiomeAwareUniquePlacement extends StructurePlacement {
 		this(locateOffset, frequencyReductionMethod, frequency, salt, exclusionZone, validBiomes, Rotation.NONE);
 	}
 
-	private BiomeSource getBiomeSourceReflection(ChunkGeneratorStructureState state) {
-		try {
-			if (biomeSourceField == null) {
-				for (Field f : ChunkGeneratorStructureState.class.getDeclaredFields()) {
-					if (BiomeSource.class.isAssignableFrom(f.getType())) {
-						f.setAccessible(true);
-						biomeSourceField = f;
-						break;
-					}
-				}
-			}
-			if (biomeSourceField != null) return (BiomeSource) biomeSourceField.get(state);
-		} catch (Exception e) {
-			System.err.println("[DMZ Debug] Error trying to get BiomeSource: " + e.getMessage());
-		}
-		return null;
-	}
-
+	/**
+	 * ANTES existia aqui uma copia do cache reflexivo (um "static Field biomeSourceField"
+	 * sem volatile, preenchido no primeiro uso). Com geracao de chunk paralela o
+	 * isPlacementChunk passa a rodar em varias threads ao mesmo tempo, e esse cache virava
+	 * corrida: uma thread podia enxergar a referencia do Field ANTES do efeito do
+	 * setAccessible, a leitura estourava e o metodo devolvia null. Null aqui significa
+	 * "sem posicao planejada", ou seja, a estrutura do DMZ simplesmente NAO gera e nada
+	 * aparece no log.
+	 *
+	 * <p>Agora existe um unico cache, publicado com seguranca pelo
+	 * {@link StructureSpawnPlanner#getBiomeSourceReflection(ChunkGeneratorStructureState)}.
+	 * Dois caches pro mesmo campo tambem eram desperdicio: e o mesmo campo do mesmo
+	 * ChunkGeneratorStructureState.</p>
+	 */
 	@Override
 	protected boolean isPlacementChunk(@NonNull ChunkGeneratorStructureState structureState, int x, int z) {
 		if (!ConfigManager.getServerConfig().getWorldGen().getGenerateCustomStructures()) return false;
-		ChunkPos pos = getStructureChunk(structureState.getLevelSeed(), getBiomeSourceReflection(structureState), structureState.randomState(), structureState);
+		BiomeSource biomeSource = StructureSpawnPlanner.getBiomeSourceReflection(structureState);
+		if (biomeSource == null) return false;
+		ChunkPos pos = getStructureChunk(structureState.getLevelSeed(), biomeSource, structureState.randomState(), structureState);
 		return pos != null && pos.x == x && pos.z == z;
 	}
 
