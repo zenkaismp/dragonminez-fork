@@ -25,37 +25,6 @@ public class TargetHelper {
         return entity instanceof PartEntity<?> part ? part.getParent() : entity;
     }
 
-    /**
-     * Cenario: nao e alvo de combate, e ninguem pode empurrar, agarrar nem teleportar.
-     *
-     * <p>Sao as entidades que existem so pra DESENHAR ou pra receber clique: holograma
-     * ({@code Display}, que cobre text/item/block display), hitbox invisivel de interface
-     * ({@code Interaction}), marcador sem hitbox ({@code Marker}) e armor stand em modo marker.
-     * O vanilla nao ajuda aqui: {@code Display} nao sobrescreve {@code isAttackable()}, entao
-     * responde "sim, pode atacar" como qualquer mob.</p>
-     *
-     * <p><b>O bug que isto conserta (relato de 22/08):</b> mirando num holograma e usando Dragon
-     * Fist, o holograma era ARRASTADO junto com o jogador. O {@code shouldDamage} classificava
-     * o {@code TextDisplay} como NEUTRAL, e a regra de neutro so exige que o jogador esteja
-     * olhando pra ele ({@code dot > 0.95}), que e exatamente o gesto de mirar. Pior: no
-     * {@code SPDragonFistEntity.devastateEnemies} o {@code holdTargetAtCaster} roda FORA do
-     * {@code if (hit)}, entao o {@code hurt()} devolver false (holograma nao toma dano) nao
-     * impedia nada, so o agarrao continuava. Barrando aqui, o alvo nem entra na lista.</p>
-     *
-     * <p>Vale pros 11 ataques de ki de uma vez, porque todos filtram pelo mesmo
-     * {@code shouldDamage}: blast, wave, disk, laser, area, explosion, dragon fist, ozaru fist,
-     * blue hurricane e majin candy.</p>
-     */
-    public static boolean isCenario(Entity entity) {
-        if (entity == null) return false;
-        Entity target = resolveHittable(entity);
-        if (target instanceof net.minecraft.world.entity.Display) return true;
-        if (target instanceof net.minecraft.world.entity.Interaction) return true;
-        if (target instanceof net.minecraft.world.entity.Marker) return true;
-        return target instanceof net.minecraft.world.entity.decoration.ArmorStand armorStand
-                && armorStand.isMarker();
-    }
-
     public static Entity getEntityOrPart(Level level, int id) {
         if (level instanceof ServerLevel serverLevel) {
             return serverLevel.getEntityOrPart(id);
