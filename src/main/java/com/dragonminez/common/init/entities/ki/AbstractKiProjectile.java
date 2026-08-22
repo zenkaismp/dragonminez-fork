@@ -249,6 +249,11 @@ public abstract class AbstractKiProjectile extends Projectile {
      * does not drift ahead from entity push/physics while it is held.
      */
     protected void holdTargetAtCaster(Entity target, Vec3 desiredFeet) {
+        // Segunda camada, de proposito. O filtro de verdade e o shouldDamage, mas este metodo
+        // TELEPORTA e no SPDragonFistEntity ele roda FORA do "if (hit)": o alvo nao levar dano
+        // nao impedia o agarrao. Se algum caminho novo esquecer o filtro, holograma continua
+        // parado em vez de sair voando junto com o jogador.
+        if (TargetHelper.isCenario(target)) return;
         Vec3 delta = new Vec3(
                 desiredFeet.x - target.getX(),
                 desiredFeet.y - target.getY(),
@@ -273,6 +278,9 @@ public abstract class AbstractKiProjectile extends Projectile {
     public boolean shouldDamage(Entity target) {
         target = TargetHelper.resolveHittable(target);
         if (target == this) return false;
+        // Holograma, marcador e hitbox de interface nao sao alvo: nem levam dano, nem podem ser
+        // agarrados ou arrastados. Ver TargetHelper.isCenario.
+        if (TargetHelper.isCenario(target)) return false;
         Entity owner = this.getOwner();
         if (target instanceof AbstractKiProjectile kiProj && kiProj.getOwner() == owner) return false;
         if (this.isOwner(target)) return this.isHeal();
