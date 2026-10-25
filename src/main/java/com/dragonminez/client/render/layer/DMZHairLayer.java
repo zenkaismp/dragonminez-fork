@@ -1,5 +1,6 @@
 package com.dragonminez.client.render.layer;
 
+import com.dragonminez.client.render.effects.CandyEffect;
 import com.dragonminez.Reference;
 import com.dragonminez.client.render.compat.CosmeticArmorCompat;
 import com.dragonminez.client.render.firstperson.dto.FirstPersonManager;
@@ -218,7 +219,7 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 	private boolean shouldRenderHair(T animatable) {
 		if (animatable.isInvisible() && !animatable.isSpectator()) return false;
-		if (animatable.hasEffect(MainEffects.CANDY.get())) return false;
+		if (CandyEffect.isCandy(animatable)) return false;
 		if (FirstPersonManager.shouldRenderFirstPerson(animatable)) return false;
 
 		ItemStack headItem = resolveHeadArmorStack(animatable);

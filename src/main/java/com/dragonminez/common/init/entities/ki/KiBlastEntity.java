@@ -40,6 +40,12 @@ public class KiBlastEntity extends AbstractKiProjectile {
 
     public static final int RENDER_SOUL_PUNISHER = 4;
     public static final int RENDER_FAKE_MOON = 11;
+    // Zenkai: tipos de desenho da v2.2 que o KiProjectileRenderer conhece. Os golpes (Assault Rain, Blaster Meteor e
+    // Tri-Beam) moram no ZenkaiExtra; aqui ficam so os numeros, iguais aos da v2.2.
+    public static final int RENDER_ASSAULT_RAIN = 12;
+    public static final int RENDER_BLASTER_METEOR = 13;
+    public static final int RENDER_TRI_BEAM = 14;
+    public static final float SOUL_PUNISHER_CORE_SCALE = 0.15F;
     private static final double FAKE_MOON_CLIMB_BLOCKS = 30.0D;
     private static final double FAKE_MOON_CLIMB_SPEED = 1.0D;
     private static final int FAKE_MOON_GLOW_TICKS = 20 * 20;

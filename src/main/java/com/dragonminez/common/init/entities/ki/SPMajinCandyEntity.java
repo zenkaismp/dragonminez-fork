@@ -10,6 +10,8 @@ import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.particles.KiTrailParticle;
+import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.S2C.CandyVfxS2C;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.commands.arguments.EntityAnchorArgument;
 import net.minecraft.nbt.CompoundTag;
@@ -153,7 +155,7 @@ public class SPMajinCandyEntity extends AbstractKiProjectile {
                 if (!this.level().isClientSide) {
                     // Gated to ~1s pulses; the candy effect refreshes on each landed pulse.
                     if (this.applyContinuousDamage(target)) {
-                        target.addEffect(new MobEffectInstance(MainEffects.CANDY.get(), 200, 0, false, true));
+                        applyCandy(owner, target, 200, 0);
                     }
                 }
             } else {
@@ -177,10 +179,20 @@ public class SPMajinCandyEntity extends AbstractKiProjectile {
             if (hitEntity instanceof LivingEntity target && target != owner) {
                 target.hurt(MainDamageTypes.kiblast(this.level(), this, (LivingEntity) owner), this.getKiDamage());
 
-                target.addEffect(new MobEffectInstance(MainEffects.CANDY.get(), 100, 0, false, true));
+                applyCandy(owner instanceof LivingEntity livingOwner ? livingOwner : null, target, 100, 0);
                 this.discard();
             }
         }
+    }
+
+    /**
+     * Zenkai: o EvasionAttackHandler.applyCandy da v2.2 (o EvasionAttackHandler do combate 2.0 nao existe no fork). Poe o
+     * efeito e avisa quem esta perto, para o alvo virar doce tambem na tela dos outros (CandyEffect).
+     */
+    private static void applyCandy(LivingEntity caster, LivingEntity target, int candyTicks, int boltTicks) {
+        target.addEffect(new MobEffectInstance(MainEffects.CANDY.get(), candyTicks, 0, false, true));
+        CandyVfxS2C packet = new CandyVfxS2C(caster != null ? caster.getId() : -1, target.getId(), candyTicks, boltTicks);
+        NetworkHandler.sendToTrackingEntityAndSelf(packet, caster != null ? caster : target);
     }
 
     private LivingEntity findNearestTarget(LivingEntity owner, double range) {
