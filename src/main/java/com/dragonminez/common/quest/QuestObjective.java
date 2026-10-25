@@ -46,7 +46,9 @@ public abstract class QuestObjective {
         COORDS,
         TALK_TO,
         DRAGON_SUMMON,
-        SKILL
+        SKILL,
+        // v2.2 (no fim: o nome e o que viaja, mas a ordem dos de antes nao muda)
+        SURVIVE_WAVES
     }
 }
 

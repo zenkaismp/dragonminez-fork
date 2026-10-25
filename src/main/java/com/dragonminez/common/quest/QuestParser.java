@@ -9,6 +9,7 @@ import com.dragonminez.common.quest.objectives.ItemObjective;
 import com.dragonminez.common.quest.objectives.KillObjective;
 import com.dragonminez.common.quest.objectives.SkillObjective;
 import com.dragonminez.common.quest.objectives.StructureObjective;
+import com.dragonminez.common.quest.objectives.SurviveWavesObjective;
 import com.dragonminez.common.quest.objectives.TalkToObjective;
 import com.dragonminez.common.quest.rewards.*;
 import com.dragonminez.common.diagnostics.JsonKeys;
@@ -211,6 +212,24 @@ public class QuestParser {
 				String skill = firstString(json, "skill", "skillId", "id");
 				int level = firstInt(json, 1, "level", "minLevel", "required");
 				yield skill != null ? new SkillObjective(skill, level) : null;
+			}
+			// v2.2 (QuestParser.parseObjective)
+			case "SURVIVE_WAVES" -> {
+				String entityId = json.get("entity").getAsString();
+				int waves = json.has("waves") ? json.get("waves").getAsInt() : 3;
+				int mobsPerWave = firstInt(json, 3, "mobs_per_wave", "mobsPerWave");
+				int waveDelaySeconds = firstInt(json, 10, "wave_delay_seconds", "waveDelaySeconds");
+				double health = json.has("health") ? json.get("health").getAsDouble() : 20.0;
+				double meleeDamage = json.has("meleeDamage") ? json.get("meleeDamage").getAsDouble() : 1.0;
+				double kiDamage = json.has("kiDamage") ? json.get("kiDamage").getAsDouble() : 1.0;
+				int textureVariant = json.has("TextureVariant") && !json.get("TextureVariant").isJsonNull()
+						? json.get("TextureVariant").getAsInt() : -1;
+				int aiTier = json.has("AITier") && !json.get("AITier").isJsonNull()
+						? json.get("AITier").getAsInt() : -1;
+				boolean canTransform = !json.has("CanTransform") || json.get("CanTransform").isJsonNull()
+						|| json.get("CanTransform").getAsBoolean();
+				yield new SurviveWavesObjective(entityId, waves, mobsPerWave, waveDelaySeconds,
+						health, meleeDamage, kiDamage, textureVariant, aiTier, canTransform);
 			}
 			default -> null;
 		};
@@ -562,6 +581,9 @@ public class QuestParser {
 					"ball_set", "ballSet", "ball_set_id", "ballSetId", "set");
 			case "TALK_TO" -> allowed = JsonKeys.of("type", "npcId");
 			case "SKILL" -> allowed = JsonKeys.of("type", "skill", "skillId", "id", "level", "minLevel", "required");
+			case "SURVIVE_WAVES" -> allowed = JsonKeys.of("type", "entity", "waves", "mobs_per_wave", "mobsPerWave",
+					"wave_delay_seconds", "waveDelaySeconds", "health", "meleeDamage", "kiDamage",
+					"TextureVariant", "AITier", "CanTransform", "canTransform");
 			default -> { JsonKeys.reportBadType(source, file, path, type); return; }
 		}
 		JsonKeys.checkObject(source, file, path, json, allowed);

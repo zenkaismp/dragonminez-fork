@@ -10,6 +10,7 @@ import com.dragonminez.client.gui.character.QuestTreeScreen;
 import com.dragonminez.client.gui.character.RaceSelectionScreen;
 import com.dragonminez.client.render.DMZRendererCache;
 import com.dragonminez.client.render.shader.TransformationPostShaderManager;
+import com.dragonminez.client.systems.DragonSkyState;
 import com.dragonminez.client.util.TextureCounter;
 import com.dragonminez.client.util.KeyBinds;
 import com.dragonminez.client.gui.character.CharacterStatsScreen;
@@ -24,6 +25,7 @@ import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.mixin.client.MinecraftAccessor;
 import com.dragonminez.mixin.common.LivingEntityAccessor;
+import com.dragonminez.server.world.dimension.CustomSpecialEffects;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.util.Mth;
 import com.mojang.blaze3d.platform.InputConstants;
@@ -34,6 +36,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.client.event.RenderGuiOverlayEvent;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
+import net.minecraftforge.client.event.ViewportEvent;
 import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
@@ -48,6 +51,16 @@ public class ForgeClientEvents {
 	private static boolean pendingCharacterCreationReopen = false;
 	private static int characterCreationOpenCooldownTicks = 0;
 	private static final int CHARACTER_CREATION_OPEN_COOLDOWN = 8;
+
+	@SubscribeEvent
+	public static void onRenderFog(ViewportEvent.RenderFog event) {
+		CustomSpecialEffects.DemonRealmEffects.adjustFog(event);
+	}
+
+	@SubscribeEvent
+	public static void onComputeFogColor(ViewportEvent.ComputeFogColor event) {
+		CustomSpecialEffects.applyDragonNightFog(event);
+	}
 
 	@SubscribeEvent
 	public static void RenderHealthBar(RenderGuiOverlayEvent.Pre event) {
@@ -170,6 +183,7 @@ public class ForgeClientEvents {
 
 		Minecraft mc = Minecraft.getInstance();
 		TransformationPostShaderManager.tick();
+		DragonSkyState.tick();
 		if (mc.player == null || mc.level == null) return;
 		if (characterCreationOpenCooldownTicks > 0) characterCreationOpenCooldownTicks--;
 		handleUtilityMenuHold(mc);

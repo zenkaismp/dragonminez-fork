@@ -3,6 +3,7 @@ package com.dragonminez.common.quest;
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
 import com.dragonminez.common.events.DMZEvent;
+import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.ProgressionSyncS2C;
 import com.dragonminez.common.network.S2C.StoryToastS2C;
@@ -13,6 +14,7 @@ import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -694,6 +696,13 @@ public final class QuestService {
 					continue;
 				}
 
+				// v2.2: alvo que nasce um por vez so nasce sem outro vivo do mesmo objetivo, e so um
+				boolean oneAtATime = entity instanceof DBSagasEntity sagasEntity && sagasEntity.questSpawnsOneAtATime();
+				if (oneAtATime && aliveByObjective.getOrDefault(i, 0) > 0) {
+					entity.discard();
+					break;
+				}
+
 				positionQuestEntity(requester, entity);
 
 				if (difficulty != null && difficulty != Difficulty.NORMAL) {
@@ -781,9 +790,45 @@ public final class QuestService {
 				if (requester.serverLevel().addFreshEntity(entity)) {
 					spawned++;
 				}
+				if (oneAtATime) {
+					break;
+				}
 			}
 		}
 		return spawned;
+	}
+
+	/**
+	 * v2.2: ainda falta abate neste objetivo pra alguem da party do dono? E o que faz o alvo que nasce um por vez
+	 * renascer (DBSagasEntity.questSpawnsOneAtATime).
+	 */
+	public static boolean hasPendingKills(ServerLevel level, CompoundTag questTags) {
+		if (!questTags.contains(QUEST_KEY_TAG) || !questTags.contains(QUEST_OBJECTIVE_INDEX_TAG)
+				|| !questTags.contains(QUEST_OWNER_TAG)) {
+			return false;
+		}
+
+		ServerPlayer owner;
+		try {
+			owner = level.getServer().getPlayerList().getPlayer(UUID.fromString(questTags.getString(QUEST_OWNER_TAG)));
+		} catch (IllegalArgumentException e) {
+			return false;
+		}
+		if (owner == null) return false;
+
+		String questKey = questTags.getString(QUEST_KEY_TAG);
+		int objectiveIndex = questTags.getInt(QUEST_OBJECTIVE_INDEX_TAG);
+		Quest quest = QuestRegistry.getQuest(questKey);
+		if (quest == null || objectiveIndex < 0 || objectiveIndex >= quest.getObjectives().size()) return false;
+
+		for (ServerPlayer member : PartyManager.getAllPartyMembers(owner)) {
+			PlayerQuestData pqd = QuestParty.questData(member);
+			if (pqd == null || !pqd.isQuestAccepted(questKey)) continue;
+			if (pqd.getObjectiveProgress(questKey, objectiveIndex) < quest.getObjectiveRequired(pqd, questKey, objectiveIndex)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	// Quest-spawned enemies used to appear on top of the player. Instead, drop them ~10 blocks away in a

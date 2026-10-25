@@ -8,6 +8,7 @@ import com.dragonminez.common.init.*;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.quest.QuestRegistry;
 import com.dragonminez.common.wish.WishManager;
+import com.dragonminez.server.world.feature.DemonRealmFeatures;
 import com.dragonminez.server.world.feature.OverworldFeatures;
 import com.dragonminez.server.world.feature.SacredKaiFeatures;
 import com.dragonminez.server.world.structure.placement.MainStructurePlacements;
@@ -51,6 +52,7 @@ public class DMZCommon {
 		modEventBus.addListener(ModCommonEvents::commonSetup);
 		OverworldFeatures.register(modEventBus);
 		SacredKaiFeatures.register(modEventBus);
+		DemonRealmFeatures.register(modEventBus);
 
 		MainGameRules.register();
 		MainDamageTypes.register();

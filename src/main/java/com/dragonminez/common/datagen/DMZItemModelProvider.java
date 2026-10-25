@@ -207,6 +207,7 @@ public class DMZItemModelProvider extends ItemModelProvider {
 		simpleItem(MainItems.KIKONO_STRING);
 		simpleItem(MainItems.KIKONO_CLOTH);
 		simpleItem(MainItems.KIKONO_STICK);
+		simpleItem(MainItems.MAJILITE);
 		simpleItem(MainItems.ARMOR_CRAFTING_KIT);
 		simpleItem(MainItems.BLANK_PATTERN_Z);
 		simpleItem(MainItems.BLANK_PATTERN_SUPER);
@@ -382,6 +383,16 @@ public class DMZItemModelProvider extends ItemModelProvider {
 		wallItem(MainBlocks.NAMEK_DEEPSLATE_WALL, MainBlocks.NAMEK_DEEPSLATE);
 		wallItem(MainBlocks.ROCKY_STONE_WALL, MainBlocks.ROCKY_STONE);
 		wallItem(MainBlocks.ROCKY_COBBLESTONE_WALL, MainBlocks.ROCKY_COBBLESTONE);
+		simpleBlockItem(MainBlocks.MAKAI_STONE_STAIRS);
+		simpleBlockItem(MainBlocks.MAKAI_STONE_SLAB);
+		wallItem(MainBlocks.MAKAI_STONE_WALL, MainBlocks.MAKAI_STONE);
+		simpleBlockItem(MainBlocks.ADOBE_STAIRS);
+		simpleBlockItem(MainBlocks.ADOBE_SLAB);
+		wallItem(MainBlocks.ADOBE_WALL, MainBlocks.ADOBE);
+		simpleBlockItem(MainBlocks.DEMON_BRICK_STAIRS);
+		simpleBlockItem(MainBlocks.DEMON_BRICK_SLAB);
+		wallItem(MainBlocks.DEMON_BRICK_WALL, MainBlocks.DEMON_BRICKS);
+		blockItem(MainBlocks.MAKAI_SHRUB);
 
 		//Vegetacion
 		blockAsItem(MainBlocks.CHRYSANTHEMUM_FLOWER);

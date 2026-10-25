@@ -22,6 +22,7 @@ import com.dragonminez.common.quest.objectives.ItemObjective;
 import com.dragonminez.common.quest.objectives.KillObjective;
 import com.dragonminez.common.quest.objectives.DragonSummonObjective;
 import com.dragonminez.common.quest.objectives.SkillObjective;
+import com.dragonminez.common.quest.objectives.SurviveWavesObjective;
 import com.dragonminez.common.quest.objectives.TalkToObjective;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
@@ -71,6 +72,8 @@ public class QuestEvents {
 
 	@SubscribeEvent
 	public static void onEntityKill(LivingDeathEvent event) {
+		QuestFieldSessions.onEntityDeath(event.getEntity());
+
 		if (event.getEntity() instanceof ServerPlayer deadPlayer) {
 			handlePlayerQuestFailure(deadPlayer);
 		}
@@ -80,6 +83,14 @@ public class QuestEvents {
 		}
 
 		creditQuestKill(killer, event.getEntity());
+	}
+
+	// v2.2: as ondas do jogador que sai somem e voltam do progresso salvo no proximo login
+	@SubscribeEvent
+	public static void onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent event) {
+		if (event.getEntity() instanceof ServerPlayer player) {
+			QuestFieldSessions.clearAll(player);
+		}
 	}
 
 	public static void creditQuestKill(ServerPlayer killer, LivingEntity killedEntity) {
@@ -256,6 +267,8 @@ public class QuestEvents {
 						int progressToSet = Math.min(skillLevel, quest.getObjectiveRequired(pqd, questKey, i));
 						updateProgress(player, pqd, questKey, quest, i, progressToSet);
 					}
+				} else if (objective instanceof SurviveWavesObjective wavesObjective) {
+					QuestFieldSessions.tickWaves(player, pqd, questKey, quest, i, wavesObjective);
 				}
 
 				if (!quest.isParallelObjectives()) {
@@ -390,7 +403,7 @@ public class QuestEvents {
 
 	private static boolean hasKillObjectives(Quest quest) {
 		for (QuestObjective objective : quest.getObjectives()) {
-			if (objective instanceof KillObjective) {
+			if (objective instanceof KillObjective || objective instanceof SurviveWavesObjective) {
 				return true;
 			}
 		}
@@ -489,7 +502,7 @@ public class QuestEvents {
 		return isFirstUncompleted(pqd, questKey, quest, killBlockStart);
 	}
 
-	private static boolean isFirstUncompleted(PlayerQuestData pqd, String questKey, Quest quest, int targetIndex) {
+	static boolean isFirstUncompleted(PlayerQuestData pqd, String questKey, Quest quest, int targetIndex) {
 		for (int i = 0; i < targetIndex; i++) {
 			int progress = pqd.getObjectiveProgress(questKey, i);
 			if (progress < quest.getObjectiveRequired(pqd, questKey, i)) {
@@ -515,8 +528,8 @@ public class QuestEvents {
 		}
 	}
 
-	private static void updateProgress(ServerPlayer player, PlayerQuestData pqd, String questKey, Quest quest,
-									   int objectiveIndex, int newProgress) {
+	static void updateProgress(ServerPlayer player, PlayerQuestData pqd, String questKey, Quest quest,
+							   int objectiveIndex, int newProgress) {
 		int current = pqd.getObjectiveProgress(questKey, objectiveIndex);
 		if (current == newProgress) {
 			return;
@@ -560,7 +573,7 @@ public class QuestEvents {
 		NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
 	}
 
-	private static void checkAndComplete(ServerPlayer player, PlayerQuestData pqd, String questKey, Quest quest) {
+	static void checkAndComplete(ServerPlayer player, PlayerQuestData pqd, String questKey, Quest quest) {
 		if (pqd.isQuestCompleted(questKey) || QuestService.requiresTurnInAction(quest)) {
 			return;
 		}
@@ -585,6 +598,7 @@ public class QuestEvents {
 		}
 
 		pqd.completeQuest(questKey);
+		QuestFieldSessions.clearQuest(player, questKey);
 		if (questKey.equals(pqd.getTrackedQuestId())) {
 			pqd.setTrackedQuestId(null);
 		}

@@ -17,12 +17,20 @@ import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.dimension.LevelStem;
 import net.minecraft.world.level.levelgen.*;
+import net.minecraft.world.level.levelgen.synth.NormalNoise;
 
 import java.util.List;
 
 public class OtherworldGeneration {
 	public static final ResourceKey<LevelStem> OTHERWORLD_STEM = ResourceKey.create(Registries.LEVEL_STEM, new ResourceLocation(Reference.MOD_ID, "otherworld"));
 	public static final ResourceKey<NoiseGeneratorSettings> OTHERWORLD_NOISE_SETTINGS = ResourceKey.create(Registries.NOISE_SETTINGS, new ResourceLocation(Reference.MOD_ID, "otherworld"));
+
+	// Da v2.2: o ruido das nuvens do Outro Mundo novo. Aqui so o Reino Demoniaco usa (o topo do Mar da Escuridao).
+	public static final ResourceKey<NormalNoise.NoiseParameters> CLOUD_BILLOW = ResourceKey.create(Registries.NOISE, new ResourceLocation(Reference.MOD_ID, "otherworld_cloud_billow"));
+
+	public static void bootstrapNoiseParameters(BootstapContext<NormalNoise.NoiseParameters> context) {
+		context.register(CLOUD_BILLOW, new NormalNoise.NoiseParameters(-5, 1.0, 0.5));
+	}
 
 	public static void bootstrap(BootstapContext<LevelStem> context) {
 		HolderGetter<Biome> biomeRegistry = context.lookup(Registries.BIOME);
