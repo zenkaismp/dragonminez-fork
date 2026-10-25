@@ -4,6 +4,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.common.init.MainTags;
 import com.dragonminez.server.world.biome.NamekBiomes;
 import com.dragonminez.server.world.biome.SacredKaiBiomes;
+import com.dragonminez.server.world.structure.BossStructures.GomahCradleShape;
 import com.dragonminez.server.world.structure.placement.BiomeAwareUniquePlacement;
 import com.dragonminez.server.world.structure.placement.FixedStructurePlacement;
 import com.dragonminez.server.world.structure.placement.UniqueNearSpawnPlacement;
@@ -33,11 +34,13 @@ public class DMZStructureSets {
 			CELL_ARENA = createKey("cell_arena"), FRIEZA_SHIP = createKey("frieza_ship"),
 			PICCOLO_HOUSE = createKey("piccolo_house"), OLDKAI_PILLAR = createKey("oldkai_pillar"),
 			YAMCHA_HOUSE = createKey("yamcha_house"), TRUNKS_SHIP = createKey("trunks_ship"),
-			VEGETA_POD = createKey("vegeta_pod"), DEMON_VILLAGE = createKey("demon_village");
+			VEGETA_POD = createKey("vegeta_pod"), DEMON_VILLAGE = createKey("demon_village"),
+			GOMAH_CRADLE = createKey("gomah_cradle");
 
 	private static final int DEMON_VILLAGE_SALT = 73019284;
 	private static final int DEMON_VILLAGE_SPACING = 24;
 	private static final int DEMON_VILLAGE_SEPARATION = 8;
+	private static final int GOMAH_CRADLE_SALT = 59173046;
 
 	public static void bootstrap(BootstapContext<StructureSet> context) {
 		HolderGetter<Structure> structures = context.lookup(Registries.STRUCTURE);
@@ -104,6 +107,18 @@ public class DMZStructureSets {
 						DEMON_VILLAGE_SPACING,
 						DEMON_VILLAGE_SEPARATION,
 						RandomSpreadType.TRIANGULAR
+				)
+		));
+
+		context.register(GOMAH_CRADLE, new StructureSet(
+				structures.getOrThrow(DMZStructures.GOMAH_CRADLE),
+				new FixedStructurePlacement(
+						Vec3i.ZERO,
+						StructurePlacement.FrequencyReductionMethod.DEFAULT,
+						1.0f,
+						GOMAH_CRADLE_SALT,
+						Optional.empty(),
+						GomahCradleShape.ORIGIN.x, GomahCradleShape.ORIGIN.z
 				)
 		));
 	}
