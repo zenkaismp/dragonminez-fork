@@ -247,7 +247,51 @@ public class KiAttackData extends TechniqueData {
 	}
 
 	public int getUpgradeXpCost(String statName) {
-		TechniqueConfig.TechniqueTypeConfig cfg = ConfigManager.getTechniqueConfig().getKiTypeConfig(this.kiType != null ? this.kiType : KiType.SMALL_BALL);
+		return getUpgradeXpCost(statName, ConfigManager.getTechniqueConfig().getKiTypeConfig(this.kiType != null ? this.kiType : KiType.SMALL_BALL));
+	}
+
+	// Zenkai: a mesma conta com o config do tipo dado (a devolucao do Solar Flare e o teste dela usam).
+	public int getUpgradeXpCost(String statName, TechniqueConfig.TechniqueTypeConfig cfg) {
+		return upgradeXpCostAt(cfg, getTotalUpgradeCount());
+	}
+
+	/**
+	 * Zenkai: a XP de tecnica que os niveis de melhoria custaram, pela formula de {@link #getUpgradeXpCost}: o nivel de
+	 * numero k (0, 1, 2...) custou o preco com k niveis ja comprados. As bases da conta (dano, tamanho, velocidade e
+	 * perfuracao sem os niveis) nao mudam com a compra, entao a soma refaz o que foi pago, com o config dado.
+	 */
+	public int getSpentUpgradeXp(TechniqueConfig.TechniqueTypeConfig cfg) {
+		long spent = 0;
+		int total = getTotalUpgradeCount();
+		for (int k = 0; k < total; k++) spent += upgradeXpCostAt(cfg, k);
+		return (int) Math.min(Integer.MAX_VALUE, spent);
+	}
+
+	public int getUpgradeLevelCount() {
+		return getTotalUpgradeCount();
+	}
+
+	/**
+	 * Zenkai: so o que a conta do custo de melhoria usa (tipo, dano, tamanho, velocidade, perfuracao e os niveis), lido do
+	 * NBT salvo sem passar pelo {@link #load} (que troca os valores pelo molde do registro de golpes de ki).
+	 */
+	public static KiAttackData upgradeSnapshot(CompoundTag tag) {
+		KiAttackData data = new KiAttackData();
+		try { data.kiType = KiType.valueOf(tag.getString("KiType")); } catch (Exception e) { data.kiType = KiType.SMALL_BALL; }
+		data.damageMultiplier = tag.getFloat("DamageMultiplier");
+		data.size = tag.getFloat("Size");
+		data.speed = tag.getFloat("Speed");
+		data.armorPenetration = tag.getInt("ArmorPenetration");
+		data.armorPenLevel = tag.getInt("ArmorPenLevel");
+		data.damageLevel = tag.getInt("DamageLevel");
+		data.castTimeLevel = tag.getInt("CastTimeLevel");
+		data.cooldownLevel = tag.getInt("CooldownLevel");
+		data.speedLevel = tag.getInt("SpeedLevel");
+		data.sizeLevel = tag.getInt("SizeLevel");
+		return data;
+	}
+
+	private int upgradeXpCostAt(TechniqueConfig.TechniqueTypeConfig cfg, int totalUpgrades) {
 		int baseMin = Math.max(0, cfg.getMinXPCost());
 		double multiplier = Math.max(0.0, cfg.getXpCostMultiplier());
 
@@ -258,7 +302,6 @@ public class KiAttackData extends TechniqueData {
 
 		KiType resolvedType = this.kiType != null ? this.kiType : KiType.SMALL_BALL;
 		float initialComplexity = getWeightedComplexity(initialDamage, sizeComplexityRatio(resolvedType, initialSize), initialSpeed, initialArmorPen);
-		int totalUpgrades = getTotalUpgradeCount();
 
 		int complexityBase = baseMin + (int) Math.round(initialComplexity * 10.0);
 		int scaledBase = (int) Math.round(complexityBase * multiplier);

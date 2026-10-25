@@ -28,6 +28,45 @@ public class Techniques {
 
 	private final transient Map<String, Float> fractionalXpRemainder = new HashMap<>();
 
+	// Zenkai: a devolucao da XP dos niveis do golpe de ki que virou esquiva (id -> {niveis, XP devolvida}), para o aviso
+	// no chat (TechniqueMigrationRefund). Fica so na memoria: o NBT salvo depois da migracao ja e da esquiva, entao a
+	// devolucao nao se repete. Cada load comeca do zero (o dado de antes foi trocado).
+	private final transient Map<String, int[]> migrationRefunds = new HashMap<>();
+
+	public Map<String, int[]> takeMigrationRefunds() {
+		if (migrationRefunds.isEmpty()) return Map.of();
+		Map<String, int[]> taken = new HashMap<>(migrationRefunds);
+		migrationRefunds.clear();
+		return taken;
+	}
+
+	/**
+	 * v2.2: o golpe de ki salvo que agora e esquiva (o Solar Flare) carrega como a esquiva do registro, so com a XP; os
+	 * niveis de melhoria de golpe de ki somem. Zenkai: a XP que esses niveis custaram volta para a tecnica, pela formula de
+	 * custo do fork ({@link KiAttackData#getSpentUpgradeXp}, com o config do tipo do golpe salvo). Puro (o config vem de
+	 * fora) para o teste. {@code refundOut}, quando vem, recebe {niveis, XP devolvida}.
+	 */
+	public static EvasionAttackData migrateKiToEvasion(CompoundTag oldKiTag, EvasionAttackData template,
+			com.dragonminez.common.config.TechniqueConfig.TechniqueTypeConfig costConfig, int[] refundOut) {
+		EvasionAttackData migrated = new EvasionAttackData();
+		migrated.load(template.save());
+		int experience = oldKiTag.contains("Experience") ? oldKiTag.getInt("Experience") : 0;
+		KiAttackData old = KiAttackData.upgradeSnapshot(oldKiTag);
+		int levels = old.getUpgradeLevelCount();
+		int refund = levels > 0 && costConfig != null ? old.getSpentUpgradeXp(costConfig) : 0;
+		migrated.setExperience((int) Math.max(Integer.MIN_VALUE, Math.min(Integer.MAX_VALUE, (long) experience + refund)));
+		if (refundOut != null && refundOut.length >= 2) {
+			refundOut[0] = levels;
+			refundOut[1] = refund;
+		}
+		return migrated;
+	}
+
+	private static com.dragonminez.common.config.TechniqueConfig.TechniqueTypeConfig refundCostConfig(CompoundTag oldKiTag) {
+		com.dragonminez.common.config.TechniqueConfig config = com.dragonminez.common.config.ConfigManager.getTechniqueConfig();
+		return config != null ? config.getKiTypeConfig(KiAttackData.upgradeSnapshot(oldKiTag).getKiType()) : null;
+	}
+
 	public Techniques() {
 		for (int i = 0; i < SLOT_COUNT; i++) equippedSlots[i] = "";
 	}
@@ -212,6 +251,7 @@ public class Techniques {
 		}
 
 		this.unlockedTechniques.clear();
+		this.migrationRefunds.clear();
 		ListTag unlockedTag = tag.getList("UnlockedTechniques", 10);
 		for (int i = 0; i < unlockedTag.size(); i++) {
 			CompoundTag techTag = unlockedTag.getCompound(i);
@@ -220,9 +260,9 @@ public class Techniques {
 
 			if ("KI".equals(type) && PredefinedTechniques.EVASION_REGISTRY.containsKey(savedId)) {
 				EvasionAttackData template = PredefinedTechniques.EVASION_REGISTRY.get(savedId);
-				EvasionAttackData migrated = new EvasionAttackData();
-				migrated.load(template.save());
-				migrated.setExperience(techTag.contains("Experience") ? techTag.getInt("Experience") : 0);
+				int[] refund = new int[2];
+				EvasionAttackData migrated = migrateKiToEvasion(techTag, template, refundCostConfig(techTag), refund);
+				if (refund[1] > 0) this.migrationRefunds.put(migrated.getId(), refund);
 				this.unlockedTechniques.put(migrated.getId(), migrated);
 				continue;
 			}
