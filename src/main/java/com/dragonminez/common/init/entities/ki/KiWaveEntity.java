@@ -419,7 +419,34 @@ public class KiWaveEntity extends AbstractKiProjectile {
         if (this.getOwner() instanceof Player) this.triggerAnimationPacket("_fire");
     }
 
+    // Zenkai: o Heat Dome mora no ZenkaiExtra (o KiTechniqueHandler.HeatDome da v2.2); aqui fica so a posicao dele da v2.2,
+    // pelo id da tecnica, que o client tambem sabe (a onda do ZE so existe no servidor).
+    private static final String HEAT_DOME_ID = "heat_dome";
+    private static final float HEAT_DOME_BEAM_HEAD_OFFSET = 0.3F;
+
+    private boolean isHeatDome() {
+        return HEAT_DOME_ID.equals(this.getTechniqueId());
+    }
+
+    private void updateHeatDomePosition(LivingEntity owner, boolean isCasting) {
+        double y = isCasting
+                ? ownerCastCenterY(owner)
+                : owner.getY() + owner.getBbHeight() + HEAT_DOME_BEAM_HEAD_OFFSET * ownerScaleOf(owner);
+        this.setPos(owner.getX(), y, owner.getZ());
+
+        float yaw = owner.getYRot();
+        this.entityData.set(FIXED_YAW, yaw);
+        this.entityData.set(FIXED_PITCH, -90.0F);
+        this.setYRot(yaw);
+        this.setXRot(-90.0F);
+    }
+
     private void updatePositionRelativeToOwner(LivingEntity owner, boolean isCasting) {
+        if (this.isHeatDome()) {
+            this.updateHeatDomePosition(owner, isCasting);
+            return;
+        }
+
         Vec3 look = owner.getLookAngle();
         Vec3 newPos;
 
