@@ -279,12 +279,12 @@ public class GumBindEntity extends Entity implements GeoEntity {
 		}
 	}
 
-	// Zenkai: na v2.2 o NPC de saga amarrado tambem toca a pose gum_bound no controlador de reacao dele, que vem com os
-	// golpes de strike da v2.2 e nao existe no fork: aqui so o jogador ganha a pose (o NPC fica atordoado, como na v2.2).
 	private void pose(LivingEntity victim) {
 		if (victim instanceof ServerPlayer player) {
 			NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(player.getUUID(),
 					TriggerAnimationS2C.AnimationType.KI_ANIMATION, 0, -1, BOUND_ANIMATION), player);
+		} else if (victim instanceof DBSagasEntity saga) {
+			saga.triggerAnim(DBSagasEntity.HURT_CONTROLLER, DBSagasEntity.HURT_ANIM_GUM_BOUND);
 		}
 	}
 
@@ -328,6 +328,8 @@ public class GumBindEntity extends Entity implements GeoEntity {
 							TriggerAnimationS2C.AnimationType.KI_ANIMATION_STOP, 0, -1, ""), player);
 				}
 				if (escaped) KnockbackHelper.apply(player, new Vec3(0.0D, 0.45D, 0.0D));
+			} else if (victim instanceof DBSagasEntity saga && victim.getUUID().equals(this.victimUuid)) {
+				saga.stopTriggeredAnimation(DBSagasEntity.HURT_CONTROLLER, DBSagasEntity.HURT_ANIM_GUM_BOUND);
 			}
 			Vec3 center = victim != null ? victim.position().add(0.0D, victim.getBbHeight() * 0.5D, 0.0D) : this.position().add(0.0D, 1.0D, 0.0D);
 			level.sendParticles(new DustParticleOptions(this.dustColor(), 1.6F), center.x, center.y, center.z, 30, 0.6D, 0.7D, 0.6D, 0.1D);

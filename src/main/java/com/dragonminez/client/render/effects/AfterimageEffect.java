@@ -78,7 +78,7 @@ public final class AfterimageEffect {
 
 	// Zenkai: a v2.2 tambem conta o braco do Dimensional Punch (DimensionalFistEffect), golpe de strike que nao veio.
 	public static boolean isRendering() {
-		return rendering;
+		return rendering || DimensionalFistEffect.isRenderingArm();
 	}
 
 	public static void start(int entityId, int durationTicks, Vec3[] positions, float[] yaws, boolean breakLockOn) {

@@ -33,6 +33,9 @@ public class DMZShaders {
 	public static ShaderInstance chargeRaysShader;
 	public static ShaderInstance blueHurricaneShader;
 	public static ShaderInstance afterimageShader;
+	public static ShaderInstance shockwaveShader;
+	public static ShaderInstance clawSlashShader;
+	public static ShaderInstance impactBurstShader;
 
 	@SubscribeEvent
 	public static void onRegisterShaders(RegisterShadersEvent event) throws IOException {
@@ -83,6 +86,12 @@ public class DMZShaders {
 		// v2.2 (8da3e61c1): imagem residual do Afterimage. Sem o shader (ou com shaderpack) o AfterimageEffect desenha o
 		// fantasma translucido comum, como na v2.2.
 		registerOptional(event, "afterimage", DefaultVertexFormat.NEW_ENTITY, shaderInstance -> afterimageShader = shaderInstance);
+
+		// v2.2 (8506f3b2a): onda de choque, garra e estouro dos golpes de strike. Com shaderpack os efeitos desenham no
+		// AFTER_LEVEL, como na v2.2; sem o shader o efeito nao desenha.
+		registerOptional(event, "shockwave", DefaultVertexFormat.POSITION_TEX, shaderInstance -> shockwaveShader = shaderInstance);
+		registerOptional(event, "claw_slash", DefaultVertexFormat.POSITION_TEX, shaderInstance -> clawSlashShader = shaderInstance);
+		registerOptional(event, "impact_burst", DefaultVertexFormat.POSITION_TEX, shaderInstance -> impactBurstShader = shaderInstance);
 	}
 
 	private static void registerOptional(RegisterShadersEvent event, String name, VertexFormat format, Consumer<ShaderInstance> onLoaded) {

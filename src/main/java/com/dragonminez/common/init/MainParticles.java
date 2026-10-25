@@ -3,6 +3,8 @@ package com.dragonminez.common.init;
 import com.dragonminez.Reference;
 import net.minecraft.core.particles.ParticleType;
 import net.minecraft.core.particles.SimpleParticleType;
+import com.mojang.serialization.Codec;
+import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -53,6 +55,14 @@ public class MainParticles {
             PARTICLE_TYPES.register("divine_particle", () -> new SimpleParticleType(true));
     public static final RegistryObject<SimpleParticleType> STARDUST =
             PARTICLE_TYPES.register("stardust", () -> new SimpleParticleType(true));
+    @SuppressWarnings("deprecation")
+    public static final RegistryObject<ParticleType<BlockParticleOption>> FLYING_BLOCK =
+            PARTICLE_TYPES.register("flying_block", () -> new ParticleType<BlockParticleOption>(false, BlockParticleOption.DESERIALIZER) {
+                @Override
+                public Codec<BlockParticleOption> codec() {
+                    return BlockParticleOption.codec(this);
+                }
+            });
     public static final RegistryObject<SimpleParticleType> SLEEP_Z =
             PARTICLE_TYPES.register("sleep_z", () -> new SimpleParticleType(true));
 

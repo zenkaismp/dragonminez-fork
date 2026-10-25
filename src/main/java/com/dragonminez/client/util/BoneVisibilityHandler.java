@@ -25,6 +25,12 @@ public class BoneVisibilityHandler {
 		var stats = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
 		if (stats == null) return;
 
+		// v2.2 (8506f3b2a): o braco do Dimensional Fist desenhado sozinho, saindo do portal
+		if (com.dragonminez.client.render.effects.DimensionalFistEffect.isRenderingArm()) {
+			com.dragonminez.client.render.effects.DimensionalFistEffect.isolateArm(model);
+			return;
+		}
+
 		if (shouldShowBodyOnly(renderLayer, player)) {
 			applyBodyOnlyVisibility(model);
 			return;

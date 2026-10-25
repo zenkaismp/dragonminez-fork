@@ -583,6 +583,68 @@ public class NetworkHandler {
 				.encoder(DimensionalShatterS2C::encode)
 				.consumerMainThread(DimensionalShatterS2C::handle)
 				.add();
+
+		// Strike 2.0 da v2.2: os efeitos dos golpes novos, a investida e a camera de cena (na ordem da v2.2), e a parada da
+		// animacao do NPC (Zenkai: o GeckoLib 4.3.1 nao tem a do 4.4). No fim da lista, como todo pacote novo.
+		net.messageBuilder(ShockwaveVfxS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(ShockwaveVfxS2C::new)
+				.encoder(ShockwaveVfxS2C::encode)
+				.consumerMainThread(ShockwaveVfxS2C::handle)
+				.add();
+
+		net.messageBuilder(ClawSlashVfxS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(ClawSlashVfxS2C::new)
+				.encoder(ClawSlashVfxS2C::encode)
+				.consumerMainThread(ClawSlashVfxS2C::handle)
+				.add();
+
+		net.messageBuilder(ImpactBurstVfxS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(ImpactBurstVfxS2C::new)
+				.encoder(ImpactBurstVfxS2C::encode)
+				.consumerMainThread(ImpactBurstVfxS2C::handle)
+				.add();
+
+		net.messageBuilder(BossTelegraphS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(BossTelegraphS2C::new)
+				.encoder(BossTelegraphS2C::encode)
+				.consumerMainThread(BossTelegraphS2C::handle)
+				.add();
+
+		net.messageBuilder(DimensionalFistS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(DimensionalFistS2C::new)
+				.encoder(DimensionalFistS2C::encode)
+				.consumerMainThread(DimensionalFistS2C::handle)
+				.add();
+
+		net.messageBuilder(SwordSlashS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(SwordSlashS2C::new)
+				.encoder(SwordSlashS2C::encode)
+				.consumerMainThread(SwordSlashS2C::handle)
+				.add();
+
+		net.messageBuilder(StrikeRushS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(StrikeRushS2C::new)
+				.encoder(StrikeRushS2C::encode)
+				.consumerMainThread(StrikeRushS2C::handle)
+				.add();
+
+		net.messageBuilder(KiBladeExtendS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(KiBladeExtendS2C::new)
+				.encoder(KiBladeExtendS2C::encode)
+				.consumerMainThread(KiBladeExtendS2C::handle)
+				.add();
+
+		net.messageBuilder(StrikeCinematicS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(StrikeCinematicS2C::new)
+				.encoder(StrikeCinematicS2C::encode)
+				.consumerMainThread(StrikeCinematicS2C::handle)
+				.add();
+
+		net.messageBuilder(SagaAnimStopS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(SagaAnimStopS2C::new)
+				.encoder(SagaAnimStopS2C::encode)
+				.consumerMainThread(SagaAnimStopS2C::handle)
+				.add();
 	}
 
 	public static <MSG> void sendToServer(MSG message) {

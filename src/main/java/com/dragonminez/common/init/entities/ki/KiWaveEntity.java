@@ -46,6 +46,14 @@ public class KiWaveEntity extends AbstractKiProjectile {
 
     private static final EntityDataAccessor<Boolean> CONTINUOUS_FOLLOW = SynchedEntityData.defineId(KiWaveEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> IS_FIRING = SynchedEntityData.defineId(KiWaveEntity.class, EntityDataSerializers.BOOLEAN);
+    // v2.2: a onda que segue a mira do dono aos poucos (graus por tick); 0 e a onda normal.
+    private static final EntityDataAccessor<Float> STEER_RATE = SynchedEntityData.defineId(KiWaveEntity.class, EntityDataSerializers.FLOAT);
+
+    private static final float MOUTH_BLAST_STEER_RATE = 2.5F;
+    private static final float STEER_EASE = 0.2F;
+    private static final float STEER_MIN_STEP = 0.15F;
+    private static final float MOUTH_OFFSET_Y = -0.25F;
+    private static final float MOUTH_OFFSET_FORWARD = 0.3F;
 
     private static final float MAX_RANGE = 300.0F; // uff
 
@@ -368,6 +376,22 @@ public class KiWaveEntity extends AbstractKiProjectile {
         this.setupKiOozaruPlayer(owner, damage, speed, color, colorBorder, 0xFFFFFF, size);
     }
 
+    public void setupMouthBlastPlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder, float size) {
+        this.setKiRenderType(0);
+        this.setSize(size);
+        this.setCastSize(size / 2);
+        this.setKiDamage(damage);
+        this.setKiSpeed(speed);
+        this.setColors(color, colorBorder, 0xFFFFFF);
+        this.setContinuousFollow(true);
+        this.setSteerRate(MOUTH_BLAST_STEER_RATE);
+        this.setFiring(false);
+        this.setMaxLife(99999);
+        this.setCastWave(0);
+        this.setCastOffsets(0.0F, MOUTH_OFFSET_Y, MOUTH_OFFSET_FORWARD);
+        updatePositionRelativeToOwner(owner, true);
+    }
+
     public void setupKiMasenko(LivingEntity owner, float damage, float speed, float size, int colorOutline, int castTime) {
         this.setKiRenderType(4);
         this.setSize(size);
@@ -475,10 +499,23 @@ public class KiWaveEntity extends AbstractKiProjectile {
         float exactPitch = (float) (-(Mth.atan2(look.y, horizontalDistance) * (180F / Math.PI)));
         float exactYaw = (float) (Mth.atan2(look.z, look.x) * (180F / Math.PI) - 90.0F);
 
+        float steerRate = this.getSteerRate();
+        if (steerRate > 0.0F && this.isFiring()) {
+            exactYaw = steerToward(this.getFixedYaw(), exactYaw, steerRate);
+            exactPitch = steerToward(this.getFixedPitch(), exactPitch, steerRate);
+        }
+
         this.entityData.set(FIXED_YAW, exactYaw);
         this.entityData.set(FIXED_PITCH, exactPitch);
         this.setYRot(exactYaw);
         this.setXRot(exactPitch);
+    }
+
+    private static float steerToward(float current, float target, float maxStep) {
+        float diff = Mth.wrapDegrees(target - current);
+        float distance = Math.abs(diff);
+        float step = Mth.clamp(distance * STEER_EASE, Math.min(distance, STEER_MIN_STEP), maxStep);
+        return current + Math.signum(diff) * step;
     }
 
     @Override
@@ -495,6 +532,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
 
         this.entityData.define(CONTINUOUS_FOLLOW, false);
         this.entityData.define(IS_FIRING, false);
+        this.entityData.define(STEER_RATE, 0.0F);
     }
 
     public float getBeamLength() { return this.entityData.get(BEAM_LENGTH); }
@@ -518,6 +556,8 @@ public class KiWaveEntity extends AbstractKiProjectile {
     public void setContinuousFollow(boolean follow) { this.entityData.set(CONTINUOUS_FOLLOW, follow); }
     public boolean isFiring() { return this.entityData.get(IS_FIRING); }
     public void setFiring(boolean firing) { this.entityData.set(IS_FIRING, firing); }
+    public float getSteerRate() { return this.entityData.get(STEER_RATE); }
+    public void setSteerRate(float degreesPerTick) { this.entityData.set(STEER_RATE, degreesPerTick); }
 
     @Override
     public void tick() {
@@ -525,7 +565,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
         this.setDeltaMovement(0, 0, 0);
 
         int renderType = this.getKiRenderType();
-        if (renderType == 1 || renderType == 0) {
+        if ((renderType == 1 || renderType == 0) && this.getSteerRate() <= 0.0F) {
             if (this.tickCount <= 5) {
                 this.setCastOffsets(0.0F, 0.1F, 0.5F);
             } else if (this.tickCount < 15) {

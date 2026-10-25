@@ -34,28 +34,50 @@ public class SkillsConfig {
 		createDefaults();
 	}
 
-	// Zenkai: o golpe SP que a v2.2 acrescentou (Blue Hurricane) num skills.json que ja existia. Na v2.2 ele chega pela
-	// regeneracao da versao 2.2.0 do config; aqui entra so o que falta: o id na lista de golpes SP (que e do codigo,
-	// @ConfigNonPreservable) e o custo padrao dele. Nenhum mestre oferece o golpe, como na v2.2.
+	// Zenkai: os golpes SP que a v2.2 acrescentou (o Blue Hurricane e os do Strike 2.0) num skills.json que ja existia. Na
+	// v2.2 eles chegam pela regeneracao da versao 2.2.0 do config e pelo addMissingDefaults (fbc523620); aqui entra so o
+	// que falta: o id na lista de golpes SP (que e do codigo, @ConfigNonPreservable), o custo padrao e, quando o custo
+	// nao estava no arquivo, o golpe nos mestres que o oferecem no padrao, como o addMissingDefaults da v2.2 faz. Depois
+	// disso o que o dono mudar nos mestres fica.
 	public boolean addMissingV22StrikeSkills(com.google.gson.JsonObject raw) {
+		return addMissingV22Skills(raw, "strikeSkills", strikeSkills, V22_STRIKE_SKILLS);
+	}
+
+	// Zenkai: a tecnica de ki que veio com o Strike 2.0 (Mouth Blast, so por /dmztech), do mesmo jeito.
+	public boolean addMissingV22KiSkills(com.google.gson.JsonObject raw) {
+		return addMissingV22Skills(raw, "kiSkills", kiSkills, V22_KI_SKILLS);
+	}
+
+	private boolean addMissingV22Skills(com.google.gson.JsonObject raw, String listKey, List<String> target, List<String> ids) {
 		if (raw == null) return false;
-		com.google.gson.JsonArray listed = raw.has("strikeSkills") && raw.get("strikeSkills").isJsonArray() ? raw.getAsJsonArray("strikeSkills") : null;
+		com.google.gson.JsonArray listed = raw.has(listKey) && raw.get(listKey).isJsonArray() ? raw.getAsJsonArray(listKey) : null;
 		com.google.gson.JsonObject costs = raw.has("skills") && raw.get("skills").isJsonObject() ? raw.getAsJsonObject("skills") : null;
 		if (listed == null || costs == null) return false;
 		SkillsConfig defaults = new SkillsConfig();
 		boolean changed = false;
-		for (String id : V22_STRIKE_SKILLS) {
+		for (String id : ids) {
 			boolean inFile = false;
 			for (com.google.gson.JsonElement element : listed) {
 				if (element.isJsonPrimitive() && id.equals(element.getAsString())) { inFile = true; break; }
 			}
-			if (!inFile && !strikeSkills.contains(id)) { strikeSkills.add(id); changed = true; }
-			if (!costs.has(id) && defaults.skills.containsKey(id)) { skills.put(id, defaults.skills.get(id)); changed = true; }
+			if (!inFile && !target.contains(id)) { target.add(id); changed = true; }
+			if (costs.has(id) || !defaults.skills.containsKey(id)) continue;
+			skills.put(id, defaults.skills.get(id));
+			changed = true;
+			for (Map.Entry<String, List<String>> offering : defaults.skillOfferings.entrySet()) {
+				if (!offering.getValue().contains(id)) continue;
+				List<String> offered = skillOfferings.computeIfAbsent(offering.getKey(), key -> new ArrayList<>());
+				if (!offered.contains(id)) offered.add(id);
+			}
 		}
 		return changed;
 	}
 
-	private static final List<String> V22_STRIKE_SKILLS = List.of("blue_hurricane");
+	private static final List<String> V22_STRIKE_SKILLS = List.of("blue_hurricane", "oozaru_slam", "gum_punch",
+			"dimensional_punch", "dimensional_sword_attack", "spirit_breaking_cannon", "grab", "shining_sword_attack",
+			"combo_meteor", "meteor_burst", "mystic_ball", "darkness_eye_beam", "death_chaser", "android_combo",
+			"beam_sword_slash", "perfect_rush", "spirit_breaker");
+	private static final List<String> V22_KI_SKILLS = List.of("mouth_blast");
 
 	// Zenkai: as esquivas do combate 2.0 da v2.2 num skills.json que ja existia. Na v2.2 elas chegam pela regeneracao da
 	// versao 2.2.0 do config; aqui entra so o que falta: o Solar Flare sai da lista de golpes de ki do arquivo (foi para a
@@ -122,6 +144,7 @@ public class SkillsConfig {
 		kiSkills.add("final_explosion");
 		kiSkills.add("soul_punisher");
 		kiSkills.add("fake_moon");
+		kiSkills.add("mouth_blast");
 		evasionSkills.add("taiyoken");
 		evasionSkills.add("rage_scream");
 		evasionSkills.add("afterimage");
@@ -146,6 +169,7 @@ public class SkillsConfig {
 		skills.put("makkanko", new SkillCosts(List.of(3500)));
 		skills.put("burning_attack", new SkillCosts(List.of(3500)));
 		skills.put("big_bang", new SkillCosts(List.of(4000)));
+		skills.put("mouth_blast", new SkillCosts(List.of(4500)));
 		skills.put("sokidan", new SkillCosts(List.of(4000)));
 		skills.put("kienzan_doble", new SkillCosts(List.of(4000)));
 
@@ -166,7 +190,23 @@ public class SkillsConfig {
 		strikeSkills.add("wolf_fang");
 		strikeSkills.add("oozaru_fist");
 		strikeSkills.add("super_god_fist");
+		strikeSkills.add("oozaru_slam");
+		strikeSkills.add("gum_punch");
 		strikeSkills.add("blue_hurricane");
+		strikeSkills.add("dimensional_punch");
+		strikeSkills.add("dimensional_sword_attack");
+		strikeSkills.add("spirit_breaking_cannon");
+		strikeSkills.add("grab");
+		strikeSkills.add("shining_sword_attack");
+		strikeSkills.add("combo_meteor");
+		strikeSkills.add("meteor_burst");
+		strikeSkills.add("mystic_ball");
+		strikeSkills.add("darkness_eye_beam");
+		strikeSkills.add("death_chaser");
+		strikeSkills.add("android_combo");
+		strikeSkills.add("beam_sword_slash");
+		strikeSkills.add("perfect_rush");
+		strikeSkills.add("spirit_breaker");
 
 		skills.put("meteor",             new SkillCosts(List.of(3000)));
 		skills.put("wolf_fang",          new SkillCosts(List.of(3500)));
@@ -176,7 +216,23 @@ public class SkillsConfig {
 		skills.put("super_god_fist",     new SkillCosts(List.of(10000)));
 		skills.put("deadly_dance_vegetto", new SkillCosts(List.of(12000)));
 		skills.put("oozaru_fist",        new SkillCosts(List.of(15000)));
+		skills.put("oozaru_slam",        new SkillCosts(List.of(4000)));
+		skills.put("gum_punch",          new SkillCosts(new ArrayList<>(List.of(4000)), new ArrayList<>(List.of("majin"))));
 		skills.put("blue_hurricane",     new SkillCosts(List.of(5000)));
+		skills.put("dimensional_punch",  new SkillCosts(List.of(18000)));
+		skills.put("dimensional_sword_attack", new SkillCosts(List.of(22000)));
+		skills.put("spirit_breaking_cannon", new SkillCosts(List.of(12000)));
+		skills.put("grab", new SkillCosts(List.of(3500)));
+		skills.put("shining_sword_attack", new SkillCosts(List.of(9000)));
+		skills.put("combo_meteor", new SkillCosts(List.of(7000)));
+		skills.put("meteor_burst", new SkillCosts(List.of(24000)));
+		skills.put("mystic_ball", new SkillCosts(new ArrayList<>(List.of(11000)), new ArrayList<>(List.of("majin"))));
+		skills.put("darkness_eye_beam", new SkillCosts(new ArrayList<>(List.of(11000)), new ArrayList<>(List.of("namekian"))));
+		skills.put("death_chaser", new SkillCosts(List.of(15000)));
+		skills.put("android_combo", new SkillCosts(new ArrayList<>(List.of(14000)), new ArrayList<>(List.of("android"))));
+		skills.put("perfect_rush", new SkillCosts(new ArrayList<>(List.of(15000)), new ArrayList<>(List.of("bioandroid"))));
+		skills.put("spirit_breaker", new SkillCosts(List.of(17000)));
+		skills.put("beam_sword_slash", new SkillCosts(List.of(16000)));
 
 		List<Integer> jumpCosts = new ArrayList<>();
 		jumpCosts.add(300);
@@ -392,6 +448,7 @@ public class SkillsConfig {
 		gokuSkills.add("dragon_fist");
 		gokuSkills.add("super_god_fist");
 		gokuSkills.add("oozaru_fist");
+		gokuSkills.add("beam_sword_slash");
 		skillOfferings.put("goku", gokuSkills);
 
 		List<String> kingKaiSkills = new ArrayList<>();
@@ -411,6 +468,8 @@ public class SkillsConfig {
 		vegetaSkills.add("final_explosion");
 		vegetaSkills.add("fake_moon");
 		vegetaSkills.add("deadly_dance_vegetto");
+		vegetaSkills.add("spirit_breaker");
+		vegetaSkills.add("spirit_breaking_cannon");
 		skillOfferings.put("vegeta", vegetaSkills);
 
 		List<String> oldKaiSkills = new ArrayList<>();
@@ -436,6 +495,7 @@ public class SkillsConfig {
 		piccoloSkills.add("makkanko");
 		piccoloSkills.add("ki_barrage");
 		piccoloSkills.add("kienzan");
+		piccoloSkills.add("darkness_eye_beam");
 		skillOfferings.put("piccolo", piccoloSkills);
 
 		List<String> krillinSkills = new ArrayList<>();
@@ -463,12 +523,14 @@ public class SkillsConfig {
 		friezaSkills.add("kienzan_doble");
 		friezaSkills.add("deadly_dance");
 		friezaSkills.add("meteor");
+		friezaSkills.add("death_chaser");
 		skillOfferings.put("frieza", friezaSkills);
 
 		List<String> trunksSkills = new ArrayList<>();
 		trunksSkills.add("kiboost");
 		trunksSkills.add("kiprotection");
 		trunksSkills.add("burning_attack");
+		trunksSkills.add("shining_sword_attack");
 		trunksSkills.add("galick_gun");
 		trunksSkills.add("ki_barrage");
 		trunksSkills.add("meteor");
@@ -491,6 +553,8 @@ public class SkillsConfig {
 		cellSkills.add("afterimage");
 		cellSkills.add("deadly_dance");
 		cellSkills.add("meteor");
+		cellSkills.add("android_combo");
+		cellSkills.add("perfect_rush");
 		skillOfferings.put("cell", cellSkills);
 
 		List<String> yamchaSkills = new ArrayList<>();
@@ -502,9 +566,11 @@ public class SkillsConfig {
 		yamchaSkills.add("ki_barrage");
 		skillOfferings.put("yamcha", yamchaSkills);
 
-		// Zenkai: da lista do Majin Buu mestre da v2.2 (ab3cd4152, 698ca3f1f) so as tres esquivas; o mestre ainda nao
-		// existe no fork e os outros itens dela (assault_rain, gum_punch, mystic_ball) nao vieram.
+		// Zenkai: a lista do Majin Buu mestre da v2.2 (ab3cd4152, 698ca3f1f) sem o assault_rain (golpe de ki que nao veio).
+		// O mestre nao existe no fork (o dono nao quis), entao estes so saem por /dmztech.
 		List<String> buuSkills = new ArrayList<>();
+		buuSkills.add("gum_punch");
+		buuSkills.add("mystic_ball");
 		buuSkills.add("sleep_recovery");
 		buuSkills.add("candy_beam");
 		buuSkills.add("gum_bind");
@@ -542,6 +608,11 @@ public class SkillsConfig {
 	}
 
 	public boolean isSkillAllowedForRace(String skillName, String raceName) {
+		return isSkillAllowedForRace(skillName, raceName, false);
+	}
+
+	// v2.2 (49f4fbd59): golpe liberado para "android" vale tambem para quem fez o upgrade de androide (Android Combo).
+	public boolean isSkillAllowedForRace(String skillName, String raceName, boolean androidUpgraded) {
 		if (skillName == null || skillName.isEmpty()) return false;
 
 		SkillCosts skillCosts = getSkillCosts(skillName);
@@ -553,6 +624,7 @@ public class SkillsConfig {
 			if (allowedRace == null || allowedRace.isEmpty()) continue;
 			String normalizedAllowed = allowedRace.toLowerCase();
 			if (normalizedAllowed.equals("all") || normalizedAllowed.equals(normalizedRace)) return true;
+			if (androidUpgraded && normalizedAllowed.equals("android")) return true;
 		}
 
 		return false;

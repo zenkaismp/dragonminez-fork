@@ -209,6 +209,25 @@ public class DBSagasAnimationHandler {
         return PlayState.STOP;
     }
 
+    public static <T extends GeoAnimatable> PlayState hurtPredicate(AnimationState<T> event) {
+        return hurtPredicate(event, (DBSagasEntity) event.getAnimatable());
+    }
+
+    // v2.2. Zenkai: sem o sono, a habilidade de chefe e o choque de strike da v2.2 (isInSleepPose, getBossAbility,
+    // isStrikeClashing), que o fork nao tem.
+    public static <T extends GeoAnimatable> PlayState hurtPredicate(AnimationState<T> event, DBSagasEntity entity) {
+
+        if (entity.isDeadOrDying()
+                || entity.isCasting() || entity.isComboing() || entity.isTransforming()
+                || entity.isEvading() || entity.isZanzoken()) {
+            return PlayState.STOP;
+        }
+
+        if (event.getController().isPlayingTriggeredAnimation()) return PlayState.CONTINUE;
+        if (entity.isStunned()) return event.setAndContinue(DBSagasAnimations.ANIM_STUNNED);
+        return PlayState.STOP;
+    }
+
     public static <T extends GeoAnimatable> PlayState tailPredicate(AnimationState<T> event) {
         return event.setAndContinue(DBSagasAnimations.ANIM_TAIL);
     }

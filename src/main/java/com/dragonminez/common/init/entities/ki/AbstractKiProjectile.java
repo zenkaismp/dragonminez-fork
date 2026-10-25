@@ -294,6 +294,7 @@ public abstract class AbstractKiProjectile extends Projectile {
      * does not drift ahead from entity push/physics while it is held.
      */
     protected void holdTargetAtCaster(Entity target, Vec3 desiredFeet) {
+        if (target instanceof com.dragonminez.common.init.entities.MastersEntity) return;
         Vec3 delta = new Vec3(
                 desiredFeet.x - target.getX(),
                 desiredFeet.y - target.getY(),

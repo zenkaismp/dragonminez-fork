@@ -65,10 +65,24 @@ public class TechniqueConfig {
 		return switch (strikeId) {
 			case "dragon_fist" -> 320;
 			case "oozaru_fist" -> 280;
+			// Zenkai: a v2.2 (fbc523620) passou o Kaioken Attack para 180 e o Super God Fist para 300; o dono ficou com os 240.
 			case "super_god_fist", "kaioken_attack" -> 240;
 			case "deadly_dance_vegetto" -> 200;
 			case "blue_hurricane" -> 260;
 			case "wolf_fang" -> 140;
+			// v2.2: os golpes do Strike 2.0
+			case "oozaru_slam" -> 180;
+			case "grab" -> 210;
+			case "gum_punch" -> 260;
+			case "combo_meteor" -> 290;
+			case "shining_sword_attack", "mystic_ball", "death_chaser" -> 320;
+			case "spirit_breaking_cannon", "perfect_rush" -> 330;
+			case "dimensional_punch" -> 340;
+			case "beam_sword_slash" -> 350;
+			case "spirit_breaker" -> 370;
+			case "dimensional_sword_attack", "android_combo" -> 380;
+			case "darkness_eye_beam" -> 410;
+			case "meteor_burst" -> 600;
 			default -> 160;
 		};
 	}
@@ -166,7 +180,11 @@ public class TechniqueConfig {
 	public StrikeAttackConfig getStrikeConfig(String strikeId) {
 		if (strikeId == null || strikeId.isEmpty()) return StrikeAttackConfig.defaults();
 		StrikeAttackConfig config = strikeAttacks.get(strikeId.toLowerCase());
-		return config != null ? config : StrikeAttackConfig.defaults();
+		// v2.2 (0242f7fa9): golpe sem entrada no arquivo usa a recarga padrao dele, nao a generica.
+		if (config != null) return config;
+		StrikeAttackConfig fallback = StrikeAttackConfig.defaults();
+		fallback.setCooldownTicks(defaultStrikeCooldownTicks(strikeId.toLowerCase()));
+		return fallback;
 	}
 
 	public EvasionAttackConfig getEvasionConfig(String evasionId) {

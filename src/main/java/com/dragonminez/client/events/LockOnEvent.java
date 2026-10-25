@@ -39,12 +39,14 @@ public class LockOnEvent {
 	private static final ResourceLocation LOCK_ICON = new ResourceLocation(Reference.MOD_ID, "textures/gui/lock_on.png");
 	@Getter
 	private static LivingEntity lockedTarget = null;
+	private static LivingEntity suspendedTarget = null;
 	private static int scanTickCounter = 0;
 
 	public static void toggleLock() {
 		Minecraft mc = Minecraft.getInstance();
 		Player player = mc.player;
 		if (player == null) return;
+		if (com.dragonminez.client.render.camera.StrikeCinematicCamera.isFilming()) return;
 
 		if (TaiyokenBlindState.isActive()) {
 			unlock();
@@ -74,6 +76,38 @@ public class LockOnEvent {
 
 	public static void unlock() {
 		lockedTarget = null;
+		suspendedTarget = null;
+	}
+
+	public static void suspend() {
+		if (lockedTarget != null) suspendedTarget = lockedTarget;
+		lockedTarget = null;
+	}
+
+	public static void resume() {
+		LivingEntity target = suspendedTarget;
+		suspendedTarget = null;
+		Minecraft mc = Minecraft.getInstance();
+		Player player = mc.player;
+		if (target == null || player == null || lockedTarget != null || target.level() != mc.level) return;
+		if (TaiyokenBlindState.isActive()) return;
+		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+			if (isLockValid(player, target, data)) lockedTarget = target;
+		});
+	}
+
+	// v2.2: as mesmas checagens do onClientTick, juntas.
+	private static boolean isLockValid(Player player, LivingEntity target, com.dragonminez.common.stats.StatsData data) {
+		if (!target.isAlive()) return false;
+		int level = data.getSkills().getSkillLevel("kisense");
+		if (level <= 0 || data.getSkills().getSkill("kisense") == null) return false;
+
+		double maxRange = 15.0 + 5.0 * level;
+		if (data.getStatus().isAndroidUpgraded()) maxRange += 25.0;
+		if (player.distanceTo(target) > maxRange) return false;
+
+		if (!KiSenseScan.canTarget(target, data)) return false;
+		return player.hasLineOfSight(target) || data.getStatus().isAndroidUpgraded();
 	}
 
 	@SubscribeEvent

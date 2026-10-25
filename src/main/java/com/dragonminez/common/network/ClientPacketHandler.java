@@ -150,6 +150,27 @@ public class ClientPacketHandler {
 		RadarRenderEvent.updateRadarData(earthPositions, namekPositions, positionsBySet);
 	}
 
+	public static void handleStrikeRush(int playerId, int ticks, int targetId, boolean connected) {
+		var localPlayer = Minecraft.getInstance().player;
+		if (localPlayer != null && localPlayer.getId() == playerId) {
+			if (ticks > 0) com.dragonminez.client.events.FlySkillEvent.startStrikeRush(ticks, targetId);
+			else com.dragonminez.client.events.FlySkillEvent.stopStrikeRush(connected);
+		} else com.dragonminez.client.events.FlySkillEvent.setRemoteStrikeRush(playerId, ticks);
+	}
+
+	// Zenkai: a parada da animacao disparada do NPC (SagaAnimStopS2C), no lugar do pacote do GeckoLib 4.4 da v2.2.
+	public static void handleSagaAnimStop(int entityId, String controller, String animation) {
+		var level = Minecraft.getInstance().level;
+		if (level != null && level.getEntity(entityId) instanceof com.dragonminez.common.init.entities.sagas.DBSagasEntity saga) {
+			saga.stopTriggeredAnimation(controller, animation);
+		}
+	}
+
+	public static void handleStrikeCinematic(boolean active, int attackerId, int victimId) {
+		if (active) com.dragonminez.client.render.camera.StrikeCinematicCamera.start(attackerId, victimId);
+		else com.dragonminez.client.render.camera.StrikeCinematicCamera.stop(attackerId);
+	}
+
 	public static void handleTriggerAnimationPacket(UUID playerUUID, TriggerAnimationS2C.AnimationType animationType,
 			int variant, int entityId, String stringPayload) {
 		var clientLevel = Minecraft.getInstance().level;

@@ -6,6 +6,15 @@ import com.dragonminez.client.animation.IPlayerAnimatable;
 import com.dragonminez.client.render.hair.HairRenderCapture;
 import com.dragonminez.client.render.hair.HairRenderContext;
 import com.dragonminez.client.render.effects.AuraBorderRenderer;
+import com.dragonminez.client.render.effects.AuraTrailRenderer;
+import com.dragonminez.client.render.effects.DimensionalFistEffect;
+import com.dragonminez.server.events.players.combat.StrikeCombos.MysticBallCombo;
+import net.minecraft.util.Mth;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.phys.Vec3;
+import org.joml.Quaternionf;
+import java.util.HashMap;
+import java.util.Map;
 import com.dragonminez.client.render.util.TintedBufferSource;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.server.events.players.statuseffect.RelicItemsStatusHandler;
@@ -48,6 +57,20 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 	private static final float[] DEMON_EYE_FLAME_INNER = ColorUtils.hexToRgb("#FF2A2A");
 	private static final float[] DEMON_EYE_FLAME_OUTER = ColorUtils.hexToRgb("#6B0000");
 
+	// v2.2 (a312ac8c0): o rastro e a deformacao da bola do Mystic Ball Attack
+	private static final float[] MYSTIC_BALL_TRAIL_COLOR = ColorUtils.rgbIntToFloat(MysticBallCombo.COLOR_MAIN);
+	private static final float MYSTIC_BALL_TRAIL_ALPHA = 0.6f;
+	private static final int MYSTIC_BALL_TRAIL_SAMPLES = 24;
+	private static final float MYSTIC_BALL_TRAIL_HALF_WIDTH = 0.6f;
+	private static final float MYSTIC_BALL_TRAIL_HEIGHT = 0.75f;
+	private static final int MYSTIC_BALL_TRAIL_FADE_TICKS = 30;
+	private static final Map<Integer, int[]> MYSTIC_BALL_TICKS = new HashMap<>();
+	private static final Map<Integer, Vec3> MYSTIC_BALL_AXIS = new HashMap<>();
+	private static final double MYSTIC_BALL_SMEAR_MIN_SPEED = 0.3;
+	private static final float MYSTIC_BALL_STRETCH_PER_SPEED = 0.45f;
+	private static final float MYSTIC_BALL_MAX_STRETCH = 0.9f;
+	private static final float MYSTIC_BALL_SQUASH = 0.45f;
+
 	protected GeoRenderLayer<T> caller = null;
 
 	public DMZPlayerRenderer(EntityRendererProvider.Context renderManager, GeoModel<T> model) {
@@ -82,12 +105,63 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 		BoneVisibilityHandler.updateVisibility(model, animatable, this.caller);
 	}
 
+	public static void submitMysticBallTrail(Entity entity, boolean playing, PoseStack poseStack, float partialTick) {
+		int[] ticks = MYSTIC_BALL_TICKS.get(entity.getId());
+		if (playing && (ticks == null || entity.tickCount - ticks[1] > 5)) {
+			ticks = new int[]{entity.tickCount, entity.tickCount};
+			MYSTIC_BALL_TICKS.put(entity.getId(), ticks);
+		}
+		if (ticks == null) return;
+		if (playing) ticks[1] = entity.tickCount;
+		else if (entity.tickCount - ticks[1] > MYSTIC_BALL_TRAIL_FADE_TICKS) {
+			MYSTIC_BALL_TICKS.remove(entity.getId());
+			return;
+		}
+
+		boolean active = playing && MysticBallCombo.isBallTick(entity.tickCount - ticks[0]);
+		AuraTrailRenderer.submitEntityTrail(entity, poseStack.last().pose(), partialTick, MYSTIC_BALL_TRAIL_COLOR, MYSTIC_BALL_TRAIL_ALPHA,
+				MYSTIC_BALL_TRAIL_SAMPLES, MYSTIC_BALL_TRAIL_HALF_WIDTH, 0.0f, MYSTIC_BALL_TRAIL_HEIGHT, active);
+	}
+
+	public static boolean hasMysticBallTrail(Entity entity) {
+		return MYSTIC_BALL_TICKS.containsKey(entity.getId());
+	}
+
+	public static void applyMysticBallSmear(Entity entity, PoseStack poseStack, float partialTick) {
+		int[] ticks = MYSTIC_BALL_TICKS.get(entity.getId());
+		float elapsed = ticks != null ? entity.tickCount - ticks[0] + partialTick : -1.0f;
+		if (ticks == null || ticks[1] != entity.tickCount || !MysticBallCombo.isBallTick((int) elapsed)) {
+			MYSTIC_BALL_AXIS.remove(entity.getId());
+			return;
+		}
+
+		Vec3 velocity = new Vec3(entity.getX() - entity.xo, entity.getY() - entity.yo, entity.getZ() - entity.zo);
+		double speed = velocity.length();
+		Vec3 axis = speed > 0.05 ? velocity.scale(1.0 / speed) : MYSTIC_BALL_AXIS.get(entity.getId());
+		if (axis == null) return;
+		MYSTIC_BALL_AXIS.put(entity.getId(), axis);
+
+		float stretch = 1.0f + Mth.clamp((float) (speed - MYSTIC_BALL_SMEAR_MIN_SPEED) * MYSTIC_BALL_STRETCH_PER_SPEED, 0.0f, MYSTIC_BALL_MAX_STRETCH);
+		float along = stretch * (1.0f - MYSTIC_BALL_SQUASH * MysticBallCombo.squash(elapsed));
+		float across = 1.0f / Mth.sqrt(along);
+		Quaternionf toAxis = new Quaternionf().rotationTo(0.0f, 1.0f, 0.0f, (float) axis.x, (float) axis.y, (float) axis.z);
+
+		poseStack.translate(0.0f, MYSTIC_BALL_TRAIL_HEIGHT, 0.0f);
+		poseStack.mulPose(toAxis);
+		poseStack.scale(across, along, across);
+		poseStack.mulPose(new Quaternionf(toAxis).conjugate());
+		poseStack.translate(0.0f, -MYSTIC_BALL_TRAIL_HEIGHT, 0.0f);
+	}
+
 	@Override
 	public void render(T entity, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
 		if (entity == null) {
 			super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
 			return;
 		}
+
+		boolean mysticBall = entity instanceof IPlayerAnimatable anim && MysticBallCombo.ANIMATION.equals(anim.dragonminez$getCurrentPlayingAnimation());
+		submitMysticBallTrail(entity, mysticBall, poseStack, partialTick);
 
 		// ponytail: GeckoLib 4.3.1's GeoModel has no lastRenderedInstance cache (a 4.4+ addition),
 		// so the per-frame reset is unnecessary here; upstream's GeoModelAccessor mixin drops away.
@@ -121,6 +195,7 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 		}
 
 		poseStack.pushPose();
+		applyMysticBallSmear(entity, poseStack, partialTick);
 		float previewLift = TechniquePreview.modelLift(entity, partialTick);
 		if (previewLift != 0.0F) poseStack.translate(0.0F, previewLift, 0.0F);
 
@@ -199,9 +274,29 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 
 	@Override
 	public void applyRenderLayers(PoseStack poseStack, T animatable, BakedGeoModel model, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
+		// v2.2 (8506f3b2a): o braco do Dimensional Fist leva so a pele
+		boolean armOnly = DimensionalFistEffect.isRenderingArm();
 		for (GeoRenderLayer<T> renderLayer : getRenderLayers()) {
+			if (armOnly && !(renderLayer instanceof DMZSkinLayer<?>)) continue;
 			renderLayer.render(poseStack, animatable, model, renderType, bufferSource, buffer, partialTick, packedLight, packedOverlay);
 		}
+	}
+
+	@Override
+	public void preApplyRenderLayers(PoseStack poseStack, T animatable, BakedGeoModel model, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
+		if (DimensionalFistEffect.isRenderingArm()) {
+			for (GeoRenderLayer<T> renderLayer : getRenderLayers()) {
+				if (renderLayer instanceof DMZSkinLayer<?>) renderLayer.preRender(poseStack, animatable, model, renderType, bufferSource, buffer, partialTick, packedLight, packedOverlay);
+			}
+			return;
+		}
+		super.preApplyRenderLayers(poseStack, animatable, model, renderType, bufferSource, buffer, partialTick, packedLight, packedOverlay);
+	}
+
+	@Override
+	public void applyRenderLayersForBone(PoseStack poseStack, T animatable, GeoBone bone, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
+		if (DimensionalFistEffect.isRenderingArm()) return;
+		super.applyRenderLayersForBone(poseStack, animatable, bone, renderType, bufferSource, buffer, partialTick, packedLight, packedOverlay);
 	}
 
 	@Override
@@ -217,7 +312,12 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 			poseStack.popPose();
 			return;
 		}
-		super.renderRecursively(poseStack, animatable, bone, renderType, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha);
+		float[] fistPose = DimensionalFistEffect.beginBonePose(bone);
+		try {
+			super.renderRecursively(poseStack, animatable, bone, renderType, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha);
+		} finally {
+			DimensionalFistEffect.endBonePose(bone, fistPose);
+		}
 	}
 
 	private static boolean editorHeadOnly() {

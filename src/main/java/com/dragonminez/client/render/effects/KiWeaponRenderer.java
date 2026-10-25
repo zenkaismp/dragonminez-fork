@@ -129,4 +129,39 @@ public class KiWeaponRenderer {
 			currentDest = currentDest.getParent();
 		}
 	}
+
+	// v2.2 (698ca3f1f): o golpe de strike que corta com a lamina (Beam Sword Slash) chama a lamina de ki por alguns ticks,
+	// mesmo sem a Ki Manipulation ligada, e pode estica-la (KiBladeExtendS2C). Zenkai: a lamina do fork ainda e o modelo
+	// antigo (o retrabalho por shader das armas de ki da v2.2, f072999dc, nao veio), entao o comprimento guardado aqui
+	// (extendBlade) nao muda o desenho; o forcesBlade faz a lamina aparecer.
+	private static final java.util.Map<Integer, long[]> BLADE_SUMMONS = new java.util.HashMap<>();
+	private static final java.util.Map<Integer, float[]> BLADE_EXTENSIONS = new java.util.HashMap<>();
+
+	public static void summonBlade(int entityId, int ticks) {
+		Minecraft mc = Minecraft.getInstance();
+		if (mc.level == null) return;
+		if (ticks <= 0) {
+			BLADE_SUMMONS.remove(entityId);
+			BLADE_EXTENSIONS.remove(entityId);
+			return;
+		}
+		BLADE_SUMMONS.put(entityId, new long[]{mc.level.getGameTime(), ticks});
+	}
+
+	public static boolean forcesBlade(net.minecraft.world.entity.Entity entity) {
+		long[] summon = BLADE_SUMMONS.get(entity.getId());
+		if (summon == null) return false;
+		long age = entity.level().getGameTime() - summon[0];
+		if (age < 0L || age > summon[1]) {
+			BLADE_SUMMONS.remove(entity.getId());
+			return false;
+		}
+		return true;
+	}
+
+	public static void extendBlade(int entityId, float length, int ticks) {
+		Minecraft mc = Minecraft.getInstance();
+		if (mc.level == null) return;
+		BLADE_EXTENSIONS.put(entityId, new float[]{length, mc.level.getGameTime(), ticks});
+	}
 }

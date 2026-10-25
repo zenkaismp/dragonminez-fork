@@ -1,5 +1,7 @@
 package com.dragonminez.client.render;
 
+import com.dragonminez.client.render.effects.KiWeaponRenderer;
+
 import com.dragonminez.Reference;
 import com.dragonminez.client.model.KiWeaponModelLoader;
 import com.dragonminez.common.combat.logic.weapon.KiWeaponHelper;
@@ -163,8 +165,9 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 	}
 
 	private void renderKiWeapon(PoseStack ps, MultiBufferSource buffer, int light, AbstractClientPlayer player, StatsData stats, HumanoidArm arm) {
-		if (!stats.getSkills().isSkillActive("kimanipulation")) return;
-		String type = stats.getStatus().getKiWeaponType();
+		boolean forcedBlade = KiWeaponRenderer.forcesBlade(player);
+		if (!forcedBlade && !stats.getSkills().isSkillActive("kimanipulation")) return;
+		String type = forcedBlade ? "blade" : stats.getStatus().getKiWeaponType();
 		if (type == null || type.equalsIgnoreCase("none")) return;
 		float[] color = KiWeaponHelper.resolveColorForType(type, getKiColor(stats));
 		String lower = type.toLowerCase();

@@ -37,7 +37,7 @@ public class EquipTechniqueC2S {
 			if (player != null) {
 				StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 					boolean raceLocked = techniqueId != null && !techniqueId.isEmpty()
-							&& !ConfigManager.getSkillsConfig().isSkillAllowedForRace(techniqueId, data.getCharacter().getRaceName());
+							&& !ConfigManager.getSkillsConfig().isSkillAllowedForRace(techniqueId, data.getCharacter().getRaceName(), data.getStatus().isAndroidUpgraded());
 					if (!raceLocked) data.getTechniques().equipOrSwapTechnique(slotIndex, techniqueId);
 					NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
 				});

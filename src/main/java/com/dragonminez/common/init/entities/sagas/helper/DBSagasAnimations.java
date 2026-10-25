@@ -65,6 +65,18 @@ public class DBSagasAnimations {
     public static final RawAnimation ANIM_CAPE = RawAnimation.begin().thenLoop("cape");
     public static final RawAnimation ANIM_GRAB = RawAnimation.begin().thenLoop("grab");
     public static final RawAnimation ANIM_GRAB_KI = RawAnimation.begin().thenLoop("grab_ki");
+    // v2.2: o que o controle de dor do NPC toca (as animacoes do jogador)
+    public static final RawAnimation ANIM_HURT_LEFT = RawAnimation.begin().thenPlay("base.hurt_left");
+    public static final RawAnimation ANIM_HURT_RIGHT = RawAnimation.begin().thenPlay("base.hurt_right");
+    public static final RawAnimation ANIM_HURT_GODFIST = RawAnimation.begin().thenPlayAndHold("base.hurt_supergodfist");
+    public static final RawAnimation ANIM_HURT_TOP = RawAnimation.begin().thenPlayAndHold("base.hurt_top");
+    public static final RawAnimation ANIM_HURT_TOP2 = RawAnimation.begin().thenPlayAndHold("base.hurt_top2");
+    public static final RawAnimation ANIM_HURT_DOWN = RawAnimation.begin().thenPlayAndHold("base.hurt_down");
+    public static final RawAnimation ANIM_HURT_GRABBED = RawAnimation.begin().thenPlay("skp.grabbed");
+    public static final RawAnimation ANIM_HURT_KO = RawAnimation.begin().thenPlayAndHold("base.faint_horizontal");
+    public static final RawAnimation ANIM_HURT_PARRIED = RawAnimation.begin().thenPlayAndHold("base.parried_stun");
+    public static final RawAnimation ANIM_STUNNED = RawAnimation.begin().thenLoop("base.stunned");
+    public static final RawAnimation ANIM_GUM_BOUND = RawAnimation.begin().thenLoop("evs.gum_bound");
     public static final RawAnimation ANIM_KI_BARRAGE = RawAnimation.begin().thenPlay("ki_barrage");
 
     public static final RawAnimation ANIM_KI_MAKKAKO = RawAnimation.begin().thenPlay("ki_makkako");

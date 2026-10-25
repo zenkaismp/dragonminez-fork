@@ -1234,6 +1234,7 @@ public class ConfigManager {
 				changed = techniques.addMissingV22Defaults(raw.getAsJsonObject());
 			} else if (config instanceof SkillsConfig skills) {
 				changed = skills.addMissingV22StrikeSkills(raw.getAsJsonObject());
+				changed |= skills.addMissingV22KiSkills(raw.getAsJsonObject());
 				changed |= skills.addMissingV22EvasionSkills(raw.getAsJsonObject());
 			}
 			if (!changed) return;

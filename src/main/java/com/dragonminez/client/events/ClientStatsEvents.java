@@ -191,7 +191,9 @@ public class ClientStatsEvents {
 				isActionKeyPressed = false;
 				isBlockKeyDown = false;
 
-				if (isMovementRestricted && TechniqueDispatcher.isFiringKiAttack(localPlayer)) {
+				// v2.2 (0242f7fa9): com a rajada que segue a mira (Mouth Blast) o jogador ainda gira
+				if (isMovementRestricted && TechniqueDispatcher.isFiringKiAttack(localPlayer)
+						&& !TechniqueDispatcher.isFiringSteerableKiAttack(localPlayer)) {
 					localPlayer.setYRot(localPlayer.yRotO);
 					localPlayer.setXRot(localPlayer.xRotO);
 					localPlayer.yHeadRot = localPlayer.yHeadRotO;
@@ -399,7 +401,7 @@ public class ClientStatsEvents {
 				String id = techniques.getEquippedSlots()[i];
 				TechniqueData t = (id == null || id.isEmpty()) ? null : techniques.getUnlockedTechniques().get(id);
 				if (t == null) continue;
-				if (!canActivateTechnique(data, player)) continue;
+				if (!canActivateTechnique(data, player, t)) continue;
 
 				if (t instanceof StrikeAttackData) {
 					techniques.selectSlot(i);
@@ -462,7 +464,7 @@ public class ClientStatsEvents {
 		}
 	}
 
-	private static boolean canActivateTechnique(StatsData data, LocalPlayer player) {
+	private static boolean canActivateTechnique(StatsData data, LocalPlayer player, TechniqueData technique) {
 		if (player.isSpectator()) return false;
 		if (data.getStatus().isFused() && !data.getStatus().isFusionLeader()) return false;
 		if (data.getSkills().getSkillLevel("kicontrol") <= 0) {
@@ -471,6 +473,10 @@ public class ClientStatsEvents {
 			return false;
 		}
 		if (data.getResources().getPowerRelease() < 5) return false;
+		// v2.2 (29d4224e6): o Shining Sword Attack sai com a Brave Sword na mao
+		if (technique instanceof StrikeAttackData && com.dragonminez.server.events.players.combat.StrikeAttackHandler.requiresBraveSword(technique.getId())) {
+			return player.getMainHandItem().getItem() instanceof com.dragonminez.common.init.item.weapons.BraveSwordItem;
+		}
 		if (!player.getMainHandItem().isEmpty()) return false;
 		return true;
 	}

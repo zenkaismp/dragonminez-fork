@@ -66,6 +66,7 @@ public class CombatConfig {
 	private Double blockDamageReductionCap = 0.65;
 	private Double blockDamageReductionMin = 0.05;
 	private Integer poiseRegenCooldown = 100;
+	private Integer strikeGlobalCooldownTicks = 60;
 
 	private Boolean enablePerfectEvasion = true;
 	private Integer perfectEvasionWindowMs = 200;

@@ -22,11 +22,12 @@ import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.ai.goal.FloatGoal;
 import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.effect.MobEffectInstance;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.core.animatable.instance.SingletonAnimatableInstanceCache;
@@ -50,7 +51,6 @@ public class MastersEntity extends PathfinderMob implements GeoEntity {
 
 	@Override
 	protected void registerGoals() {
-		this.goalSelector.addGoal(0, new FloatGoal(this));
 		this.goalSelector.addGoal(1, new LookAtPlayerGoal(this, Player.class, 8.0F));
 		this.goalSelector.addGoal(2, new RandomLookAroundGoal(this));
 	}
@@ -86,6 +86,60 @@ public class MastersEntity extends PathfinderMob implements GeoEntity {
 
 	@Override
 	protected void doPush(Entity p_20971_) {
+	}
+
+	// v2.2 (47b726860): o mestre nao e empurrado, puxado nem arrastado por golpe (so cai), nao pega efeito, fogo nem
+	// explosao, nao vai na guia nem monta.
+	@Override
+	public void setDeltaMovement(Vec3 motion) {
+		super.setDeltaMovement(new Vec3(0.0D, Math.min(motion.y, 0.0D), 0.0D));
+	}
+
+	@Override
+	public void move(MoverType type, Vec3 movement) {
+		if (type != MoverType.SELF) return;
+		super.move(type, new Vec3(0.0D, Math.min(movement.y, 0.0D), 0.0D));
+	}
+
+	@Override
+	public boolean isPushedByFluid() {
+		return false;
+	}
+
+	@Override
+	public boolean ignoreExplosion() {
+		return true;
+	}
+
+	@Override
+	public boolean canBeLeashed(Player player) {
+		return false;
+	}
+
+	@Override
+	protected void tickLeash() {
+		super.tickLeash();
+		if (this.isLeashed()) this.dropLeash(true, true);
+	}
+
+	@Override
+	public boolean startRiding(Entity vehicle, boolean force) {
+		return false;
+	}
+
+	@Override
+	public boolean canBeAffected(MobEffectInstance effect) {
+		return false;
+	}
+
+	@Override
+	public boolean fireImmune() {
+		return true;
+	}
+
+	@Override
+	public boolean canBreatheUnderwater() {
+		return true;
 	}
 
 	@Override

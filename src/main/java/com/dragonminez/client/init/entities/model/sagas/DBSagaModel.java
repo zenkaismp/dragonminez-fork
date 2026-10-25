@@ -57,6 +57,40 @@ public class DBSagaModel<T extends DBSagasEntity> extends GeoModel<T> {
         return new ResourceLocation(Reference.MOD_ID, "animations/entity/sagas/saga_base.animation.json");
     }
 
+    // v2.2 (5fe39df23, de03ed58c, d11e4b000): o NPC de saga acha nas animacoes do jogador o que nao esta no saga_base:
+    // golpes de ki, golpes de strike, o agarrao (skp.grabbed), as esquivas e as dores (base.hurt_*, no movement).
+    private static final ResourceLocation[] PLAYER_ANIMATION_FALLBACKS = {
+            new ResourceLocation(Reference.MOD_ID, "animations/entity/races/ki.animation.json"),
+            new ResourceLocation(Reference.MOD_ID, "animations/entity/races/skp.animation.json"),
+            new ResourceLocation(Reference.MOD_ID, "animations/entity/races/evs.animation.json"),
+            new ResourceLocation(Reference.MOD_ID, "animations/entity/races/movement.animation.json")
+    };
+
+    public ResourceLocation[] getAnimationResourceFallbacks(T animatable) {
+        return PLAYER_ANIMATION_FALLBACKS;
+    }
+
+    // Zenkai: o GeckoLib 4.3.1 do fork nao tem o gancho getAnimationResourceFallbacks (4.4+). A mesma busca do
+    // DMZPlayerModel: o arquivo principal e depois cada reserva.
+    @Override
+    public software.bernie.geckolib.core.animation.Animation getAnimation(T animatable, String name) {
+        java.util.Map<ResourceLocation, software.bernie.geckolib.loading.object.BakedAnimations> cache =
+                software.bernie.geckolib.cache.GeckoLibCache.getBakedAnimations();
+        software.bernie.geckolib.loading.object.BakedAnimations primary = cache.get(getAnimationResource(animatable));
+        if (primary != null) {
+            software.bernie.geckolib.core.animation.Animation anim = primary.getAnimation(name);
+            if (anim != null) return anim;
+        }
+        for (ResourceLocation fallback : getAnimationResourceFallbacks(animatable)) {
+            software.bernie.geckolib.loading.object.BakedAnimations fb = cache.get(fallback);
+            if (fb != null) {
+                software.bernie.geckolib.core.animation.Animation anim = fb.getAnimation(name);
+                if (anim != null) return anim;
+            }
+        }
+        return null;
+    }
+
     @Override
     public void setCustomAnimations(T animatable, long instanceId, AnimationState<T> animationState) {
         CoreGeoBone head = getAnimationProcessor().getBone("head");

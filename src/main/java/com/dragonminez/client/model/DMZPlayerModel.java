@@ -311,10 +311,17 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
         return null;
     }
 
-    // Zenkai: da lista da v2.2 so as esquivas; os outros clipes dela sao dos golpes de strike novos, que nao vieram.
     private static boolean clipOwnsHead(String anim) {
-        return EvasionAttackHandler.CANDY_BEAM_ANIMATION.equals(anim)
-                || EvasionAttackHandler.GUM_BIND_ANIMATION.equals(anim) || GumBindEntity.BOUND_ANIMATION.equals(anim);
+        return com.dragonminez.server.events.players.combat.StrikeCombos.MysticBallCombo.ANIMATION.equals(anim)
+                || com.dragonminez.server.events.players.combat.StrikeCombos.MeteorBurstCombo.ANIMATION.equals(anim)
+                || com.dragonminez.server.events.players.combat.StrikeCombos.DarknessEyeBeamCombo.ANIMATION.equals(anim)
+                || com.dragonminez.server.events.players.combat.StrikeCombos.DeathChaserCombo.ANIMATION.equals(anim)
+                || com.dragonminez.server.events.players.combat.StrikeCombos.AndroidCombo.ANIMATION.equals(anim)
+                || EvasionAttackHandler.CANDY_BEAM_ANIMATION.equals(anim)
+                || EvasionAttackHandler.GUM_BIND_ANIMATION.equals(anim) || GumBindEntity.BOUND_ANIMATION.equals(anim)
+                || com.dragonminez.server.events.players.combat.StrikeCombos.BeamSwordSlashCombo.ANIMATION.equals(anim)
+                || com.dragonminez.server.events.players.combat.StrikeCombos.PerfectRushCombo.ANIMATION.equals(anim)
+                || com.dragonminez.server.events.players.combat.StrikeCombos.SpiritBreakerCombo.ANIMATION.equals(anim);
     }
 
     @Override

@@ -223,7 +223,8 @@ public class TickHandler {
 
 				if (serverPlayer.getPose() != Pose.STANDING) serverPlayer.setPose(Pose.STANDING);
 
-				if (isFiring) {
+				// v2.2 (0242f7fa9): a rajada que segue a mira (Mouth Blast) deixa o jogador girar
+				if (isFiring && !TechniqueDispatcher.isFiringSteerableKiAttack(serverPlayer)) {
 					serverPlayer.setYRot(serverPlayer.yRotO);
 					serverPlayer.setXRot(serverPlayer.xRotO);
 					serverPlayer.yHeadRot = serverPlayer.yHeadRotO;
@@ -341,7 +342,10 @@ public class TickHandler {
 				else flySprintAuraTicks.remove(playerId);
 			}
 			boolean auraFromFlySprint = flySprintAuraTicks.containsKey(playerId);
-			data.getStatus().setAuraActive(auraFromActions || auraFromFlySprint);
+			// v2.2 (3983434b3): a aura acende na investida do golpe de strike. Zenkai: sem o StrikeClash.isClashing (o choque
+			// de strike nao veio).
+			boolean auraFromStrikeRush = com.dragonminez.server.events.players.combat.StrikeAttackHandler.isRushing(serverPlayer);
+			data.getStatus().setAuraActive(auraFromActions || auraFromFlySprint || auraFromStrikeRush);
 
 			if (tickCounter % 5 == 0) {
 				boolean hasYajirobe = serverPlayer.getInventory().hasAnyOf(Set.of(MainItems.KATANA_YAJIROBE.get()));

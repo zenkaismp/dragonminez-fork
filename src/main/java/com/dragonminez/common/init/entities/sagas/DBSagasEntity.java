@@ -18,6 +18,8 @@ import com.dragonminez.common.init.entities.sagas.ai.SagasCombatBrain;
 import com.dragonminez.common.init.entities.sagas.ai.CombatContext;
 import com.dragonminez.common.init.entities.sagas.helper.ComboManager;
 import com.dragonminez.common.init.entities.sagas.helper.DBSagasAnimationHandler;
+import com.dragonminez.common.init.entities.sagas.helper.TriggerStopController;
+import com.dragonminez.common.init.entities.sagas.helper.DBSagasAnimations;
 import com.dragonminez.common.init.entities.sagas.helper.SkillManager;
 import com.dragonminez.common.quest.QuestService;
 import com.dragonminez.common.stats.StatsCapability;
@@ -1195,12 +1197,38 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         super.remove(reason);
     }
 
+    // v2.2 (d11e4b000, 690593c8b, 698ca3f1f): controle de dor do NPC, com os golpes que o derrubam, o agarrao, o parry e a
+    // goma. As animacoes sao as do jogador (base.*, skp.grabbed, evs.gum_bound).
+    public static final String HURT_CONTROLLER = "hurt_controller";
+    public static final String HURT_ANIM_LEFT = "hurt_left";
+    public static final String HURT_ANIM_RIGHT = "hurt_right";
+    public static final String HURT_ANIM_GODFIST = "hurt_godfist";
+    public static final String HURT_ANIM_TOP = "hurt_top";
+    public static final String HURT_ANIM_TOP2 = "hurt_top2";
+    public static final String HURT_ANIM_DOWN = "hurt_down";
+    public static final String HURT_ANIM_GRABBED = "grabbed";
+    public static final String HURT_ANIM_KO = "knocked_out";
+    public static final String HURT_ANIM_PARRIED = "parried";
+    public static final String HURT_ANIM_GUM_BOUND = "gum_bound";
+
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
         controllers.add(new AnimationController<>(this, "base_controller", 5, DBSagasAnimationHandler::walkPredicate));
         controllers.add(new AnimationController<>(this, "skill_controller", 5, DBSagasAnimationHandler::skillPredicate));
         controllers.add(new AnimationController<>(this, "evasion_controller", 5, DBSagasAnimationHandler::evasionPredicate));
         controllers.add(new AnimationController<>(this, "attack_controller", 0, DBSagasAnimationHandler::attackPredicate));
+        controllers.add(new TriggerStopController<>(this, HURT_CONTROLLER, 0, DBSagasAnimationHandler::hurtPredicate)
+                .triggerableAnim(HURT_ANIM_LEFT, DBSagasAnimations.ANIM_HURT_LEFT)
+                .triggerableAnim(HURT_ANIM_RIGHT, DBSagasAnimations.ANIM_HURT_RIGHT)
+                .triggerableAnim(HURT_ANIM_GODFIST, DBSagasAnimations.ANIM_HURT_GODFIST)
+                .triggerableAnim(HURT_ANIM_TOP, DBSagasAnimations.ANIM_HURT_TOP)
+                .triggerableAnim(HURT_ANIM_TOP2, DBSagasAnimations.ANIM_HURT_TOP2)
+                .triggerableAnim(HURT_ANIM_DOWN, DBSagasAnimations.ANIM_HURT_DOWN)
+                .triggerableAnim(HURT_ANIM_GRABBED, DBSagasAnimations.ANIM_HURT_GRABBED)
+                .triggerableAnim(HURT_ANIM_KO, DBSagasAnimations.ANIM_HURT_KO)
+                .triggerableAnim(HURT_ANIM_PARRIED, DBSagasAnimations.ANIM_HURT_PARRIED)
+                .triggerableAnim(HURT_ANIM_GUM_BOUND, DBSagasAnimations.ANIM_GUM_BOUND)
+                .receiveTriggeredAnimations());
         controllers.add(new AnimationController<>(this, "tail_controller", 5, DBSagasAnimationHandler::tailPredicate));
         controllers.add(new AnimationController<>(this, "cape_controller", 5, DBSagasAnimationHandler::capePredicate));
     }
@@ -1574,9 +1602,48 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
                     if (this.getTarget() != livingAttacker) this.setTarget(livingAttacker);
                 }
             }
+
+            this.playHurtAnimation(pSource);
         }
 
         return actuallyHurt;
+    }
+
+    /**
+     * Para a animacao disparada (o {@code GeoEntity.stopTriggeredAnimation} do GeckoLib 4.4+ que a v2.2 usa). Zenkai: no
+     * GeckoLib 4.3.1 do fork, o servidor manda o {@code SagaAnimStopS2C} e o client para no {@code TriggerStopController}.
+     */
+    public void stopTriggeredAnimation(String controllerName, String animName) {
+        if (!this.level().isClientSide) {
+            com.dragonminez.common.network.NetworkHandler.sendToTrackingEntity(
+                    new com.dragonminez.common.network.S2C.SagaAnimStopS2C(this.getId(), controllerName, animName), this);
+            return;
+        }
+        var manager = this.getAnimatableInstanceCache().getManagerForId(this.getId());
+        if (manager == null) return;
+        var controller = manager.getAnimationControllers().get(controllerName);
+        if (controller instanceof TriggerStopController<?> stoppable) stoppable.stopTriggeredAnimation(animName);
+    }
+
+    // v2.2 (d11e4b000): o NPC acusa o golpe pelo lado de onde ele veio. Zenkai: sem as checagens de sono e de habilidade
+    // de chefe da v2.2 (isInSleepPose, getBossAbility), que sao de sistemas que o fork nao tem.
+    protected void playHurtAnimation(DamageSource pSource) {
+        if (com.dragonminez.common.init.entities.ki.GumBindEntity.isBound(this.getUUID())) return;
+        if (this.getHealth() <= 0.0F || this.isDeadOrDying()) return;
+        if (this.isCasting() || this.isComboing() || this.isTransforming()
+                || this.isEvading() || this.isZanzoken()) return;
+
+        Entity from = pSource.getDirectEntity() != null ? pSource.getDirectEntity() : pSource.getEntity();
+        if (from == null) return;
+
+        double dx = from.getX() - this.getX();
+        double dz = from.getZ() - this.getZ();
+        float hitYaw = (float) (Mth.atan2(dz, dx) * (180.0D / Math.PI)) - 90.0F;
+        boolean fromLeft = Mth.wrapDegrees(hitYaw - this.yBodyRot) < 0.0F;
+
+        String hurtAnim = fromLeft ? HURT_ANIM_LEFT : HURT_ANIM_RIGHT;
+        this.stopTriggeredAnimation(HURT_CONTROLLER, hurtAnim);
+        this.triggerAnim(HURT_CONTROLLER, hurtAnim);
     }
 
     protected boolean hasTransformation() {

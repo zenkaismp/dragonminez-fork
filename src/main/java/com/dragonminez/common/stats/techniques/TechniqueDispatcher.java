@@ -172,6 +172,9 @@ public class TechniqueDispatcher {
                 } else if ("masenko".equals(data.getId())) {
                     wave.setupKiMasenkoPlayer(owner, realDamage, kiSpeed, castSize);
                     wave.setColors(data.getColorInterior(), data.getColorExterior(), data.getColorOutline());
+                } else if ("mouth_blast".equals(data.getId())) {
+                    wave.setupMouthBlastPlayer(owner, realDamage, kiSpeed, data.getColorInterior(), data.getColorExterior(), castSize);
+                    wave.setColorOutline(data.getColorOutline());
                 } else {
                     wave.setupKiWavePlayer(owner, realDamage, kiSpeed, data.getColorInterior(), data.getColorExterior(), castSize);
                     wave.setColorOutline(data.getColorOutline());
@@ -386,6 +389,16 @@ public class TechniqueDispatcher {
 	public static boolean isFiringKiAttack(Player player) {
 		List<AbstractKiProjectile> projectiles = player.level().getEntitiesOfClass(AbstractKiProjectile.class, player.getBoundingBox().inflate(32.0D));
 		for (AbstractKiProjectile ki : projectiles) if (ki.getOwner() != null && ki.getOwner().getUUID().equals(player.getUUID())) if (ki.isFiring()) return true;
+		return false;
+	}
+
+	// v2.2 (0242f7fa9): a onda do jogador que segue a mira (Mouth Blast) esta saindo
+	public static boolean isFiringSteerableKiAttack(Player player) {
+		List<AbstractKiProjectile> projectiles = player.level().getEntitiesOfClass(AbstractKiProjectile.class, player.getBoundingBox().inflate(32.0D));
+		for (AbstractKiProjectile ki : projectiles) {
+			if (ki.getOwner() == null || !ki.getOwner().getUUID().equals(player.getUUID())) continue;
+			if (ki instanceof KiWaveEntity wave && wave.isFiring() && wave.getSteerRate() > 0.0F) return true;
+		}
 		return false;
 	}
 

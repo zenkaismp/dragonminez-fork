@@ -603,13 +603,14 @@ public class CombatEvent {
 		PARRIED_ANIM_UNTIL.remove(event.getEntity().getUUID());
 	}
 
-	// Zenkai: na v2.2 o NPC de saga tambem ganha a pose (DBSagasEntity.HURT_CONTROLLER / HURT_ANIM_PARRIED), mas esse
-	// controlador de reacao vem com os golpes de strike da v2.2 (d11e4b000), que o fork nao tem: aqui so o jogador.
 	private static void playParriedStun(LivingEntity entity) {
 		if (entity instanceof ServerPlayer player) {
 			PARRIED_ANIM_UNTIL.remove(player.getUUID());
 			NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(player.getUUID(), TriggerAnimationS2C.AnimationType.KI_ANIMATION_STOP, 0, -1, ""), player);
 			NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(player.getUUID(), TriggerAnimationS2C.AnimationType.KI_ANIMATION, 0, -1, PARRIED_STUN_ANIM), player);
+		} else if (entity instanceof DBSagasEntity saga) {
+			saga.stopTriggeredAnimation(DBSagasEntity.HURT_CONTROLLER, DBSagasEntity.HURT_ANIM_PARRIED);
+			saga.triggerAnim(DBSagasEntity.HURT_CONTROLLER, DBSagasEntity.HURT_ANIM_PARRIED);
 		} else {
 			return;
 		}
@@ -623,6 +624,8 @@ public class CombatEvent {
 		PARRIED_STUN_ACTIVE.remove(entity.getUUID());
 		if (entity instanceof ServerPlayer player) {
 			NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(player.getUUID(), TriggerAnimationS2C.AnimationType.KI_ANIMATION_STOP, 0, -1, ""), player);
+		} else if (entity instanceof DBSagasEntity saga) {
+			saga.stopTriggeredAnimation(DBSagasEntity.HURT_CONTROLLER, DBSagasEntity.HURT_ANIM_PARRIED);
 		}
 	}
 
