@@ -45,6 +45,10 @@ public class ClientPacketHandler {
 		});
 	}
 
+	public static void handleSilentDamage(float amount) {
+		com.dragonminez.client.systems.SilentDamageState.add(amount);
+	}
+
 	public static void handleStatsSyncPacket(int playerId, CompoundTag nbt) {
 		var clientLevel = Minecraft.getInstance().level;
 		if (clientLevel == null) return;

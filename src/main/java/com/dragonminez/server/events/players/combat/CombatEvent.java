@@ -28,6 +28,7 @@ import com.dragonminez.common.stats.character.Status;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.server.events.players.KiSurgeService;
+import com.dragonminez.server.events.players.statuseffect.RelicItemsStatusHandler;
 import com.dragonminez.server.util.GravityLogic;
 import com.dragonminez.server.world.dimension.OtherworldDimension;
 import net.minecraft.server.level.ServerLevel;
@@ -756,6 +757,7 @@ public class CombatEvent {
 				victim.getPersistentData().remove("dmz_defense_pen");
 			}
 		}
+		RelicItemsStatusHandler.onFinalDamage(event);
 	}
 
 	private static final Map<java.util.UUID, Long> LAST_NEGATION_SOUND_TICK = new HashMap<>();

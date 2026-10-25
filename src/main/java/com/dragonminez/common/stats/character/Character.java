@@ -66,6 +66,7 @@ public class Character {
 	private boolean renderHairBase = true;
 	private boolean aura3D = false;
 	private String aura3DType = FormConfig.AURA_3D_SMOOTH;
+	private float demonEyeGrowth = 1.0f;
 
 	private final Map<String, MasterLocation> interactedMasters = new HashMap<>();
 
@@ -380,7 +381,14 @@ public class Character {
 		return scaling;
 	}
 
+	// v2.2: the Demon Eye growth multiplies the resolved scaling (model, aura and hitbox follow).
 	public Float[] getResolvedModelScaling() {
+		Float[] scaling = resolveFormModelScaling();
+		if (demonEyeGrowth <= 1.0f) return scaling;
+		return new Float[]{scaling[0] * demonEyeGrowth, scaling[1] * demonEyeGrowth, scaling[2] * demonEyeGrowth};
+	}
+
+	private Float[] resolveFormModelScaling() {
 		if (isOozaruCached()) {
 			FormConfig.FormData form = getActiveFormData();
 			if (form != null) return safeModelScaling(form.getModelScaling());
@@ -476,6 +484,7 @@ public class Character {
 		tag.putBoolean("RenderHairBase", renderHairBase);
 		tag.putBoolean("Aura3D", aura3D);
 		tag.putString("Aura3DType", getAura3DType());
+		tag.putFloat("DemonEyeGrowth", demonEyeGrowth);
 		tag.putBoolean("isArmored", armored);
 
 		ListTag mastersList = new ListTag();
@@ -556,6 +565,7 @@ public class Character {
 		this.renderHairBase = tag.getBoolean("RenderHairBase");
 		this.aura3D = tag.getBoolean("Aura3D");
 		setAura3DType(tag.getString("Aura3DType"));
+		this.demonEyeGrowth = tag.contains("DemonEyeGrowth") ? Math.max(1.0f, tag.getFloat("DemonEyeGrowth")) : 1.0f;
 		this.armored = tag.getBoolean("isArmored");
 
 		this.interactedMasters.clear();
@@ -802,6 +812,7 @@ public class Character {
 		this.renderHairBase = other.renderHairBase;
 		this.aura3D = other.aura3D;
 		this.aura3DType = other.getAura3DType();
+		this.demonEyeGrowth = other.demonEyeGrowth;
 		this.armored = other.armored;
 		this.interactedMasters.clear();
 		this.interactedMasters.putAll(other.interactedMasters);

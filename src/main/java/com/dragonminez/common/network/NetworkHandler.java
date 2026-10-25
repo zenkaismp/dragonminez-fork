@@ -527,6 +527,12 @@ public class NetworkHandler {
 				.encoder(KiBurstVfxS2C::encode)
 				.consumerMainThread(KiBurstVfxS2C::handle)
 				.add();
+
+		net.messageBuilder(SilentDamageS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(SilentDamageS2C::new)
+				.encoder(SilentDamageS2C::encode)
+				.consumerMainThread(SilentDamageS2C::handle)
+				.add();
 	}
 
 	public static <MSG> void sendToServer(MSG message) {

@@ -11,6 +11,7 @@ import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.character.Character;
 import com.dragonminez.mixin.client.PostChainAccessor;
+import com.dragonminez.server.events.players.statuseffect.RelicItemsStatusHandler;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.shaders.Uniform;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -41,6 +42,10 @@ public final class TransformationPostShaderManager {
 
 	private static final float FIXED_GLOW_STRENGTH = 1.35f;
 	private static final float FIXED_BLOOM_STRENGTH = 0.95f;
+	// v2.2: DBSagasEntity.OutlineStyle(0xFF2020, 0x9A0000, 2.5F), i.e. no fire, the pulsing mix and no body glow. The uniform
+	// state of this fork carries only the colours and the thickness (the v2.2 fire/mix/glow of an outline are applied by
+	// ZenkaiExtra), so the style is built from those three values.
+	private static final ShaderUniformState DEMON_EYE_OUTLINE = ShaderUniformState.fromStyle(0xFF2020, 0x9A0000, 2.5F);
 
 	private static final Map<UUID, TrackedShaderState> TRACKED_PLAYERS = new HashMap<>();
 	private static final Set<UUID> ACTIVE_MASK_PLAYERS = new HashSet<>();
@@ -317,6 +322,10 @@ public final class TransformationPostShaderManager {
 		Character character = data.getCharacter();
 		if (character == null) return null;
 
+		if (RelicItemsStatusHandler.isDemonEyeActive(data) && !player.isSpectator() && !player.isInvisible()) {
+			return new ResolvedShaderConfig("demon_eye", DEMON_EYE_OUTLINE);
+		}
+
 		FormConfig.FormData activeFormData = character.getActiveFormData();
 		FormConfig.FormData activeStackFormData = character.getActiveStackFormData();
 
@@ -385,6 +394,21 @@ public final class TransformationPostShaderManager {
 					secondary[1],
 					secondary[2],
 					(float) config.getOutlineThickness()
+			);
+		}
+
+		private static ShaderUniformState fromStyle(int primaryColor, int secondaryColor, float thickness) {
+			float[] primary = ColorUtils.rgbIntToFloat(primaryColor);
+			float[] secondary = ColorUtils.rgbIntToFloat(secondaryColor);
+
+			return new ShaderUniformState(
+					primary[0],
+					primary[1],
+					primary[2],
+					secondary[0],
+					secondary[1],
+					secondary[2],
+					Math.max(0.0f, thickness)
 			);
 		}
 	}

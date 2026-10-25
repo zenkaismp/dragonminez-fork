@@ -1,5 +1,6 @@
 package com.dragonminez.mixin.client;
 
+import com.dragonminez.client.systems.SilentDamageState;
 import com.dragonminez.common.combat.util.MathHelper;
 import com.dragonminez.common.combat.util.Minecraft_DMZ;
 import com.dragonminez.common.stats.StatsCapability;
@@ -14,6 +15,19 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(LocalPlayer.class)
 public abstract class LocalPlayerMixin {
+
+	// v2.2: health the server took with SilentDamage (the Demon Eye drain) does not play the hurt animation.
+	@Inject(method = "hurtTo", at = @At("HEAD"), cancellable = true)
+	private void dragonminez$preventSilentDamageHurtAnimation(float pHealth, CallbackInfo ci) {
+		LocalPlayer self = (LocalPlayer) (Object) this;
+		float healthLoss = self.getHealth() - pHealth;
+		if (healthLoss <= 0) return;
+
+		if (SilentDamageState.consume(healthLoss)) {
+			self.setHealth(pHealth);
+			ci.cancel();
+		}
+	}
 
 	@Inject(method = "hurtTo", at = @At("HEAD"), cancellable = true)
 	private void dragonminez$preventKaiokenHurtAnimation(float pHealth, CallbackInfo ci) {
