@@ -1,7 +1,5 @@
 package com.dragonminez.common.stats.techniques;
 
-import com.dragonminez.server.events.players.combat.KiTechniqueHandler;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,8 +33,7 @@ public class PredefinedTechniques {
 		registerKi("kienzan", "technique.dragonminez.kienzan", "Krilin", KiAttackData.KiType.DISK, 1.50F, 0xFFEA00, 0xFFEA00, 1.0F, 1.5F, 10, "ki.kienzan");
 		registerKi("kienzan_doble", "technique.dragonminez.double_kienzan", "Krilin", KiAttackData.KiType.DISK, 1.75F, 0xFF00AA, 0xFF00AA, 1.0F, 1.5F, 10, "ki.kienzandoble");
 		registerKi("death_beam", "technique.dragonminez.death_beam", "Frieza", KiAttackData.KiType.LASER, 0.75F, 0xCE10E3, 0xCE10E3, 0.5F, 2.0F, 10, "ki.laser");
-		registerKi("emperor_death_beam", "technique.dragonminez.emperor_death_beam", "Frieza", KiAttackData.KiType.LASER, 1.25F, 0xCE10E3, 0xCE10E3, 0.6F, 2.0F, KiTechniqueHandler.EmperorDeathBeam.COOLDOWN_SECONDS, "ki.emperor_laser");
-		REGISTRY.get(KiTechniqueHandler.EmperorDeathBeam.TECHNIQUE_ID).setCooldown(KiTechniqueHandler.EmperorDeathBeam.COOLDOWN_SECONDS);
+		registerKi("emperor_death_beam", "technique.dragonminez.emperor_death_beam", "Frieza", KiAttackData.KiType.LASER, 1.25F, 0xCE10E3, 0xCE10E3, 0.6F, 2.0F, 10, "ki.emperor_laser");
         registerKi("makkanko", "technique.dragonminez.makkankosanpo", "Piccolo", KiAttackData.KiType.BEAM, 0.75F, 0xFFE53B, 0xC43BFF, 0.8F, 2.0F, 10, "ki.makkako");
         registerKi("ki_barrage", "technique.dragonminez.barrage", "Vegeta", KiAttackData.KiType.BARRAGE, 1.00F, 0xFFFF00, 0xFFFF00, 0.4F, 1.5F, 10, "ki.barrage");
 		registerKi("final_explosion", "technique.dragonminez.final_explosion", "Vegeta", KiAttackData.KiType.EXPLOSION, 2.25F, 0xFFFF00, 0xFFFF00, 15.0F, 0.0F, 10, "ki.explosion");
