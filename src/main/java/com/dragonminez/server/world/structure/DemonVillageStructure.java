@@ -1,8 +1,10 @@
 package com.dragonminez.server.world.structure;
 
 import com.dragonminez.Reference;
+import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.MainBlocks;
 import com.dragonminez.common.init.block.custom.DemonRealmBlocks;
+import com.dragonminez.common.init.entities.demon.DemonVillagersEntity;
 import com.dragonminez.server.world.gen.DemonRealmGeneration;
 import com.dragonminez.server.world.structure.helper.MainStructureTypes;
 import com.mojang.serialization.Codec;
@@ -15,6 +17,8 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.LevelHeightAccessor;
 import net.minecraft.world.level.NoiseColumn;
@@ -102,27 +106,6 @@ public class DemonVillageStructure extends Structure {
 	private static final int VILLAGE_RADIUS = 56;
 	private static final float SECOND_VILLAGER_CHANCE = 0.5F;
 
-	/**
-	 * Fork 1.20.2: quem mora na vila. A v2.2 nasce aqui o Patrulheiro do Tempo (praca) e os aldeoes (casas), que vendem
-	 * os Medi-Bugs e os mapas de world boss dela; essas entidades nao vieram para o fork. Os pontos e a escolha de quem
-	 * nasce sao os da v2.2 (afterPlace abaixo); quem quiser moradores registra aqui. Roda no worldgen, com o
-	 * WorldGenLevel do chunk, uma vez por ponto (so o chunk que contem o ponto chama). Sem ninguem registrado, a vila
-	 * fica sem moradores.
-	 */
-	@FunctionalInterface
-	public interface Residents {
-		/**
-		 * @param patroller true no lugar do Patrulheiro do Tempo (o primeiro marcador da praca)
-		 * @param floor     o bloco do marcador (o morador fica em cima dele)
-		 * @param home      o centro da vila (ou o proprio ponto, no Patrulheiro)
-		 * @param radius    o raio de casa que a v2.2 da ao morador
-		 * @param plaza     o centro da praca (o meio da fonte), no chao da vila
-		 */
-		void place(WorldGenLevel level, boolean patroller, BlockPos floor, BlockPos home, int radius, BlockPos plaza);
-	}
-
-	public static volatile Residents residents;
-
 	public DemonVillageStructure(StructureSettings settings) {
 		super(settings);
 	}
@@ -199,9 +182,9 @@ public class DemonVillageStructure extends Structure {
 				BlockPos spot = spots.get(i);
 				if (!GroundPiece.inside(box, spot.getX(), spot.getZ())) continue;
 				if (plaza && i == 0) {
-					spawnResident(level, true, spot, spot.above(), PATROLLER_RADIUS, home);
+					spawnResident(level, MainEntities.TIME_PATROLLER.get(), spot, spot.above(), PATROLLER_RADIUS);
 				} else if (i == 0 || noise(seed, spot.getX(), spot.getY() + 1, spot.getZ()) < SECOND_VILLAGER_CHANCE) {
-					spawnResident(level, false, spot, home, VILLAGE_RADIUS, home);
+					spawnResident(level, MainEntities.DEMON_VILLAGER.get(), spot, home, VILLAGE_RADIUS);
 				}
 			}
 		}
@@ -215,10 +198,15 @@ public class DemonVillageStructure extends Structure {
 		return null;
 	}
 
-	private static void spawnResident(WorldGenLevel level, boolean patroller, BlockPos floor, BlockPos home, int radius,
-									  BlockPos plaza) {
-		Residents hook = residents;
-		if (hook != null) hook.place(level, patroller, floor.immutable(), home.immutable(), radius, plaza.below().immutable());
+	private static void spawnResident(WorldGenLevel level, EntityType<? extends DemonVillagersEntity.Resident> type,
+									  BlockPos floor, BlockPos home, int radius) {
+		DemonVillagersEntity.Resident resident = type.create(level.getLevel());
+		if (resident == null) return;
+		BlockPos feet = floor.above();
+		resident.moveTo(feet.getX() + 0.5D, feet.getY(), feet.getZ() + 0.5D, level.getRandom().nextFloat() * 360.0F, 0.0F);
+		resident.finalizeSpawn(level, level.getCurrentDifficultyAt(feet), MobSpawnType.STRUCTURE, null, null);
+		resident.setHome(home, radius);
+		level.addFreshEntityWithPassengers(resident);
 	}
 
 	private static Door door(StructureTemplateManager templates, ResourceLocation location) {

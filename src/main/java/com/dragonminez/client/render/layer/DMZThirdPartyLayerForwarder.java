@@ -2,6 +2,7 @@ package com.dragonminez.client.render.layer;
 
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
+import com.dragonminez.client.render.DMZRendererCache;
 import com.dragonminez.client.render.VanillaModelSync;
 import com.dragonminez.client.render.firstperson.dto.FirstPersonManager;
 import com.dragonminez.common.stats.StatsCapability;
@@ -72,6 +73,7 @@ public class DMZThirdPartyLayerForwarder<T extends AbstractClientPlayer & GeoAni
 	public void renderForBone(PoseStack poseStack, T animatable, GeoBone bone, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
 		if (!ZENKAI_ENABLED) return; // @zenkai
 		if (!"root".equals(bone.getName())) return;
+		if (animatable instanceof DMZRendererCache.NpcPuppet) return;
 		var stats = StatsProvider.get(StatsCapability.INSTANCE, animatable).orElse(new StatsData(animatable));
 		if (stats.getCharacter().isOozaruCached()) return;
 		// @zenkai em primeira pessoa o DMZPOVPlayerRenderer esconde o BONE "head"

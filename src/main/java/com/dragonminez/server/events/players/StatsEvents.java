@@ -11,6 +11,7 @@ import com.dragonminez.common.init.MainFluids;
 import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.init.entities.ki.AbstractKiProjectile;
 import com.dragonminez.common.init.entities.ShadowDummyEntity;
+import com.dragonminez.common.init.entities.demon.DemonVillagersEntity;
 import com.dragonminez.common.network.C2S.SummonPlayerShadowDummyC2S;
 import com.dragonminez.common.init.entities.namek.NamekTraderEntity;
 import com.dragonminez.common.init.entities.namek.NamekWarriorEntity;
@@ -316,7 +317,8 @@ public class StatsEvents {
 	}
 
 	private static boolean removesAlignment(Entity entity) {
-		return entity instanceof NamekWarriorEntity || entity instanceof Villager || entity instanceof NamekTraderEntity;
+		return entity instanceof NamekWarriorEntity || entity instanceof Villager || entity instanceof NamekTraderEntity
+				|| entity instanceof DemonVillagersEntity.Resident;
 	}
 
 	@SubscribeEvent

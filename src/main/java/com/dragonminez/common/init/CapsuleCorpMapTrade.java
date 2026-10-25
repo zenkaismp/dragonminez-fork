@@ -39,6 +39,8 @@ public class CapsuleCorpMapTrade implements VillagerTrades.ItemListing {
 
 	/** NBT del ItemStack del mapa con el id de la estructura destino. */
 	public static final String STRUCTURE_TAG = "dmz_structure";
+	/** NBT de mapa pendente (destino ainda sem lugar), da v2.2; no fork so os moradores da vila demoniaca usam. */
+	public static final String PENDING_TAG = "dmz_pending";
 
 	private final ItemStack priceA;
 	private final ItemStack priceB;

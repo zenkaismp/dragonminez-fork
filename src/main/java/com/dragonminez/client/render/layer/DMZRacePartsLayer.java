@@ -1,5 +1,6 @@
 package com.dragonminez.client.render.layer;
 
+import com.dragonminez.client.render.DMZRendererCache;
 import com.dragonminez.Reference;
 import com.dragonminez.client.render.firstperson.dto.FirstPersonManager;
 import com.dragonminez.client.render.util.ModRenderTypes;
@@ -216,7 +217,8 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 
 						float[] colorToTint = accessoryColor;
 
-						if (character.getRaceName().equals("majin") || character.getRaceName().equals("namekian")) {
+						if (character.getRaceName().equals("majin") || character.getRaceName().equals("namekian")
+								|| animatable instanceof DMZRendererCache.NpcPuppet) {
 							colorToTint = resolveBodyColor1(stats);
 						}
 
@@ -432,6 +434,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 	}
 
 	private void renderAccessories(PoseStack poseStack, T animatable, BakedGeoModel playerModel, MultiBufferSource bufferSource, float partialTick, int packedLight) {
+		if (animatable instanceof DMZRendererCache.NpcPuppet) return;
 		ItemStack headTechStack = getRenderableCurio(animatable, "head_tech", 0);
 
 		String headTechId = headTechStack.getItem().getDescriptionId();
@@ -468,7 +471,8 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 	}
 
 	private void renderScouter(PoseStack poseStack, T animatable, BakedGeoModel playerModel, MultiBufferSource bufferSource, float partialTick, int packedLight) {
-		ItemStack headTechStack = getRenderableCurio(animatable, "head_tech", 0);
+		ItemStack headTechStack = animatable instanceof DMZRendererCache.NpcPuppet puppet
+				? puppet.getScouter() : getRenderableCurio(animatable, "head_tech", 0);
 		if (headTechStack.isEmpty()) return;
 
 		Item item = headTechStack.getItem();
