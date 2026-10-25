@@ -46,6 +46,12 @@ public class KiBlastEntity extends AbstractKiProjectile {
     public static final int RENDER_BLASTER_METEOR = 13;
     public static final int RENDER_TRI_BEAM = 14;
     public static final float SOUL_PUNISHER_CORE_SCALE = 0.15F;
+
+    // v2.2: a bola da Assault Rain e a esfera do Blaster Meteor ficam com o dono o golpe inteiro, nos dois lados.
+    private boolean isAnchoredVolley() {
+        int type = this.getKiRenderType();
+        return type == RENDER_ASSAULT_RAIN || type == RENDER_BLASTER_METEOR;
+    }
     private static final double FAKE_MOON_CLIMB_BLOCKS = 30.0D;
     private static final double FAKE_MOON_CLIMB_SPEED = 1.0D;
     private static final int FAKE_MOON_GLOW_TICKS = 20 * 20;
@@ -716,7 +722,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
 
         boolean isFiring = this.isFiring();
 
-        if ((!isFiring && this.getCastTime() > 0) || this.getKiRenderType() == 9 || this.getKiRenderType() == 10) {
+        if ((!isFiring && this.getCastTime() > 0) || this.getKiRenderType() == 9 || this.getKiRenderType() == 10 || this.isAnchoredVolley()) {
             var owner = this.getOwner();
             if (owner instanceof LivingEntity livingOwner && livingOwner.isAlive()) {
                 updatePositionRelativeToOwner(livingOwner);
@@ -744,6 +750,13 @@ public class KiBlastEntity extends AbstractKiProjectile {
         boolean isCasting = !this.isFiring();
         int type = this.getKiRenderType();
         Entity ownerEntity = this.getOwner();
+
+        // v2.2: o emissor da Assault Rain e o do Blaster Meteor saem do onKiTick aqui (tickAssaultRain/tickBlasterMeteor
+        // e return), sem as particulas de rastro em volta da bola. Zenkai: a logica dos dois mora no ZenkaiExtra (que
+        // sobrescreve o onKiTick no servidor); aqui fica so a saida no client, que tira as particulas como na v2.2.
+        if (this.level().isClientSide && (type == RENDER_BLASTER_METEOR || type == RENDER_ASSAULT_RAIN)) {
+            return;
+        }
 
         if (type == 9 || type == 10) {
             if (ownerEntity instanceof LivingEntity owner && owner.isAlive()) {
