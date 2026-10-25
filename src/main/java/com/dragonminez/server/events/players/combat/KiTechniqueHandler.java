@@ -71,6 +71,9 @@ public class KiTechniqueHandler {
 	public static final class EmperorDeathBeam {
 
 		public static final String TECHNIQUE_ID = "emperor_death_beam";
+		// Cooldown declared for the Emperor in v2.2's PredefinedTechniques. There (and in the fork) calculateDerivedValues
+		// replaces every declared ki cooldown with the formula one (11 s for this laser); the Emperor keeps the 14 s.
+		public static final int COOLDOWN_SECONDS = 14;
 
 		private static final int TOTAL_SHOTS = 10;
 		private static final int SHOT_INTERVAL_TICKS = 7;
