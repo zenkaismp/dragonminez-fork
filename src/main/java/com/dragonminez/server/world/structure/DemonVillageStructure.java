@@ -116,8 +116,9 @@ public class DemonVillageStructure extends Structure {
 		 * @param floor     o bloco do marcador (o morador fica em cima dele)
 		 * @param home      o centro da vila (ou o proprio ponto, no Patrulheiro)
 		 * @param radius    o raio de casa que a v2.2 da ao morador
+		 * @param plaza     o centro da praca (o meio da fonte), no chao da vila
 		 */
-		void place(WorldGenLevel level, boolean patroller, BlockPos floor, BlockPos home, int radius);
+		void place(WorldGenLevel level, boolean patroller, BlockPos floor, BlockPos home, int radius, BlockPos plaza);
 	}
 
 	public static volatile Residents residents;
@@ -198,9 +199,9 @@ public class DemonVillageStructure extends Structure {
 				BlockPos spot = spots.get(i);
 				if (!GroundPiece.inside(box, spot.getX(), spot.getZ())) continue;
 				if (plaza && i == 0) {
-					spawnResident(level, true, spot, spot.above(), PATROLLER_RADIUS);
+					spawnResident(level, true, spot, spot.above(), PATROLLER_RADIUS, home);
 				} else if (i == 0 || noise(seed, spot.getX(), spot.getY() + 1, spot.getZ()) < SECOND_VILLAGER_CHANCE) {
-					spawnResident(level, false, spot, home, VILLAGE_RADIUS);
+					spawnResident(level, false, spot, home, VILLAGE_RADIUS, home);
 				}
 			}
 		}
@@ -214,9 +215,10 @@ public class DemonVillageStructure extends Structure {
 		return null;
 	}
 
-	private static void spawnResident(WorldGenLevel level, boolean patroller, BlockPos floor, BlockPos home, int radius) {
+	private static void spawnResident(WorldGenLevel level, boolean patroller, BlockPos floor, BlockPos home, int radius,
+									  BlockPos plaza) {
 		Residents hook = residents;
-		if (hook != null) hook.place(level, patroller, floor.immutable(), home.immutable(), radius);
+		if (hook != null) hook.place(level, patroller, floor.immutable(), home.immutable(), radius, plaza.below().immutable());
 	}
 
 	private static Door door(StructureTemplateManager templates, ResourceLocation location) {
