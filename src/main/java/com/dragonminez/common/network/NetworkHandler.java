@@ -291,10 +291,12 @@ public class NetworkHandler {
 				.consumerMainThread(TaiyokenCastC2S::handle)
 				.add();
 
+		// Combate 2.0 da v2.2 (b33c19d34): o soco e o inicio do preparo sao lidos na thread de rede, para o
+		// MeleeWindupTracker carimbar a chegada de cada um; o resto do handle vai para a main thread pelo enqueueWork.
 		net.messageBuilder(CombatAttackRequestC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
 				.decoder(CombatAttackRequestC2S::new)
 				.encoder(CombatAttackRequestC2S::encode)
-				.consumerMainThread(CombatAttackRequestC2S::handle)
+				.consumerNetworkThread(CombatAttackRequestC2S::handle)
 				.add();
 
 		net.messageBuilder(DamageCurioC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
@@ -547,7 +549,7 @@ public class NetworkHandler {
 		net.messageBuilder(MeleeAttackStartC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
 				.decoder(MeleeAttackStartC2S::new)
 				.encoder(MeleeAttackStartC2S::encode)
-				.consumerMainThread(MeleeAttackStartC2S::handle)
+				.consumerNetworkThread(MeleeAttackStartC2S::handle)
 				.add();
 
 		// Combate 2.0 da v2.2: tecnicas de esquiva (EvasionAttackHandler) e os efeitos delas. O TaiyokenCastC2S antigo

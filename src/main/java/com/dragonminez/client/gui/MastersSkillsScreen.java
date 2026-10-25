@@ -174,6 +174,9 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 						selectedSkill = null;
 						targetScroll = 0;
 						currentScroll = 0;
+						targetDescScroll = 0;
+						currentDescScroll = 0;
+						maxDescScroll = 0;
 						refreshButtons();
 					})
 					.build();
