@@ -1,6 +1,7 @@
 package com.dragonminez.client.render.layer;
 
 import com.dragonminez.client.render.DMZRendererCache;
+import com.dragonminez.client.render.effects.CandyEffect;
 import com.dragonminez.Reference;
 import com.dragonminez.client.render.firstperson.dto.FirstPersonManager;
 import com.dragonminez.client.render.util.ModRenderTypes;
@@ -88,7 +89,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 				|| "right_leg".equals(anchor) || "left_leg".equals(anchor);
 		if (!"head".equals(anchor) && !"body".equals(anchor) && !isLimb) return;
 
-		if (animatable.hasEffect(MainEffects.CANDY.get())) return;
+		if (CandyEffect.isCandy(animatable)) return;
 
 		if (FirstPersonManager.shouldRenderFirstPerson(animatable)) {
 			var stats = StatsProvider.get(StatsCapability.INSTANCE, animatable).orElse(new StatsData(animatable));

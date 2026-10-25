@@ -30,6 +30,7 @@ public class DMZShaders {
 	public static ShaderInstance outlineShader;
 	public static ShaderInstance outlineMaskTexShader;
 	public static ShaderInstance ki3dShader;
+	public static ShaderInstance chargeRaysShader;
 
 	@SubscribeEvent
 	public static void onRegisterShaders(RegisterShadersEvent event) throws IOException {
@@ -71,6 +72,10 @@ public class DMZShaders {
 						new ResourceLocation(Reference.MOD_ID, "kiattack"),
 						DefaultVertexFormat.NEW_ENTITY),
 				shaderInstance -> ki3dShader = shaderInstance);
+
+		// v2.2: raios da carga do Kamehameha (KiWaveRenderer.renderChargeRays). Opcional como os outros da v2.2 do fork: se
+		// o driver nao compilar, o campo fica nulo e o golpe sai sem os raios.
+		registerOptional(event, "charge_rays", DefaultVertexFormat.POSITION_TEX, shaderInstance -> chargeRaysShader = shaderInstance);
 	}
 
 	private static void registerOptional(RegisterShadersEvent event, String name, VertexFormat format, Consumer<ShaderInstance> onLoaded) {

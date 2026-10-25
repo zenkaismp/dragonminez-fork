@@ -35,6 +35,7 @@ import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
@@ -75,6 +76,10 @@ public abstract class AbstractKiProjectile extends Projectile {
     private transient int firingStartTick = -1;
 
     private static final float KI_INDESTRUCTIBLE_RESISTANCE = 1000.0F;
+    /** Floor for the render-distance calculation, in vanilla's "box size" units: 2 = 128 blocks. */
+    private static final double MIN_RENDER_SIZE = 2.0;
+    /** Embers fly out to several ball radii, so the culling box has to cover more than the ball. */
+    private static final double CULLING_INFLATE = 5.0;
 
     private UUID cachedOwnerUUID;
 
@@ -676,6 +681,34 @@ public abstract class AbstractKiProjectile extends Projectile {
         if (SIZE.equals(pKey)) {
             this.refreshDimensions();
         }
+        if (COLOR_MAIN.equals(pKey)) this.cachedColorMainRgb = null;
+        if (COLOR_BORDER.equals(pKey)) this.cachedColorBorderRgb = null;
+        if (COLOR_OUTLINE.equals(pKey)) this.cachedColorOutlineRgb = null;
+    }
+
+
+    /**
+     * Ki attacks are drawn far larger than they collide.
+     *
+     * Vanilla decides render distance from the collision box ({@code boxSize * 64}), and these
+     * entities scale that box by their size -- a small blast ends up with a box of ~0.4, so it
+     * vanished about 25 blocks out while still plainly visible on screen. The drawn effect is
+     * what matters here, so the distance keys off the attack's size with a generous floor.
+     */
+    @Override
+    public boolean shouldRenderAtSqrDistance(double distanceSq) {
+        double visible = Math.max(this.getSize(), MIN_RENDER_SIZE) * 64.0 * getViewScale();
+        return distanceSq < visible * visible;
+    }
+
+    /**
+     * Frustum culling uses the collision box too, which makes the effect pop out at the edge of
+     * the screen: the shed embers alone reach several times the ball's radius, and a beam is
+     * drawn along its whole length. Inflating the culling box keeps it on screen.
+     */
+    @Override
+    public AABB getBoundingBoxForCulling() {
+        return this.getBoundingBox().inflate(Math.max(this.getSize() * CULLING_INFLATE, 2.0D));
     }
 
     @Override

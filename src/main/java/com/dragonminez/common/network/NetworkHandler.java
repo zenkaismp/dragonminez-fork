@@ -533,6 +533,14 @@ public class NetworkHandler {
 				.encoder(SilentDamageS2C::encode)
 				.consumerMainThread(SilentDamageS2C::handle)
 				.add();
+
+		// v2.2: alvo do Majin Candy vira doce para quem esta perto (CandyEffect). Sempre no fim da lista: o id do pacote e
+		// a ordem de registro.
+		net.messageBuilder(CandyVfxS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(CandyVfxS2C::new)
+				.encoder(CandyVfxS2C::encode)
+				.consumerMainThread(CandyVfxS2C::handle)
+				.add();
 	}
 
 	public static <MSG> void sendToServer(MSG message) {

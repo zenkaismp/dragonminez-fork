@@ -1,5 +1,6 @@
 package com.dragonminez.client.model;
 
+import com.dragonminez.client.render.effects.CandyEffect;
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
 import com.dragonminez.Reference;
@@ -99,7 +100,7 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
 
     @Override
     public ResourceLocation getModelResource(T player) {
-        if (player.hasEffect(MainEffects.CANDY.get())) {
+        if (CandyEffect.isCandy(player)) {
             return CANDY_MODEL;
         }
 
@@ -264,7 +265,7 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
 
     @Override
     public ResourceLocation getTextureResource(T t) {
-        if (t.hasEffect(MainEffects.CANDY.get())) {
+        if (CandyEffect.isCandy(t)) {
             return CANDY_TEXTURE;
         }
         return textureLocation;
