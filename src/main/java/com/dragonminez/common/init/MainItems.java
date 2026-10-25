@@ -512,6 +512,10 @@ public final class MainItems {
 			new ForgeSpawnEggItem(MainEntities.SAGA_FRIEZA_SOLDIER3, 0x95F0CB, 0xDABAE6, new Item.Properties()));
 	public static final RegistryObject<Item> NWARRIOR_SE = ITEM_REGISTER.register("nwarrior_spawn_egg", () ->
 			new ForgeSpawnEggItem(MainEntities.NAMEK_WARRIOR, 0x246E18, 0x12848A, new Item.Properties()));
+	public static final RegistryObject<Item> DEMON_VILLAGER_SE = ITEM_REGISTER.register("demon_villager_spawn_egg", () ->
+			new ForgeSpawnEggItem(MainEntities.DEMON_VILLAGER, 0xA1DAF0, 0xF2C2FF, new Item.Properties()));
+	public static final RegistryObject<Item> TIME_PATROLLER_SE = ITEM_REGISTER.register("time_patroller_spawn_egg", () ->
+			new ForgeSpawnEggItem(MainEntities.TIME_PATROLLER, 0xA1DAF0, 0x2B3A8C, new Item.Properties()));
 	public static final RegistryObject<Item> SAIBAMAN_SE = ITEM_REGISTER.register("saibaman_spawn_egg", () ->
 			new ForgeSpawnEggItem(MainEntities.SAGA_SAIBAMAN, 0x6ED610, 0x2A6E18, new Item.Properties()));
 	public static final RegistryObject<Item> KAIWAREMAN_SE = ITEM_REGISTER.register("kaiwareman_spawn_egg", () ->

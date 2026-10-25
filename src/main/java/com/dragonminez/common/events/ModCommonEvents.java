@@ -7,6 +7,7 @@ import com.dragonminez.common.init.MainBlocks;
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.entities.*;
 import com.dragonminez.common.init.entities.animal.*;
+import com.dragonminez.common.init.entities.demon.DemonVillagersEntity;
 import com.dragonminez.common.init.entities.dragon.DragonWishEntity;
 import com.dragonminez.common.init.entities.namek.NamekTraderEntity;
 import com.dragonminez.common.init.entities.namek.NamekWarriorEntity;
@@ -112,6 +113,8 @@ public class ModCommonEvents {
         event.put(MainEntities.NAMEK_TRADER.get(), NamekTraderEntity.createAttributes().build());
         event.put(MainEntities.CC_NAMEKIAN.get(), NamekTraderEntity.createAttributes().build());
         event.put(MainEntities.NAMEK_WARRIOR.get(), NamekWarriorEntity.createAttributes().build());
+        event.put(MainEntities.DEMON_VILLAGER.get(), DemonVillagersEntity.Resident.createAttributes().build());
+        event.put(MainEntities.TIME_PATROLLER.get(), DemonVillagersEntity.Resident.createAttributes().build());
         event.put(MainEntities.SABERTOOTH.get(), SabertoothEntity.createAttributes().build());
 
         event.put(MainEntities.BANDIT.get(), BanditEntity.createAttributes().build());

@@ -242,6 +242,7 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 	 */
 	@Override
 	public boolean shouldShowName(T animatable) {
+		if (animatable instanceof DMZRendererCache.NpcPuppet) return false;
 		if (animatable == Minecraft.getInstance().getCameraEntity()) return false;
 
 		float cutoff = animatable.isDiscrete() ? 32.0F : 64.0F;

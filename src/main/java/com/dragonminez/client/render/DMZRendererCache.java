@@ -13,6 +13,7 @@ import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import software.bernie.geckolib.renderer.GeoEntityRenderer;
 
 import javax.annotation.Nullable;
@@ -22,6 +23,11 @@ import java.util.UUID;
 
 public final class DMZRendererCache {
 	private DMZRendererCache() {}
+
+	public interface NpcPuppet {
+		ItemStack getScouter();
+	}
+
 	private static final Map<UUID, CachedRendererEntry> TP_RENDERERS = new HashMap<>();
 	private static final Map<UUID, CachedRendererEntry> POV_RENDERERS = new HashMap<>();
 
@@ -38,6 +44,11 @@ public final class DMZRendererCache {
 	public static void clear() {
 		TP_RENDERERS.clear();
 		POV_RENDERERS.clear();
+	}
+
+	public static void evict(UUID playerId) {
+		TP_RENDERERS.remove(playerId);
+		POV_RENDERERS.remove(playerId);
 	}
 
 	@Nullable

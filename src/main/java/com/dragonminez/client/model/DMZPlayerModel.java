@@ -5,6 +5,7 @@ import com.dragonminez.LogUtil;
 import com.dragonminez.Reference;
 import com.dragonminez.client.animation.IPlayerAnimatable;
 import com.dragonminez.client.events.FlySkillEvent;
+import com.dragonminez.client.render.DMZRendererCache;
 import com.dragonminez.client.render.util.RenderUtil;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.RaceCharacterConfig;
@@ -75,6 +76,18 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
         new ResourceLocation(Reference.MOD_ID, "animations/entity/races/transf.animation.json"),
         new ResourceLocation(Reference.MOD_ID, "animations/entity/races/skp.animation.json")
     };
+
+    // v2.2: o boneco de NPC (DMZRendererCache.NpcPuppet) procura primeiro no saga_base e depois nos arquivos do
+    // jogador, na ordem: ANIM_PRIMARY e os ANIM_FALLBACKS (a v2.2 escreve a lista na mao; aqui ela segue a do fork)
+    private static final ResourceLocation PUPPET_ANIM_PRIMARY = new ResourceLocation(Reference.MOD_ID, "animations/entity/sagas/saga_base.animation.json");
+    private static final ResourceLocation[] PUPPET_ANIM_FALLBACKS = puppetAnimFallbacks();
+
+    private static ResourceLocation[] puppetAnimFallbacks() {
+        ResourceLocation[] fallbacks = new ResourceLocation[ANIM_FALLBACKS.length + 1];
+        fallbacks[0] = ANIM_PRIMARY;
+        System.arraycopy(ANIM_FALLBACKS, 0, fallbacks, 1, ANIM_FALLBACKS.length);
+        return fallbacks;
+    }
 
     private final ResourceLocation textureLocation;
     private final String customModel;
@@ -259,12 +272,14 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
 
     @Override
     public ResourceLocation getAnimationResource(T t) {
+        if (t instanceof DMZRendererCache.NpcPuppet) return PUPPET_ANIM_PRIMARY;
         return ANIM_PRIMARY;
     }
 
     // ponytail: GeckoLib 4.3.1 GeoModel has no getAnimationResourceFallbacks (a 4.4+ hook); left as a
     // dead helper so animation fallbacks re-activate if GeckoLib is upgraded.
     public ResourceLocation[] getAnimationResourceFallbacks(T t) {
+        if (t instanceof DMZRendererCache.NpcPuppet) return PUPPET_ANIM_FALLBACKS;
         return ANIM_FALLBACKS;
     }
 
@@ -282,7 +297,7 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
             software.bernie.geckolib.core.animation.Animation anim = primary.getAnimation(name);
             if (anim != null) return anim;
         }
-        for (ResourceLocation fallback : ANIM_FALLBACKS) {
+        for (ResourceLocation fallback : getAnimationResourceFallbacks(animatable)) {
             software.bernie.geckolib.loading.object.BakedAnimations fb = cache.get(fallback);
             if (fb != null) {
                 software.bernie.geckolib.core.animation.Animation anim = fb.getAnimation(name);

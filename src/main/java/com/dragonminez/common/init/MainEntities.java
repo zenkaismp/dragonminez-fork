@@ -6,6 +6,7 @@ import com.dragonminez.common.dragonball.DragonBallDefinitions;
 import com.dragonminez.common.dragonball.DragonDefinition;
 import com.dragonminez.common.init.entities.dragon.DragonWishEntity;
 import com.dragonminez.common.init.entities.animal.*;
+import com.dragonminez.common.init.entities.demon.DemonVillagersEntity;
 import com.dragonminez.common.init.entities.ki.*;
 import com.dragonminez.common.init.entities.namek.CCNamekianEntity;
 import com.dragonminez.common.init.entities.namek.NamekTraderEntity;
@@ -319,6 +320,16 @@ public static Map<String, RegistryObject<EntityType<DragonWishEntity>>> getDrago
                     () -> EntityType.Builder.of(NamekWarriorEntity::new, MobCategory.CREATURE)
                             .sized(1.0f, 2.0f)
                             .build(new ResourceLocation(Reference.MOD_ID, "namek_warrior").toString()));
+    public static final RegistryObject<EntityType<DemonVillagersEntity.Resident>> DEMON_VILLAGER =
+            ENTITY_TYPES.register("demon_villager",
+                    () -> EntityType.Builder.<DemonVillagersEntity.Resident>of(DemonVillagersEntity.Resident::new, MobCategory.MISC)
+                            .sized(0.6f, 1.8f)
+                            .build(new ResourceLocation(Reference.MOD_ID, "demon_villager").toString()));
+    public static final RegistryObject<EntityType<DemonVillagersEntity.TimePatroller>> TIME_PATROLLER =
+            ENTITY_TYPES.register("time_patroller",
+                    () -> EntityType.Builder.<DemonVillagersEntity.TimePatroller>of(DemonVillagersEntity.TimePatroller::new, MobCategory.MISC)
+                            .sized(0.6f, 1.8f)
+                            .build(new ResourceLocation(Reference.MOD_ID, "time_patroller").toString()));
     public static final RegistryObject<EntityType<SpacePodEntity>> SPACE_POD =
             ENTITY_TYPES.register("spacepod",
                     () -> EntityType.Builder.of(SpacePodEntity::new, MobCategory.CREATURE)
