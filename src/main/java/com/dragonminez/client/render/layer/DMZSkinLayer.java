@@ -228,6 +228,9 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 			float originalSX = headBone.getScaleX();
 			float originalSY = headBone.getScaleY();
 			float originalSZ = headBone.getScaleZ();
+			boolean posMarked = headBone.hasPositionChanged();
+			boolean rotMarked = headBone.hasRotationChanged();
+			boolean scaleMarked = headBone.hasScaleChanged();
 
 			float inflation = 0.006f;
 			headBone.setPosZ(originalZ - inflation);
@@ -247,6 +250,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 				headBone.setScaleX(originalSX);
 				headBone.setScaleY(originalSY);
 				headBone.setScaleZ(originalSZ);
+				restoreChangeMarkers(headBone, posMarked, rotMarked, scaleMarked);
 			}
 		});
 	}
@@ -290,6 +294,9 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 			float originalSX = headBone.getScaleX();
 			float originalSY = headBone.getScaleY();
 			float originalSZ = headBone.getScaleZ();
+			boolean posMarked = headBone.hasPositionChanged();
+			boolean rotMarked = headBone.hasRotationChanged();
+			boolean scaleMarked = headBone.hasScaleChanged();
 
 			float faceInflation = 0.002f;
 			headBone.setPosZ(originalZ - faceInflation);
@@ -306,6 +313,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 				headBone.setScaleX(originalSX);
 				headBone.setScaleY(originalSY);
 				headBone.setScaleZ(originalSZ);
+				restoreChangeMarkers(headBone, posMarked, rotMarked, scaleMarked);
 			}
 		});
 	}
@@ -747,6 +755,17 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		for (GeoBone hiddenBone : hiddenBones) {
 			hiddenBone.setHidden(false);
 		}
+	}
+
+	// Zenkai: no GeckoLib 4.3.1 o setPosZ e o setScale marcam o osso como alterado, e a marca feita aqui, no desenho, dura
+	// ate o tick seguinte. O tick so devolve ao repouso a posicao do osso sem marca, entao a cabeca ficava onde a ultima
+	// pose deixou: depois da transformacao ou da carga de ki do saiyajin da v2.2 (que descem a cabeca 1,85) o jogador
+	// ficava corcunda. Aqui as marcas voltam a ser as de antes do desenho.
+	private static void restoreChangeMarkers(GeoBone bone, boolean position, boolean rotation, boolean scale) {
+		bone.resetStateChanges();
+		if (position) bone.markPositionAsChanged();
+		if (rotation) bone.markRotationAsChanged();
+		if (scale) bone.markScaleAsChanged();
 	}
 
 	public static float[] lerpColor(float factor, float[] current, float[] target) {
