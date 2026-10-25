@@ -6,6 +6,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.common.combat.logic.weapon.WeaponRegistry;
 import com.dragonminez.common.combat.util.Player_DMZ;
 import com.dragonminez.common.combat.util.SoundHelper;
+import com.dragonminez.common.config.CombatConfig;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.init.*;
@@ -16,6 +17,7 @@ import com.dragonminez.common.init.entities.ki.AbstractKiProjectile;
 import com.dragonminez.common.network.C2S.SummonPlayerShadowDummyC2S;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
+import com.dragonminez.common.network.S2C.TriggerAnimationS2C;
 import com.dragonminez.common.network.S2C.TriggerImpactFrameS2C;
 import com.dragonminez.common.quest.PartyManager;
 import com.dragonminez.common.stats.StatsData;
@@ -36,6 +38,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
+import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -46,20 +49,32 @@ import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.entity.EntityLeaveLevelEvent;
 import net.minecraftforge.event.entity.ProjectileImpactEvent;
+import net.minecraftforge.event.entity.living.LivingEvent;
+import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.event.entity.living.LivingAttackEvent;
 import net.minecraftforge.event.entity.living.LivingDamageEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
+import net.minecraftforge.event.entity.living.LivingKnockBackEvent;
+import net.minecraftforge.event.entity.living.MobEffectEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class CombatEvent {
 	private static final Map<String, Long> LAST_PLAYER_HIT_GUARD_MS = new HashMap<>();
 	public static final String DMZ_LAST_ATTACKER_ID_TAG = "dmz_last_attacker_id";
+	private static final String HIT_KNOCKBACK_MULT_TAG = "dmz_hit_knockback_mult";
+	private static final String HIT_KNOCKBACK_TICK_TAG = "dmz_hit_knockback_tick";
 	public static final String DMZ_LAST_HIT_TARGET_ID_TAG = "dmz_last_hit_target_id";
 	public static final String DMZ_LAST_HIT_TARGET_TIME_TAG = "dmz_last_hit_target_time";
 
@@ -68,6 +83,12 @@ public class CombatEvent {
 	private static final int HEALING_REDUCTION_DURATION_TICKS = 120;
 	private static final int PARRY_COMBO_STUN_TICKS = 30;
 	private static final int PARRY_STUN_TICKS = 20;
+	private static final int PARRY_STRIKE_STUN_TICKS = 40;
+	private static final String PARRIED_ANIM = "base.parried";
+	private static final int PARRIED_ANIM_TICKS = 29;
+	private static final Map<UUID, Long> PARRIED_ANIM_UNTIL = new HashMap<>();
+	private static final String PARRIED_STUN_ANIM = "base.parried_stun";
+	private static final Set<UUID> PARRIED_STUN_ACTIVE = new HashSet<>();
 
 	private static void maybeForceCombatFly(Player player) {
 		if (!ConfigManager.getCombatConfig().getCombatFlyAutoSwitchOnDamage()) return;
@@ -373,7 +394,7 @@ public class CombatEvent {
 						float currentPoise = victimData.getResources().getCurrentPoise();
 
 						if (currentPoise - poiseDamage <= 0) {
-							doGuardBreak(victim, victimData);
+							doGuardBreak(victim, victimData, !isStrikeHit(source));
 							cancelActiveTechnique(victim, victimData);
 						} else {
 							victimData.getResources().removePoise((int) poiseDamage);
@@ -409,7 +430,7 @@ public class CombatEvent {
 								int blockStaminaCost = (int) (estimatedPostMitigation * ConfigManager.getCombatConfig().getBlockStaminaCost());
 
 								if (currentPoise - poiseDamage <= 0 || currentStamina - blockStaminaCost <= 0) {
-									doGuardBreak(victim, victimData);
+									doGuardBreak(victim, victimData, !isStrikeHit(source));
 
 									if (victim.level() instanceof ServerLevel serverLevel) {
 										Vec3 look = victim.getLookAngle();
@@ -433,6 +454,7 @@ public class CombatEvent {
 											attackerLiving.setDeltaMovement(attackerLiving.getDeltaMovement().scale(0.5));
 											attackerLiving.addEffect(new MobEffectInstance(MainEffects.STAGGER.get(), 60, 1, false, false, true));
 											attackerLiving.getPersistentData().putLong("dmz_parry_penalty", System.currentTimeMillis() + 4000);
+											if (attackerLiving instanceof ServerPlayer parriedPlayer) playParriedAnimation(parriedPlayer);
 
 											if (attackerLiving instanceof DBSagasEntity saga && saga.isComboing()) {
 												saga.interruptCombo();
@@ -440,6 +462,7 @@ public class CombatEvent {
 											} else if (!(attackerLiving instanceof Player)) {
 												attackerLiving.addEffect(new MobEffectInstance(MainEffects.STUN.get(), PARRY_STUN_TICKS, 0, false, false, true));
 											}
+											if (attackerLiving instanceof DBSagasEntity) playParriedStun(attackerLiving);
 										}
 										if (MainDamageTypes.isKiblastDamage(source)) {
 											divertKiProjectile(source, victim);
@@ -561,12 +584,65 @@ public class CombatEvent {
 		projectile.hurtMarked = true;
 	}
 
+	private static void playParriedAnimation(ServerPlayer player) {
+		PARRIED_ANIM_UNTIL.put(player.getUUID(), player.level().getGameTime() + PARRIED_ANIM_TICKS);
+		NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(player.getUUID(), TriggerAnimationS2C.AnimationType.KI_ANIMATION, 0, -1, PARRIED_ANIM), player);
+	}
+
+	@SubscribeEvent
+	public static void stopParriedAnimation(TickEvent.PlayerTickEvent event) {
+		if (event.phase != TickEvent.Phase.END || !(event.player instanceof ServerPlayer player)) return;
+		Long until = PARRIED_ANIM_UNTIL.get(player.getUUID());
+		if (until == null || player.level().getGameTime() < until) return;
+		PARRIED_ANIM_UNTIL.remove(player.getUUID());
+		NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(player.getUUID(), TriggerAnimationS2C.AnimationType.KI_ANIMATION_STOP, 0, -1, ""), player);
+	}
+
+	@SubscribeEvent
+	public static void clearParriedAnimation(PlayerEvent.PlayerLoggedOutEvent event) {
+		PARRIED_ANIM_UNTIL.remove(event.getEntity().getUUID());
+	}
+
+	// Zenkai: na v2.2 o NPC de saga tambem ganha a pose (DBSagasEntity.HURT_CONTROLLER / HURT_ANIM_PARRIED), mas esse
+	// controlador de reacao vem com os golpes de strike da v2.2 (d11e4b000), que o fork nao tem: aqui so o jogador.
+	private static void playParriedStun(LivingEntity entity) {
+		if (entity instanceof ServerPlayer player) {
+			PARRIED_ANIM_UNTIL.remove(player.getUUID());
+			NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(player.getUUID(), TriggerAnimationS2C.AnimationType.KI_ANIMATION_STOP, 0, -1, ""), player);
+			NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(player.getUUID(), TriggerAnimationS2C.AnimationType.KI_ANIMATION, 0, -1, PARRIED_STUN_ANIM), player);
+		} else {
+			return;
+		}
+		PARRIED_STUN_ACTIVE.add(entity.getUUID());
+	}
+
+	@SubscribeEvent
+	public static void stopParriedStun(LivingEvent.LivingTickEvent event) {
+		LivingEntity entity = event.getEntity();
+		if (entity.level().isClientSide || !PARRIED_STUN_ACTIVE.contains(entity.getUUID()) || entity.hasEffect(MainEffects.STUN.get())) return;
+		PARRIED_STUN_ACTIVE.remove(entity.getUUID());
+		if (entity instanceof ServerPlayer player) {
+			NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(player.getUUID(), TriggerAnimationS2C.AnimationType.KI_ANIMATION_STOP, 0, -1, ""), player);
+		}
+	}
+
+	@SubscribeEvent
+	public static void clearParriedStun(EntityLeaveLevelEvent event) {
+		if (!event.getLevel().isClientSide()) PARRIED_STUN_ACTIVE.remove(event.getEntity().getUUID());
+	}
+
 	private static void applyStrikeCounterGuardBreak(Entity sourceEntity) {
 		if (!(sourceEntity instanceof Player attacker)) return;
 		StatsProvider.get(StatsCapability.INSTANCE, attacker).ifPresent(attackerData -> {
-			doGuardBreak(attacker, attackerData);
+			doGuardBreak(attacker, attackerData, false);
+
+			attacker.removeEffect(MainEffects.STUN.get());
+			attacker.addEffect(new MobEffectInstance(MainEffects.STUN.get(), PARRY_STRIKE_STUN_TICKS, 0, false, false, true));
+
 			if (attacker instanceof ServerPlayer serverPlayer) {
+				StrikeAttackHandler.interrupt(serverPlayer);
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
+				playParriedStun(serverPlayer);
 			}
 		});
 	}
@@ -579,13 +655,21 @@ public class CombatEvent {
 		for (AbstractKiProjectile p : owned) p.discard();
 	}
 
-	private static void doGuardBreak(Player attacker, StatsData attackerData) {
+	// Zenkai: a v2.2 tambem conta o golpe de NPC em strike rush (saga.isStrikeRushing), que vem com o strike rush dos
+	// NPCs (cd71dacde) e nao existe no fork.
+	private static boolean isStrikeHit(DamageSource source) {
+		if (MainDamageTypes.isStrikeAttackDamage(source)) return true;
+		return source.getEntity() instanceof DBSagasEntity saga && saga.isComboing();
+	}
+
+	private static void doGuardBreak(Player attacker, StatsData attackerData, boolean playStunAnim) {
 		attackerData.getResources().setCurrentPoise(0);
 		attackerData.getResources().setCurrentStamina(0);
 		attackerData.getStatus().setBlocking(false);
 		if (attacker instanceof ServerPlayer serverPlayer) KiSurgeService.breakSurge(serverPlayer, attackerData);
 		int stunDuration = ConfigManager.getCombatConfig().getBlockBreakStunDurationTicks();
 		attacker.addEffect(new MobEffectInstance(MainEffects.STUN.get(), stunDuration, 0, false, false, true));
+		if (playStunAnim) playParriedStun(attacker);
 		int regenCd = ConfigManager.getCombatConfig().getPoiseRegenCooldown();
 		attackerData.getCooldowns().setCooldown(Cooldowns.POISE_CD, regenCd);
 		attacker.addEffect(new MobEffectInstance(MainEffects.POISE_CD.get(), regenCd, 0, false, false, true));
@@ -637,6 +721,35 @@ public class CombatEvent {
 		return tech instanceof KiAttackData kiData ? kiData.getActualArmorPenetration() / 100.0 : 0.0;
 	}
 
+	@SubscribeEvent(priority = EventPriority.HIGHEST)
+	public static void protectKnockedDownPlayers(LivingAttackEvent event) {
+		if (!(event.getEntity() instanceof Player victim) || victim.level().isClientSide) return;
+		if (event.getSource().is(DamageTypeTags.BYPASSES_INVULNERABILITY)) return;
+
+		StatsProvider.get(StatsCapability.INSTANCE, victim).ifPresent(data -> {
+			if (data.getStatus().isKnockedDown() && data.getCooldowns().hasCooldown(Cooldowns.KNOCKDOWN_INVULN)) {
+				event.setCanceled(true);
+			}
+		});
+	}
+
+	@SubscribeEvent
+	public static void onKnockoutEffectRemoved(MobEffectEvent.Remove event) {
+		if (event.getEffect() != MainEffects.KNOCKOUT.get()) return;
+		if (!(event.getEntity() instanceof ServerPlayer player)) return;
+		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> releaseKnockdown(player, data));
+	}
+
+	// Zenkai: a v2.2 tambem limpa ZENKAI_KNOCKOUT, BABA_KNOCKOUT e BIO_EXPLODE_RECOVERY, do sistema racial e da volta da
+	// Baba da v2.2, que o fork nao tem.
+	public static void releaseKnockdown(ServerPlayer player, StatsData data) {
+		if (!data.getStatus().isKnockedDown()) return;
+		data.getStatus().setKnockedDown(false);
+		data.getCooldowns().removeCooldown(Cooldowns.KNOCKDOWN_DURATION);
+		data.getCooldowns().removeCooldown(Cooldowns.KNOCKDOWN_INVULN);
+		NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+	}
+
 	@SubscribeEvent
 	public static void deflectProjectilesWhileCharging(ProjectileImpactEvent event) {
 		if (!(event.getRayTraceResult() instanceof EntityHitResult hit)) return;
@@ -681,7 +794,7 @@ public class CombatEvent {
 				StatsProvider.get(StatsCapability.INSTANCE, victim).ifPresent(stats -> {
 					boolean isGuardBroken = stats.getStatus().isStunEffect() && stats.getResources().getCurrentPoise() <= 0;
 					double postMitigation = stats.calculatePostMitigationDamage(rawDamage, isGuardBroken, defensePenetration);
-						boolean defenseFullyNegated = postMitigation <= 0.0;
+					boolean defenseFullyNegated = postMitigation <= 0.0;
 
 					if (victim.getPersistentData().contains("dmz_block_multiplier")) {
 						postMitigation *= victim.getPersistentData().getDouble("dmz_block_multiplier");
@@ -710,6 +823,7 @@ public class CombatEvent {
 
 					float finalDamage = (float) postMitigation;
 					if (!Float.isFinite(finalDamage) || finalDamage < 0.0f) finalDamage = 0.0f;
+					float mitigatedFinal = finalDamage;
 
 					if (victim.getHealth() - finalDamage <= 0) {
 						Entity damageSource = event.getSource().getEntity();
@@ -727,8 +841,10 @@ public class CombatEvent {
 						if (shadowKnockdown || friendlyKnockdown) {
 							finalDamage = Math.max(0.0F, victim.getHealth() - 1.0F);
 
+							int knockdownTicks = ConfigManager.getCombatConfig().getKnockdownDurationSeconds() * 20;
 							stats.getStatus().setKnockedDown(true);
-							stats.getCooldowns().setCooldown(Cooldowns.KNOCKDOWN_DURATION, ConfigManager.getCombatConfig().getKnockdownDurationSeconds() * 20);
+							stats.getCooldowns().setCooldown(Cooldowns.KNOCKDOWN_DURATION, knockdownTicks);
+							stats.getCooldowns().setCooldown(Cooldowns.KNOCKDOWN_INVULN, knockdownTicks);
 							stats.getCharacter().clearActiveForm();
 							stats.getCharacter().clearActiveStackForm();
 
@@ -745,9 +861,14 @@ public class CombatEvent {
 					if (defenseFullyNegated && rawDamage > 0.0
 							&& ConfigManager.getCombatConfig().getCancelDamageEventIfMitigationTooHigh()) {
 						applyFullNegation(victim);
+						if (ConfigManager.getCombatConfig().getEnableDamageScaledKnockback()) markHitKnockback(victim, 0.0);
 						event.setAmount(0.0f);
 						event.setCanceled(true);
 						return;
+					}
+
+					if (rawDamage > 0.0 && ConfigManager.getCombatConfig().getEnableDamageScaledKnockback()) {
+						markHitKnockback(victim, computeDamageScaledKnockback(rawDamage, mitigatedFinal, victim.getMaxHealth()));
 					}
 
 					event.setAmount(finalDamage);
@@ -758,6 +879,45 @@ public class CombatEvent {
 			}
 		}
 		RelicItemsStatusHandler.onFinalDamage(event);
+	}
+
+	private static double computeDamageScaledKnockback(double rawDamage, double finalDamage, float maxHealth) {
+		CombatConfig cfg = ConfigManager.getCombatConfig();
+		double passThrough = Mth.clamp(finalDamage / rawDamage, 0.0, 1.0);
+		double healthFraction = maxHealth > 0.0f ? Math.max(0.0, finalDamage) / maxHealth : 0.0;
+		double heavyThreshold = cfg.getKnockbackHeavyHitHealthFraction();
+
+		if (healthFraction >= heavyThreshold) {
+			return Math.min(cfg.getKnockbackMaxMultiplier(), 1.0 + (healthFraction - heavyThreshold) * cfg.getKnockbackHeavyHitGain());
+		}
+
+		double mitigatedMult = Mth.lerp(passThrough, cfg.getKnockbackMinMultiplier(), 1.0);
+		return Mth.lerp(healthFraction / heavyThreshold, mitigatedMult, 1.0);
+	}
+
+	private static void markHitKnockback(LivingEntity victim, double multiplier) {
+		victim.getPersistentData().putDouble(HIT_KNOCKBACK_MULT_TAG, multiplier);
+		victim.getPersistentData().putLong(HIT_KNOCKBACK_TICK_TAG, victim.level().getGameTime());
+	}
+
+	@SubscribeEvent
+	public static void scaleKnockbackByDamage(LivingKnockBackEvent event) {
+		LivingEntity target = event.getEntity();
+		if (target.level().isClientSide) return;
+		if (!target.getPersistentData().contains(HIT_KNOCKBACK_MULT_TAG)) return;
+
+		if (target.getPersistentData().getLong(HIT_KNOCKBACK_TICK_TAG) != target.level().getGameTime()) {
+			target.getPersistentData().remove(HIT_KNOCKBACK_MULT_TAG);
+			target.getPersistentData().remove(HIT_KNOCKBACK_TICK_TAG);
+			return;
+		}
+
+		double multiplier = target.getPersistentData().getDouble(HIT_KNOCKBACK_MULT_TAG);
+		if (multiplier <= 0.0) {
+			event.setCanceled(true);
+			return;
+		}
+		event.setStrength((float) (event.getStrength() * multiplier));
 	}
 
 	private static final Map<java.util.UUID, Long> LAST_NEGATION_SOUND_TICK = new HashMap<>();
