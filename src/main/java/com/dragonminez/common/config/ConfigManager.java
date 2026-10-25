@@ -552,6 +552,8 @@ public class ConfigManager {
 		trainingConfig = loadAndValidate(CONFIG_DIR.resolve("training.json"), TrainingConfig.class, TrainingConfig::new, TrainingConfig::getConfigVersion, TrainingConfig::setConfigVersion, TrainingConfig.CURRENT_VERSION, null);
 		skillsConfig = loadAndValidate(CONFIG_DIR.resolve("skills.json"), SkillsConfig.class, SkillsConfig::new, SkillsConfig::getConfigVersion, SkillsConfig::setConfigVersion, SkillsConfig.CURRENT_VERSION, "skills.json");
 		techniqueConfig = loadAndValidate(CONFIG_DIR.resolve("techniques.json"), TechniqueConfig.class, TechniqueConfig::new, TechniqueConfig::getConfigVersion, TechniqueConfig::setConfigVersion, TechniqueConfig.CURRENT_VERSION, null);
+		addMissingV22Defaults(CONFIG_DIR.resolve("techniques.json"), techniqueConfig);
+		addMissingV22Defaults(CONFIG_DIR.resolve("skills.json"), skillsConfig);
 		entitiesConfig = loadAndValidate(CONFIG_DIR.resolve("entities.json"), EntitiesConfig.class, ConfigManager::createDefaultEntitiesConfig, EntitiesConfig::getConfigVersion, EntitiesConfig::setConfigVersion, EntitiesConfig.CURRENT_VERSION, null);
 	}
 
@@ -1219,6 +1221,23 @@ public class ConfigManager {
 		return new ArrayList<>(list);
 	}
 
+	// Zenkai: ver TechniqueConfig.addMissingV22Defaults e SkillsConfig.addMissingV22StrikeSkills. Grava o arquivo inteiro de
+	// volta (o sync manda o arquivo do disco para o client), como a regeneracao do config faz.
+	private static void addMissingV22Defaults(Path path, Object config) {
+		if (config == null || !Files.exists(path)) return;
+		try {
+			JsonElement raw = JsonParser.parseString(Files.readString(path));
+			if (raw == null || !raw.isJsonObject()) return;
+			boolean changed = config instanceof TechniqueConfig techniques ? techniques.addMissingV22Defaults(raw.getAsJsonObject())
+					: config instanceof SkillsConfig skills && skills.addMissingV22StrikeSkills(raw.getAsJsonObject());
+			if (!changed) return;
+			LOADER.saveConfig(path, config);
+			LogUtil.warn(Env.COMMON, "Added the v2.2 ki attack and strike defaults that were missing to {}", path.getFileName());
+		} catch (Exception e) {
+			LogUtil.error(Env.COMMON, "Could not add the v2.2 ki attack and strike defaults to {}: {}", path.getFileName(), e.getMessage());
+		}
+	}
+
 	public static void reloadSpecificConfig(String configFilePath) throws IOException {
 		Path path = CONFIG_DIR.resolve(configFilePath + ".json");
 		if (configFilePath.equals("general-server")) {
@@ -1229,8 +1248,10 @@ public class ConfigManager {
 			trainingConfig = LOADER.loadConfig(path, TrainingConfig.class);
 		} else if (configFilePath.equals("skills")) {
 			skillsConfig = LOADER.loadConfig(path, SkillsConfig.class);
+			addMissingV22Defaults(path, skillsConfig);
 		} else if (configFilePath.equals("techniques")) {
 			techniqueConfig = LOADER.loadConfig(path, TechniqueConfig.class);
+			addMissingV22Defaults(path, techniqueConfig);
 		} else if (configFilePath.equals("entities")) {
 			entitiesConfig = LOADER.loadConfig(path, EntitiesConfig.class);
 		} else if (configFilePath.startsWith("races/")) {

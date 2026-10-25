@@ -49,8 +49,23 @@ public class KiWaveEntity extends AbstractKiProjectile {
 
     private static final float MAX_RANGE = 300.0F; // uff
 
+    /**
+     * Player-equivalent forward clearance. It used to read the owner's width directly, but the
+     * cast offset is now scaled by that width downstream -- returning a measured value here
+     * would apply the caster's size twice.
+     */
+    /**
+     * While charging the orb is drawn at castSize * 1.5; once fired the beam is a cylinder of
+     * radius size. Either way the entity sits at the centre, so that radius is what has to clear
+     * the caster.
+     */
+    @Override
+    protected float castClearanceRadius() {
+        return this.isFiring() ? this.getSize() : this.getCastSize() * 1.5F;
+    }
+
     private float calcWaveForwardOffset(LivingEntity owner) {
-        return (owner.getBbWidth() / 2.0F) + 0.2F;
+        return 0.5F;
     }
 
     private float calcWaveCenterOffsetY(LivingEntity owner) {
@@ -404,12 +419,39 @@ public class KiWaveEntity extends AbstractKiProjectile {
         if (this.getOwner() instanceof Player) this.triggerAnimationPacket("_fire");
     }
 
+    // Zenkai: o Heat Dome mora no ZenkaiExtra (o KiTechniqueHandler.HeatDome da v2.2); aqui fica so a posicao dele da v2.2,
+    // pelo id da tecnica, que o client tambem sabe (a onda do ZE so existe no servidor).
+    private static final String HEAT_DOME_ID = "heat_dome";
+    private static final float HEAT_DOME_BEAM_HEAD_OFFSET = 0.3F;
+
+    private boolean isHeatDome() {
+        return HEAT_DOME_ID.equals(this.getTechniqueId());
+    }
+
+    private void updateHeatDomePosition(LivingEntity owner, boolean isCasting) {
+        double y = isCasting
+                ? ownerCastCenterY(owner)
+                : owner.getY() + owner.getBbHeight() + HEAT_DOME_BEAM_HEAD_OFFSET * ownerScaleOf(owner);
+        this.setPos(owner.getX(), y, owner.getZ());
+
+        float yaw = owner.getYRot();
+        this.entityData.set(FIXED_YAW, yaw);
+        this.entityData.set(FIXED_PITCH, -90.0F);
+        this.setYRot(yaw);
+        this.setXRot(-90.0F);
+    }
+
     private void updatePositionRelativeToOwner(LivingEntity owner, boolean isCasting) {
+        if (this.isHeatDome()) {
+            this.updateHeatDomePosition(owner, isCasting);
+            return;
+        }
+
         Vec3 look = owner.getLookAngle();
         Vec3 newPos;
 
         double centerX = owner.getX();
-        double centerY = this.isContinuousFollow() ? owner.getEyeY() : owner.getY() + (owner.getBbHeight() / 2.0D);
+        double centerY = this.isContinuousFollow() ? owner.getEyeY() : ownerCastCenterY(owner);
         double centerZ = owner.getZ();
         Vec3 hitboxCenter = new Vec3(centerX, centerY, centerZ);
 
@@ -417,13 +459,14 @@ public class KiWaveEntity extends AbstractKiProjectile {
             Vec3 right = look.cross(new Vec3(0, 1, 0)).normalize();
             Vec3 up = right.cross(look).normalize();
 
-            Vec3 offset = right.scale(this.entityData.get(OFFSET_X))
-                    .add(up.scale(this.entityData.get(OFFSET_Y)))
-                    .add(look.scale(this.entityData.get(OFFSET_Z)));
+            Vec3 offset = castOffset(owner, right, up, look,
+                    this.entityData.get(OFFSET_X), this.entityData.get(OFFSET_Y), this.entityData.get(OFFSET_Z));
 
             newPos = hitboxCenter.add(offset);
         } else {
-            newPos = hitboxCenter.add(look.scale(2.5D));
+            // Clears the body first, then the same 2.2 a normal player got. Scaling the whole
+            // distance instead would fling a giant's beam origin metres away from it.
+            newPos = hitboxCenter.add(look.scale((owner.getBbWidth() / 2.0D) + 2.2D + this.castClearanceRadius()));
         }
 
         this.setPos(newPos.x, newPos.y, newPos.z);
@@ -455,12 +498,16 @@ public class KiWaveEntity extends AbstractKiProjectile {
     }
 
     public float getBeamLength() { return this.entityData.get(BEAM_LENGTH); }
-    private void setBeamLength(float len) { this.entityData.set(BEAM_LENGTH, len); }
+    public void setBeamLength(float len) { this.entityData.set(BEAM_LENGTH, len); }
     public float getFixedYaw() { return this.entityData.get(FIXED_YAW); }
     public float getFixedPitch() { return this.entityData.get(FIXED_PITCH); }
     public int getCastWave() { return this.entityData.get(CAST_WAVE); }
     public void setCastWave(int ticks) { this.entityData.set(CAST_WAVE, ticks); }
-    public float getCastSize() { return this.entityData.get(CAST_SIZE); }
+    /**
+     * Cast size, scaled to the caster. The stored value is authored for a normal player, so a
+     * giant would otherwise charge a human-sized ball in a hand several times that big.
+     */
+    public float getCastSize() { return this.entityData.get(CAST_SIZE) * this.getOwnerScale(); }
     public void setCastSize(float size) { this.entityData.set(CAST_SIZE, size); }
     public void setCastOffsets(float offsetX, float offsetY, float offsetZ) {
         this.entityData.set(OFFSET_X, offsetX);
@@ -653,34 +700,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
     }
 
     private boolean destroyBlocksAtTip(Vec3 tipPos) {
-        boolean hitSomething = false;
-        float eatRadius = this.scaledDestructionRadius(this.getSize() * 3.2F);
-        int bRad = Math.round(eatRadius);
-        BlockPos center = BlockPos.containing(tipPos);
-        Level level = this.level();
-
-        for (int x = -bRad; x <= bRad; x++) {
-            for (int y = -bRad; y <= bRad; y++) {
-                for (int z = -bRad; z <= bRad; z++) {
-                    if (x * x + y * y + z * z <= eatRadius * eatRadius) {
-                        BlockPos targetPos = center.offset(x, y, z);
-                        if (!level.getBlockState(targetPos).isAir() && level.getBlockState(targetPos).getExplosionResistance(level, targetPos, null) < 1000 && this.destroyKiBlock(targetPos, false)) {
-                            hitSomething = true;
-                            if (level instanceof ServerLevel serverLevel) {
-                                if (this.random.nextFloat() < 0.25F) {
-                                    serverLevel.sendParticles(
-                                            ParticleTypes.CAMPFIRE_COSY_SMOKE,
-                                            targetPos.getX() + 0.5, targetPos.getY() + 0.5, targetPos.getZ() + 0.5,
-                                            1, 0.5D, 0.5D, 0.5D, 0.05D
-                                    );
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        return hitSomething;
+        return this.eatKiSphere(BlockPos.containing(tipPos), this.scaledDestructionRadius(this.getSize() * 4.0F));
     }
 
     private void spawnOriginSplash() {
@@ -760,7 +780,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
         for (LivingEntity target : targets) {
             if (!this.shouldDamage(target)) continue;
             if (target.is(this.getOwner())) continue;
-            if (target.invulnerableTime > 0) continue;
+            if (target.invulnerableTime > 0 && !this.isBreakthroughTarget(target)) continue;
 
             float hitPrecision = (float) cilindroRadio;
             boolean intersects = false;
@@ -773,7 +793,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
             }
 
             if (intersects) {
-                boolean wasHit = this.applyDamageOrHeal(target, this.getDamagePerHit());
+                boolean wasHit = this.applyBeamHit(target);
 
                 if (wasHit) {
                     this.onSuccessfulHit(target);
@@ -795,7 +815,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
     }
 
     private void explodeAndDie(Vec3 pos) {
-        float explosionRadius = this.getSize() * 5.5F;
+        float explosionRadius = this.getSize() * 4.0F;
 
         AABB damageArea = new AABB(pos, pos).inflate(explosionRadius);
         List<LivingEntity> targets = MultipartTargeting.collectTargets(this.level(), damageArea);
@@ -809,20 +829,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
         if (!this.level().isClientSide) {
             BlockPos center = BlockPos.containing(pos);
 
-            float destructionRadius = this.scaledDestructionRadius(explosionRadius);
-            int blockRadius = Math.round(destructionRadius);
-            for (int x = -blockRadius; x <= blockRadius; x++) {
-                for (int y = -blockRadius; y <= blockRadius; y++) {
-                    for (int z = -blockRadius; z <= blockRadius; z++) {
-                        if (x * x + y * y + z * z <= destructionRadius * destructionRadius) {
-                            BlockPos targetPos = center.offset(x, y, z);
-                            if (this.level().getBlockState(targetPos).getExplosionResistance(this.level(), targetPos, null) < 1000) {
-                                this.setKiBlockToAir(targetPos, 2);
-                            }
-                        }
-                    }
-                }
-            }
+            this.carveKiSphere(center, this.scaledDestructionRadius(explosionRadius), 2);
 
             float visualParticleSize = explosionRadius * 2.4F;
             if (this.level() instanceof ServerLevel serverLevel) {
@@ -835,7 +842,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
 
                 KiExplosionVisualEntity explosionVisual = new KiExplosionVisualEntity(MainEntities.KI_EXPLOSION_VISUAL.get(), this.level());
                 explosionVisual.setPos(pos.x, pos.y - 0.5, pos.z);
-                explosionVisual.setupExplosion(this.getColor(), this.getColorBorder(), this.getColorOutline(), this.getSize() * 2.5F);
+                explosionVisual.setupExplosion(this.getColor(), this.getColorBorder(), this.getColorOutline(), this.getSize() * 1.8F);
                 this.level().addFreshEntity(explosionVisual);
             }
         }

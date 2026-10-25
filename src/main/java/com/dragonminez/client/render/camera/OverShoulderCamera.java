@@ -57,6 +57,7 @@ public final class OverShoulderCamera {
 
 	public static boolean isActive(Entity entity, boolean thirdPersonReverse) {
 		if (thirdPersonReverse || !(entity instanceof Player)) return false;
+		if (TechniquePreviewCamera.isActive()) return false;
 		if (entity instanceof LivingEntity living && living.isSleeping()) return false;
 		if (previewOverride) return true;
 		if (f5ForceActive) return true;

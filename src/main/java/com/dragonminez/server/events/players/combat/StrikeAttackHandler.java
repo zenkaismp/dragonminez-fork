@@ -12,6 +12,7 @@ import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.entities.ki.KiExplosionVisualEntity;
 import com.dragonminez.common.init.entities.ki.KiWaveEntity;
 import com.dragonminez.common.init.entities.ki.OzaruFistEntity;
+import com.dragonminez.common.init.entities.ki.SPBlueHurricaneEntity;
 import com.dragonminez.common.init.entities.ki.SPDragonFistEntity;
 import com.dragonminez.common.combat.logic.player.TargetHelper;
 import com.dragonminez.common.network.NetworkHandler;
@@ -56,6 +57,7 @@ public class StrikeAttackHandler {
 	private static final double DASH_DISTANCE_SCALE = 0.3;
 	private static final double KNOCKBACK_FORCE = 1.8;
 	private static final double FINAL_HIT_RATIO = 0.35;
+	private static final int BLUE_HURRICANE_CAST_TICKS = 15;
 	private static final double IMPACT_DAMAGE_RATIO = 0.20;
 	private static final int HIT_INTERVAL_TICKS = 10;
 	private static final long RECENT_HIT_WINDOW_MS = 10_000L;
@@ -105,6 +107,11 @@ public class StrikeAttackHandler {
 			);
 
 			MinecraftForge.EVENT_BUS.post(new DMZEvent.StrikeAttackCastEvent(player, stats, strike));
+
+			if (SPBlueHurricaneEntity.STRIKE_ID.equals(strike.getId())) {
+				startTargetlessStrike(player, stats, strike, pending, false);
+				return;
+			}
 
 			if (immediateTarget != null) {
 				boolean faceTarget = !"dragon_fist".equals(strike.getId());
@@ -216,12 +223,29 @@ public class StrikeAttackHandler {
 		ActiveStrike active = ACTIVE.get(player.getUUID());
 		if (active == null) return;
 
-		LivingEntity target = resolveLiving(player, active.targetId());
+		// v2.2: golpe sem alvo (o Blue Hurricane nasce sem alvo e nao pode acabar por isso).
+		boolean targetless = active.targetId() == null;
+		LivingEntity target = targetless ? null : resolveLiving(player, active.targetId());
 
-		if (target == null || !target.isAlive() || !player.isAlive()) {
+		if (!player.isAlive() || (!targetless && (target == null || !target.isAlive()))) {
 			endStrike(player, target, active);
 			return;
 		}
+
+        if (SPBlueHurricaneEntity.STRIKE_ID.equals(active.techniqueId())) {
+            if (active.ticksElapsed() == 0) {
+                int firingTicks = Math.max(20, active.durationTicks() - BLUE_HURRICANE_CAST_TICKS);
+                SPBlueHurricaneEntity hurricane = new SPBlueHurricaneEntity(player.level(), player);
+                hurricane.setupHurricane(player, (float) active.totalDamage(), 1.0f, BLUE_HURRICANE_CAST_TICKS, firingTicks);
+            }
+
+            if (active.ticksElapsed() >= active.durationTicks()) {
+                endStrike(player, null, active);
+            } else {
+                ACTIVE.put(player.getUUID(), active.withTicksElapsed(active.ticksElapsed() + 1));
+            }
+            return;
+        }
 
         if ("dragon_fist".equals(active.techniqueId())) {
 
@@ -736,6 +760,33 @@ public class StrikeAttackHandler {
 		}
 
 		ACTIVE.put(player.getUUID(), active.withTicksElapsed(nextTick));
+	}
+
+	private static void startTargetlessStrike(ServerPlayer player, com.dragonminez.common.stats.StatsData stats, StrikeAttackData strike, PendingStrike pending, boolean lockPlayer) {
+		double totalDamage = stats.getStrikeDamage() * strike.getDamageMultiplier() * Math.max(0.0,
+				ConfigManager.getTechniqueConfig().getStrikeConfig(strike.getId()).getDamageMultiplier());
+
+		int durationTicks = Math.max(20, pending.durationTicks());
+		int hitCount = Math.max(1, (int) Math.ceil(durationTicks / (double) HIT_INTERVAL_TICKS));
+
+		ActiveStrike active = new ActiveStrike(
+				player.getUUID(),
+				null,
+				pending.techniqueId(),
+				pending.animationId(),
+				durationTicks,
+				pending.cooldownTicks(),
+				totalDamage,
+				(totalDamage * (1.0 - FINAL_HIT_RATIO)) / hitCount,
+				totalDamage * FINAL_HIT_RATIO,
+				HIT_INTERVAL_TICKS,
+				0
+		);
+		ACTIVE.put(player.getUUID(), active);
+		STRIKE_ANCHOR_PART.remove(player.getUUID());
+		player.invulnerableTime = 20;
+		if (lockPlayer) setStrikeLocked(player, true);
+		playStrikeAnimation(player, pending.animationId());
 	}
 
 	private static void startStrike(ServerPlayer player, LivingEntity target, PendingStrike pending) {

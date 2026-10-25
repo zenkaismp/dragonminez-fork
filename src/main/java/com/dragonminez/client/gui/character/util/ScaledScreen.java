@@ -1,14 +1,18 @@
 package com.dragonminez.client.gui.character.util;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.gui.buttons.SubpixelWidget;
+import com.dragonminez.client.gui.hud.HudRender;
 import com.dragonminez.common.config.ConfigManager;
 import com.mojang.blaze3d.platform.Window;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -26,6 +30,10 @@ public abstract class ScaledScreen extends Screen {
 	private int cachedGuiWidth = -1;
 	private int cachedGuiHeight = -1;
 	private float cachedMultiplier = Float.NaN;
+
+	// v2.2: tempo do quadro, para os paineis que deslizam (tela nova de criacao de tecnica).
+	private long lastFrameNanos;
+	private float frameDelta;
 
 	protected ScaledScreen(Component title) {
 		super(title);
@@ -160,12 +168,49 @@ public abstract class ScaledScreen extends Screen {
 
 	protected void beginUiScale(GuiGraphics graphics) {
 		updateUiScale();
+		long now = System.nanoTime();
+		frameDelta = lastFrameNanos == 0L ? 0.0f : Math.min(0.1f, (now - lastFrameNanos) / 1_000_000_000.0f);
+		lastFrameNanos = now;
 		graphics.pose().pushPose();
 		graphics.pose().scale(uiScale, uiScale, 1.0f);
 	}
 
 	protected void endUiScale(GuiGraphics graphics) {
 		graphics.pose().popPose();
+	}
+
+	protected float frameDelta() {
+		return frameDelta;
+	}
+
+	protected float frameEase() {
+		return frameEase(0.115f);
+	}
+
+	protected float frameEase(float tauSeconds) {
+		return frameDelta <= 0.0f ? 0.0f : 1.0f - (float) Math.exp(-frameDelta / tauSeconds);
+	}
+
+	protected static void blit(GuiGraphics graphics, ResourceLocation texture, float x, float y, float u, float v, float width, float height) {
+		HudRender.blit(graphics, texture, x, y, u, v, width, height, 256, 256);
+	}
+
+	protected static void blit(GuiGraphics graphics, ResourceLocation texture, float x, float y, float u, float v, float width, float height, int textureWidth, int textureHeight) {
+		HudRender.blit(graphics, texture, x, y, u, v, width, height, textureWidth, textureHeight);
+	}
+
+	protected static void slideX(AbstractWidget widget, int baseX, float offset) {
+		if (widget == null) return;
+		int whole = Mth.floor(offset);
+		widget.setX(baseX + whole);
+		if (widget instanceof SubpixelWidget subpixel) subpixel.setSubpixelX(offset - whole);
+	}
+
+	protected static void slideY(AbstractWidget widget, int baseY, float offset) {
+		if (widget == null) return;
+		int whole = Mth.floor(offset);
+		widget.setY(baseY + whole);
+		if (widget instanceof SubpixelWidget subpixel) subpixel.setSubpixelY(offset - whole);
 	}
 
 	@Override

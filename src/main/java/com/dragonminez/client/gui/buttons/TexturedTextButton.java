@@ -15,7 +15,9 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
-public class TexturedTextButton extends Button {
+// Zenkai: so o deslocamento fracionado (SubpixelWidget) da v2.2, para o painel da tela nova de criacao de tecnica
+// deslizar com os botoes junto.
+public class TexturedTextButton extends Button implements SubpixelWidget {
 
     private final ResourceLocation texture;
     private final int textureWidth;
@@ -29,6 +31,8 @@ public class TexturedTextButton extends Button {
     private int backgroundColor;
     private boolean hasBackgroundColor;
     private final SoundEvent sound;
+    private float subpixelX;
+    private float subpixelY;
 
     public TexturedTextButton(int x, int y, int width, int height, ResourceLocation texture,
                               int normalU, int normalV, int hoverU, int hoverV,
@@ -69,9 +73,12 @@ public class TexturedTextButton extends Button {
         RenderSystem.defaultBlendFunc();
         RenderSystem.enableDepthTest();
 
-        int u = this.isHoveredOrFocused() ? hoverU : normalU;
-        int v = this.isHoveredOrFocused() ? hoverV : normalV;
+        boolean highlighted = this.active && this.isHoveredOrFocused();
+        int u = highlighted ? hoverU : normalU;
+        int v = highlighted ? hoverV : normalV;
 
+        graphics.pose().pushPose();
+        graphics.pose().translate(subpixelX, subpixelY, 0.0F);
         graphics.blit(texture, this.getX(), this.getY(), u, v, textureWidth, textureHeight);
 
         if (hasBackgroundColor) {
@@ -80,11 +87,22 @@ public class TexturedTextButton extends Button {
                          0xFF000000 | (backgroundColor & 0xFFFFFF));
         }
 
-        int textColor = this.active ? (this.isHoveredOrFocused() ? hoverTextColor : normalTextColor) : 0xA0A0A0;
+        int textColor = this.active ? (highlighted ? hoverTextColor : normalTextColor) : 0xA0A0A0;
         graphics.drawCenteredString(minecraft.font, this.getMessage(),
                 this.getX() + this.width / 2,
                 this.getY() + (this.height - 8) / 2,
                 textColor);
+        graphics.pose().popPose();
+    }
+
+    @Override
+    public void setSubpixelX(float offset) {
+        this.subpixelX = offset;
+    }
+
+    @Override
+    public void setSubpixelY(float offset) {
+        this.subpixelY = offset;
     }
 
     public void setBackgroundColor(int color) {

@@ -29,6 +29,29 @@ public class SkillsConfig {
 		createDefaults();
 	}
 
+	// Zenkai: o golpe SP que a v2.2 acrescentou (Blue Hurricane) num skills.json que ja existia. Na v2.2 ele chega pela
+	// regeneracao da versao 2.2.0 do config; aqui entra so o que falta: o id na lista de golpes SP (que e do codigo,
+	// @ConfigNonPreservable) e o custo padrao dele. Nenhum mestre oferece o golpe, como na v2.2.
+	public boolean addMissingV22StrikeSkills(com.google.gson.JsonObject raw) {
+		if (raw == null) return false;
+		com.google.gson.JsonArray listed = raw.has("strikeSkills") && raw.get("strikeSkills").isJsonArray() ? raw.getAsJsonArray("strikeSkills") : null;
+		com.google.gson.JsonObject costs = raw.has("skills") && raw.get("skills").isJsonObject() ? raw.getAsJsonObject("skills") : null;
+		if (listed == null || costs == null) return false;
+		SkillsConfig defaults = new SkillsConfig();
+		boolean changed = false;
+		for (String id : V22_STRIKE_SKILLS) {
+			boolean inFile = false;
+			for (com.google.gson.JsonElement element : listed) {
+				if (element.isJsonPrimitive() && id.equals(element.getAsString())) { inFile = true; break; }
+			}
+			if (!inFile && !strikeSkills.contains(id)) { strikeSkills.add(id); changed = true; }
+			if (!costs.has(id) && defaults.skills.containsKey(id)) { skills.put(id, defaults.skills.get(id)); changed = true; }
+		}
+		return changed;
+	}
+
+	private static final List<String> V22_STRIKE_SKILLS = List.of("blue_hurricane");
+
 	private void createDefaults() {
 		formSkills.add("superforms");
 		formSkills.add("legendaryforms");
@@ -95,6 +118,7 @@ public class SkillsConfig {
 		strikeSkills.add("wolf_fang");
 		strikeSkills.add("oozaru_fist");
 		strikeSkills.add("super_god_fist");
+		strikeSkills.add("blue_hurricane");
 
 		skills.put("meteor",             new SkillCosts(List.of(3000)));
 		skills.put("wolf_fang",          new SkillCosts(List.of(3500)));
@@ -104,6 +128,7 @@ public class SkillsConfig {
 		skills.put("super_god_fist",     new SkillCosts(List.of(10000)));
 		skills.put("deadly_dance_vegetto", new SkillCosts(List.of(12000)));
 		skills.put("oozaru_fist",        new SkillCosts(List.of(15000)));
+		skills.put("blue_hurricane",     new SkillCosts(List.of(5000)));
 
 		List<Integer> jumpCosts = new ArrayList<>();
 		jumpCosts.add(300);

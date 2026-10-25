@@ -13,7 +13,9 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
-public class CustomTextureButton extends Button {
+// Zenkai: so o deslocamento fracionado (SubpixelWidget) da v2.2, para as setas da tela nova de criacao de tecnica
+// deslizarem junto com o painel.
+public class CustomTextureButton extends Button implements SubpixelWidget {
 
     private final ResourceLocation texture;
     private final int textureWidth;
@@ -23,6 +25,8 @@ public class CustomTextureButton extends Button {
     private final int hoverU;
     private final int hoverV;
 	private final SoundEvent sound;
+	private float subpixelX;
+	private float subpixelY;
 
     public CustomTextureButton(int x, int y, int width, int height, ResourceLocation texture,
                                int normalU, int normalV, int hoverU, int hoverV,
@@ -51,8 +55,25 @@ public class CustomTextureButton extends Button {
         int u = this.isHoveredOrFocused() ? hoverU : normalU;
         int v = this.isHoveredOrFocused() ? hoverV : normalV;
 
+        if (subpixelX == 0.0F && subpixelY == 0.0F) {
+            graphics.blit(texture, this.getX(), this.getY(), u, v, textureWidth, textureHeight);
+            return;
+        }
+        graphics.pose().pushPose();
+        graphics.pose().translate(subpixelX, subpixelY, 0.0F);
         graphics.blit(texture, this.getX(), this.getY(), u, v, textureWidth, textureHeight);
+        graphics.pose().popPose();
     }
+
+	@Override
+	public void setSubpixelX(float offset) {
+		this.subpixelX = offset;
+	}
+
+	@Override
+	public void setSubpixelY(float offset) {
+		this.subpixelY = offset;
+	}
 
     public static class Builder {
         private int x, y, width, height;
