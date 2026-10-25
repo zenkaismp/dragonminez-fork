@@ -57,6 +57,38 @@ public class SkillsConfig {
 
 	private static final List<String> V22_STRIKE_SKILLS = List.of("blue_hurricane");
 
+	// Zenkai: as esquivas do combate 2.0 da v2.2 num skills.json que ja existia. Na v2.2 elas chegam pela regeneracao da
+	// versao 2.2.0 do config; aqui entra so o que falta: o Solar Flare sai da lista de golpes de ki do arquivo (foi para a
+	// de esquivas, que e do codigo), os custos padrao das esquivas que nao estao no arquivo e, na primeira vez (sem o
+	// custo do Afterimage no arquivo), o Afterimage no Roshi, no Kuririn e no Cell e a lista do Majin Buu, como na v2.2.
+	// Depois disso o que o dono mudar nos mestres fica.
+	public boolean addMissingV22EvasionSkills(com.google.gson.JsonObject raw) {
+		if (raw == null) return false;
+		com.google.gson.JsonObject costs = raw.has("skills") && raw.get("skills").isJsonObject() ? raw.getAsJsonObject("skills") : null;
+		if (costs == null) return false;
+		SkillsConfig defaults = new SkillsConfig();
+		boolean changed = false;
+		for (String id : defaults.evasionSkills) {
+			if (kiSkills.remove(id)) changed = true;
+			if (!evasionSkills.contains(id)) { evasionSkills.add(id); changed = true; }
+		}
+		boolean firstTime = !costs.has("afterimage");
+		for (String id : defaults.evasionSkills) {
+			if (!costs.has(id) && defaults.skills.containsKey(id)) { skills.put(id, defaults.skills.get(id)); changed = true; }
+		}
+		if (firstTime) {
+			for (String master : List.of("roshi", "krillin", "cell")) {
+				List<String> offered = skillOfferings.get(master);
+				if (offered != null && !offered.contains("afterimage")) { offered.add("afterimage"); changed = true; }
+			}
+			if (!skillOfferings.containsKey("buu") && defaults.skillOfferings.containsKey("buu")) {
+				skillOfferings.put("buu", new ArrayList<>(defaults.skillOfferings.get("buu")));
+				changed = true;
+			}
+		}
+		return changed;
+	}
+
 	private void createDefaults() {
 		formSkills.add("superforms");
 		formSkills.add("legendaryforms");

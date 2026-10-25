@@ -1221,15 +1221,21 @@ public class ConfigManager {
 		return new ArrayList<>(list);
 	}
 
-	// Zenkai: ver TechniqueConfig.addMissingV22Defaults e SkillsConfig.addMissingV22StrikeSkills. Grava o arquivo inteiro de
-	// volta (o sync manda o arquivo do disco para o client), como a regeneracao do config faz.
+	// Zenkai: ver TechniqueConfig.addMissingV22Defaults, SkillsConfig.addMissingV22StrikeSkills e
+	// SkillsConfig.addMissingV22EvasionSkills (as esquivas do combate 2.0). Grava o arquivo inteiro de volta (o sync manda o
+	// arquivo do disco para o client), como a regeneracao do config faz.
 	private static void addMissingV22Defaults(Path path, Object config) {
 		if (config == null || !Files.exists(path)) return;
 		try {
 			JsonElement raw = JsonParser.parseString(Files.readString(path));
 			if (raw == null || !raw.isJsonObject()) return;
-			boolean changed = config instanceof TechniqueConfig techniques ? techniques.addMissingV22Defaults(raw.getAsJsonObject())
-					: config instanceof SkillsConfig skills && skills.addMissingV22StrikeSkills(raw.getAsJsonObject());
+			boolean changed = false;
+			if (config instanceof TechniqueConfig techniques) {
+				changed = techniques.addMissingV22Defaults(raw.getAsJsonObject());
+			} else if (config instanceof SkillsConfig skills) {
+				changed = skills.addMissingV22StrikeSkills(raw.getAsJsonObject());
+				changed |= skills.addMissingV22EvasionSkills(raw.getAsJsonObject());
+			}
 			if (!changed) return;
 			LOADER.saveConfig(path, config);
 			LogUtil.warn(Env.COMMON, "Added the v2.2 ki attack and strike defaults that were missing to {}", path.getFileName());

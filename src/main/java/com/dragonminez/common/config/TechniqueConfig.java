@@ -123,6 +123,8 @@ public class TechniqueConfig {
 	public boolean addMissingV22Defaults(JsonObject raw) {
 		JsonObject typesJson = raw != null && raw.has("KiAttacks") && raw.get("KiAttacks").isJsonObject() ? raw.getAsJsonObject("KiAttacks") : null;
 		JsonObject strikesJson = raw != null && raw.has("StrikeAttacks") && raw.get("StrikeAttacks").isJsonObject() ? raw.getAsJsonObject("StrikeAttacks") : null;
+		// Zenkai: as esquivas do combate 2.0 da v2.2 (EvasionAttacks), com a recarga padrao de cada uma, quando faltam.
+		JsonObject evasionsJson = raw != null && raw.has("EvasionAttacks") && raw.get("EvasionAttacks").isJsonObject() ? raw.getAsJsonObject("EvasionAttacks") : null;
 		TechniqueConfig defaults = new TechniqueConfig();
 		boolean changed = false;
 		for (Map.Entry<String, TechniqueTypeConfig> entry : kiAttacks.entrySet()) {
@@ -142,6 +144,13 @@ public class TechniqueConfig {
 			for (Map.Entry<String, StrikeAttackConfig> entry : defaults.strikeAttacks.entrySet()) {
 				if (strikesJson.has(entry.getKey())) continue;
 				strikeAttacks.put(entry.getKey(), entry.getValue());
+				changed = true;
+			}
+		}
+		if (raw != null) {
+			for (Map.Entry<String, EvasionAttackConfig> entry : defaults.evasionAttacks.entrySet()) {
+				if (evasionsJson != null && evasionsJson.has(entry.getKey())) continue;
+				evasionAttacks.put(entry.getKey(), entry.getValue());
 				changed = true;
 			}
 		}

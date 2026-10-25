@@ -47,6 +47,14 @@ public class KiProjectileRenderer extends EntityRenderer<AbstractKiProjectile> {
     private static final float TRI_BEAM_CHARGE_LIGHTNING_RADIUS = 0.75F;
     private static final float[] TRI_BEAM_LIGHTNING = ColorUtils.rgbIntToFloat(0x6FE8FF);
     private static final float[] TRI_BEAM_LIGHTNING_DEEP = ColorUtils.rgbIntToFloat(0x1F7BFF);
+    private static final float[] PURIFY_CORE = ColorUtils.rgbIntToFloat(0xFFFFFF);
+    private static final float[] PURIFY_BORDER = ColorUtils.rgbIntToFloat(0x7FE6FF);
+    private static final float[] PURIFY_OUTLINE = ColorUtils.rgbIntToFloat(0xFFFFFF);
+    private static final float[] PURIFY_LIGHTNING = ColorUtils.rgbIntToFloat(0xF3EEFF);
+    private static final float[] PURIFY_LIGHTNING_DEEP = ColorUtils.rgbIntToFloat(0x8FD9FF);
+    private static final float PURIFY_HALO_SCALE = 1.12F;
+    private static final float PURIFY_HALO_ALPHA = 0.3F;
+    private static final float PURIFY_LIGHTNING_SPEED = 1.5F;
 
     public KiProjectileRenderer(EntityRendererProvider.Context pContext) {
         super(pContext);
@@ -110,6 +118,10 @@ public class KiProjectileRenderer extends EntityRenderer<AbstractKiProjectile> {
 
             switch (renderType) {
                 case 4:
+                    if (entity instanceof KiBlastEntity soul && soul.isPurifying()) {
+                        renderSoulPunisherPurify(soul, stack, proj, immediateBuffer, ageInTicks, partialTick, scale);
+                        break;
+                    }
                     // Zenkai: a purificacao do Soul Punisher da v2.2 (KiBlastEntity.isPurifying) nao existe no fork.
                     float[] soulWhite = ColorUtils.rgbIntToFloat(0xFFFFFF);
                     stack.pushPose();
@@ -302,6 +314,34 @@ public class KiProjectileRenderer extends EntityRenderer<AbstractKiProjectile> {
             hue[i] = c * c;
         }
         return hue;
+    }
+
+    private void renderSoulPunisherPurify(KiBlastEntity entity, PoseStack stack, Matrix4f proj, MultiBufferSource buffer,
+                                          float age, float partialTick, float scale) {
+        float fade = entity.getPurifyFade(partialTick);
+        if (fade <= 0.01F) return;
+        float radius = entity.getPurifyVisualRadius(partialTick) / Math.max(scale, 0.01F);
+
+        stack.pushPose();
+        float halo = radius * PURIFY_HALO_SCALE;
+        stack.scale(halo, halo, halo);
+        drawMesh(KiMeshFactory.getSphereMesh(), stack, proj, PURIFY_CORE, PURIFY_BORDER, PURIFY_OUTLINE, PURIFY_HALO_ALPHA * fade, age, true, null);
+        stack.popPose();
+
+        stack.pushPose();
+        stack.scale(radius, radius, radius);
+        drawKiBall(stack, proj, PURIFY_CORE, PURIFY_BORDER, PURIFY_OUTLINE, age, true, 1.0F, fade);
+        stack.popPose();
+
+        int seed = entity.getId() * 4;
+        LightningBoltRenderer.drawSphereKiPass(stack.last().pose(), proj, seed, age, radius * 1.12F, PURIFY_LIGHTNING, PURIFY_LIGHTNING_SPEED, fade);
+        LightningBoltRenderer.drawSphereKiPass(stack.last().pose(), proj, seed + 1, age, radius * 1.04F, PURIFY_LIGHTNING_DEEP, PURIFY_LIGHTNING_SPEED, fade * 0.8F);
+
+        stack.pushPose();
+        float spikes = radius * 1.1F;
+        stack.scale(spikes, spikes, spikes);
+        renderCastigadorSpikes(stack, buffer, age, PURIFY_LIGHTNING, fade);
+        stack.popPose();
     }
 
     private void drawKiBall(PoseStack stack, Matrix4f proj, float[] core, float[] border, float[] outline, float age, boolean orb, float flameGain) {
