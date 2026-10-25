@@ -3,6 +3,7 @@ package com.dragonminez.server.world.structure.helper;
 import com.dragonminez.Reference;
 import com.dragonminez.common.init.MainTags;
 import com.dragonminez.server.world.biome.DemonRealmBiomes;
+import com.dragonminez.server.world.structure.BossStructures.GomahCradleStructure;
 import com.dragonminez.server.world.structure.DemonVillageStructure;
 import com.dragonminez.server.world.structure.TallJigsawStructure;
 import net.minecraft.core.HolderGetter;
@@ -35,7 +36,8 @@ public class DMZStructures {
 			CELL_ARENA = createKey("cell_arena"), FRIEZA_SHIP = createKey("frieza_ship"),
 			PICCOLO_HOUSE = createKey("piccolo_house"), OLDKAI_PILLAR = createKey("oldkai_pillar"),
 			YAMCHA_HOUSE = createKey("yamcha_house"), TRUNKS_SHIP = createKey("trunks_ship"),
-			VEGETA_POD = createKey("vegeta_pod"), DEMON_VILLAGE = createKey("demon_village");
+			VEGETA_POD = createKey("vegeta_pod"), DEMON_VILLAGE = createKey("demon_village"),
+			GOMAH_CRADLE = createKey("gomah_cradle");
 
 	public static void bootstrap(BootstapContext<Structure> context) {
 		HolderGetter<Biome> biomes = context.lookup(Registries.BIOME);
@@ -248,6 +250,17 @@ public class DMZStructures {
 		context.register(DEMON_VILLAGE, new DemonVillageStructure(
 				new Structure.StructureSettings(
 						HolderSet.direct(biomes.getOrThrow(DemonRealmBiomes.THIRD_DEMON_WORLD)),
+						Map.of(),
+						GenerationStep.Decoration.SURFACE_STRUCTURES,
+						TerrainAdjustment.NONE
+				)
+		));
+
+		context.register(GOMAH_CRADLE, new GomahCradleStructure(
+				new Structure.StructureSettings(
+						HolderSet.direct(biomes.getOrThrow(DemonRealmBiomes.FIRST_DEMON_WORLD),
+								biomes.getOrThrow(DemonRealmBiomes.SECOND_DEMON_WORLD),
+								biomes.getOrThrow(DemonRealmBiomes.THIRD_DEMON_WORLD)),
 						Map.of(),
 						GenerationStep.Decoration.SURFACE_STRUCTURES,
 						TerrainAdjustment.NONE
