@@ -200,13 +200,16 @@ dependencies {
 
     // Database libraries
 
-    jarJar("org.mariadb.jdbc:mariadb-java-client:[3.5.9,)") {
+    // Versao FIXA no jar: com "[3.5.9,)" o Gradle embutia a mais nova que achasse (4.0.0 em 24/10/2026) e o
+    // ZenkaiExtra, que embute o driver na faixa [3.3.0,4.0), deixava o JarJar sem versao comum: o Forge desistia de
+    // todos os jar-in-jar e o servidor nem subia. A faixa declarada continua a mesma.
+    jarJar("org.mariadb.jdbc:mariadb-java-client:3.5.9") {
         jarJar.ranged(
             this,
             "[3.5.7,)"
         )
     }
-    jarJar("com.zaxxer:HikariCP:[7.1.0,)") { jarJar.ranged(this, "[7.1.0,)") }
+    jarJar("com.zaxxer:HikariCP:7.1.0") { jarJar.ranged(this, "[7.1.0,)") }
     compileOnly("org.mariadb.jdbc:mariadb-java-client:3.5.9")
     compileOnly("com.zaxxer:HikariCP:7.1.0")
 
