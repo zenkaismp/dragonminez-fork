@@ -126,7 +126,7 @@ public class CreateCharacterC2S {
 		int hairId = buf.readInt();
 		CustomHair customHair = null;
 		if (buf.readBoolean()) {
-			customHair = CustomHair.readFromBuffer(buf);
+			customHair = CustomHair.readClientStyle(buf);
 		}
 		int bodyType = buf.readInt();
 		int eyesType = buf.readInt();

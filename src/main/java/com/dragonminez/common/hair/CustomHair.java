@@ -287,4 +287,16 @@ public class CustomHair {
 	public static CustomHair readFromBuffer(FriendlyByteBuf buf) {
 		return fromTag(buf.readNbt());
 	}
+
+	public static int formatVersion(CompoundTag tag) {
+		return tag.contains("v") ? tag.getInt("v") : (tag.contains("Version") ? tag.getInt("Version") : 1);
+	}
+
+	// Zenkai: a style sent by a client must already be in the current format. A 2.1.3 client reads v7 hair as
+	// empty strands, so whatever it sends back is dropped (null) instead of overwriting the saved style.
+	public static CustomHair readClientStyle(FriendlyByteBuf buf) {
+		CompoundTag tag = buf.readNbt();
+		if (tag == null || formatVersion(tag) < VERSION) return null;
+		return fromTag(tag);
+	}
 }

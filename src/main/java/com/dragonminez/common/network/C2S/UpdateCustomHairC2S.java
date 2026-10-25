@@ -41,7 +41,7 @@ public class UpdateCustomHairC2S {
 	public static UpdateCustomHairC2S decode(FriendlyByteBuf buf) {
 		int hairIndex = buf.readInt();
 		boolean hasHair = buf.readBoolean();
-		CustomHair hair = hasHair ? CustomHair.readFromBuffer(buf) : null;
+		CustomHair hair = hasHair ? CustomHair.readClientStyle(buf) : null;
 		return new UpdateCustomHairC2S(hairIndex, hair);
 	}
 

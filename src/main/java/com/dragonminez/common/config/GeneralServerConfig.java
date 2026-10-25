@@ -32,36 +32,39 @@ public class GeneralServerConfig {
 		return hair;
 	}
 
+	// Limits applied when a player saves an edited hair style (v2.2 hair system).
+	// Zenkai defaults sit at the format maximum so no 2.1 hairstyle is trimmed when it is saved again;
+	// lower them in general-server.json only after checking how long the hairstyles in use are.
 	public static class HairConfig {
-		private Integer maxSegmentsPerStrand = 12;
+		private Integer maxSegmentsPerStrand = 32;
 		private Map<String, Float> maxStrandLength = defaultMaxStrandLength();
-		private Float maxStrandWidth = 8.0f;
+		private Float maxStrandWidth = 16.0f;
 		private Float maxRootOffset = 2.0f;
-		private Integer maxTotalSegmentsPerStyle = 600;
+		private Integer maxTotalSegmentsPerStyle = 68 * 32;
 
 		private static Map<String, Float> defaultMaxStrandLength() {
 			Map<String, Float> map = new LinkedHashMap<>();
-			map.put("base", 20.0f);
-			map.put("ssj", 20.0f);
-			map.put("ssj2", 20.0f);
-			map.put("ssj3", 20.0f);
-			map.put("ssj4", 20.0f);
+			map.put("base", 128.0f);
+			map.put("ssj", 128.0f);
+			map.put("ssj2", 128.0f);
+			map.put("ssj3", 128.0f);
+			map.put("ssj4", 128.0f);
 			return map;
 		}
 
 		public int getMaxSegmentsPerStrand() {
-			int value = maxSegmentsPerStrand != null ? maxSegmentsPerStrand : 12;
+			int value = maxSegmentsPerStrand != null ? maxSegmentsPerStrand : 32;
 			return Math.max(1, Math.min(value, 32));
 		}
 
 		public float getMaxStrandLength(String hairType) {
 			Float value = maxStrandLength != null ? maxStrandLength.get(hairType) : null;
-			if (value == null || !Float.isFinite(value)) value = defaultMaxStrandLength().getOrDefault(hairType, 20.0f);
+			if (value == null || !Float.isFinite(value)) value = defaultMaxStrandLength().getOrDefault(hairType, 128.0f);
 			return Math.max(0.5f, Math.min(value, 128.0f));
 		}
 
 		public float getMaxStrandWidth() {
-			float value = maxStrandWidth != null && Float.isFinite(maxStrandWidth) ? maxStrandWidth : 8.0f;
+			float value = maxStrandWidth != null && Float.isFinite(maxStrandWidth) ? maxStrandWidth : 16.0f;
 			return Math.max(0.25f, Math.min(value, 16.0f));
 		}
 
@@ -71,7 +74,7 @@ public class GeneralServerConfig {
 		}
 
 		public int getMaxTotalSegmentsPerStyle() {
-			int value = maxTotalSegmentsPerStyle != null ? maxTotalSegmentsPerStyle : 600;
+			int value = maxTotalSegmentsPerStyle != null ? maxTotalSegmentsPerStyle : 68 * 32;
 			return Math.max(1, Math.min(value, 68 * 32));
 		}
 	}
