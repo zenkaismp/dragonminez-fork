@@ -378,7 +378,7 @@ public class TechniqueDispatcher {
     private static int resolvePlayerMaxLifeTicks(KiAttackData data, float chargeMultiplier) {
 		int base = switch (data.getKiType()) {
 			case WAVE, LASER, BEAM -> 80;
-			case GIANT_BALL, EXPLOSION -> 120;
+			case GIANT_BALL, EXPLOSION -> 300;
 			case DISK -> 70;
 			case BARRAGE -> 50;
 			default -> 90;
