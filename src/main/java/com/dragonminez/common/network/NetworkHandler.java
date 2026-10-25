@@ -541,6 +541,14 @@ public class NetworkHandler {
 				.encoder(CandyVfxS2C::encode)
 				.consumerMainThread(CandyVfxS2C::handle)
 				.add();
+
+		// Combate 2.0 da v2.2: inicio do golpe corpo a corpo (o preparo, MeleeWindupTracker). No fim da lista, como todo
+		// pacote novo do Zenkai: o id e a ordem de registro.
+		net.messageBuilder(MeleeAttackStartC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(MeleeAttackStartC2S::new)
+				.encoder(MeleeAttackStartC2S::encode)
+				.consumerMainThread(MeleeAttackStartC2S::handle)
+				.add();
 	}
 
 	public static <MSG> void sendToServer(MSG message) {
