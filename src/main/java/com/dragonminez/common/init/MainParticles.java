@@ -51,6 +51,8 @@ public class MainParticles {
             PARTICLE_TYPES.register("aura_particle", () -> new SimpleParticleType(true));
     public static final RegistryObject<SimpleParticleType> DIVINE =
             PARTICLE_TYPES.register("divine_particle", () -> new SimpleParticleType(true));
+    public static final RegistryObject<SimpleParticleType> SLEEP_Z =
+            PARTICLE_TYPES.register("sleep_z", () -> new SimpleParticleType(true));
 
 
     public static void register(IEventBus eventBus) {

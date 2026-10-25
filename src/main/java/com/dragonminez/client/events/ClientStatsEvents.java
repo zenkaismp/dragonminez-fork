@@ -61,6 +61,7 @@ public class ClientStatsEvents {
 	private static int kiBlastTimer = 0;
 	private static int blockLockTicks = 0;
 	private static final int BLOCK_REACTIVATION_LOCK_TICKS = 5;
+	private static final int SLEEP_Z_INTERVAL_TICKS = 10;
 	private static boolean wasTransformKeyDown = false;
 	private static boolean wasKiChargeKeyDown = false;
 	private static long lastDashTime = 0;
@@ -115,6 +116,14 @@ public class ClientStatsEvents {
 				lastActionMode = mode;
 			}
 		});
+
+		if (mc.level != null && !mc.isPaused()) {
+			for (Player player : mc.level.players()) {
+				StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+					if (data.getStatus().isSleepRecovering()) spawnSleepZ(mc, player);
+				});
+			}
+		}
 
 		if (mc.level != null && !mc.isPaused()) {
 			for (Player player : mc.level.players()) {
@@ -399,11 +408,12 @@ public class ClientStatsEvents {
 					int targetId = lockedTarget != null ? lockedTarget.getId() : -1;
 					NetworkHandler.sendToServer(new StrikeAttackC2S(targetId));
 					net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(new DMZClientEvent.StrikeAttack(player, targetId));
-				} else if (t instanceof KiAttackData && "taiyoken".equals(id)) {
-						if (data.getCooldowns().hasCooldown("TechniqueCooldown_taiyoken")) continue;
+				} else if (t instanceof EvasionAttackData) {
+						if (data.getCooldowns().hasCooldown("TechniqueCooldown_" + id)) continue;
 						techniques.selectSlot(i);
 						NetworkHandler.sendToServer(new SelectTechniqueSlotC2S(i));
-						NetworkHandler.sendToServer(new TaiyokenCastC2S());
+						var lockedEvasionTarget = LockOnEvent.getLockedTarget();
+						NetworkHandler.sendToServer(new EvasionCastC2S(id, lockedEvasionTarget != null ? lockedEvasionTarget.getId() : -1));
 					} else if (t instanceof KiAttackData ki && !data.getCooldowns().hasCooldown("TechniqueCooldown_" + id)) { if (player.isPassenger() && TechniqueDispatcher.restrictsMovementWhileCharging(ki.getKiType())) continue; var lockedKiTarget = LockOnEvent.getLockedTarget(); int kiTargetId = lockedKiTarget != null ? lockedKiTarget.getId() : -1;
 					if (ki.isInstantCast()) NetworkHandler.sendToServer(TechniqueChargeC2S.start(i, kiTargetId));
 					else {
@@ -563,7 +573,8 @@ public class ClientStatsEvents {
 		StatsProvider.get(StatsCapability.INSTANCE, event.getEntity()).ifPresent(data -> {
 			if (TechniqueDispatcher.isMovementRestrictedKiAttack(event.getEntity(), data) || data.getStatus().isStunned()
 					|| data.getStatus().isActionCharging() || data.getStatus().isChargingKi()
-					|| data.getStatus().getPotaraPoseTimer() > 0) {
+					|| data.getStatus().getPotaraPoseTimer() > 0
+					|| data.getStatus().getEvasionLockTicks() > 0) {
 				event.getInput().forwardImpulse = 0;
 				event.getInput().leftImpulse = 0;
 				event.getInput().jumping = false;
@@ -574,6 +585,28 @@ public class ClientStatsEvents {
 				event.getInput().right = false;
 			}
 		});
+	}
+
+	@SubscribeEvent
+	public static void onInteractionKey(InputEvent.InteractionKeyMappingTriggered event) {
+		Minecraft mc = Minecraft.getInstance();
+		if (mc.player == null) return;
+		StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> {
+			if (!data.getStatus().isSleepRecovering()) return;
+			event.setSwingHand(false);
+			event.setCanceled(true);
+		});
+	}
+
+	private static void spawnSleepZ(Minecraft mc, Player player) {
+		if (player.isInvisible() || (player.tickCount + player.getId()) % SLEEP_Z_INTERVAL_TICKS != 0) return;
+		if (player == mc.player && mc.options.getCameraType().isFirstPerson()) return;
+		float yaw = player.yBodyRot * Mth.DEG_TO_RAD;
+		double rightX = -Mth.cos(yaw);
+		double rightZ = -Mth.sin(yaw);
+		mc.level.addParticle(MainParticles.SLEEP_Z.get(),
+				player.getX() + rightX * 0.25, player.getY() + player.getBbHeight() + 0.15, player.getZ() + rightZ * 0.25,
+				rightX * 0.015, 0.0, rightZ * 0.015);
 	}
 
 	@SubscribeEvent

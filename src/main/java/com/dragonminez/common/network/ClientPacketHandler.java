@@ -1,5 +1,6 @@
 package com.dragonminez.common.network;
 
+import com.dragonminez.client.animation.EvasionAnimations;
 import com.dragonminez.client.animation.IPlayerAnimatable;
 import com.dragonminez.client.animation.KiAnimations;
 import com.dragonminez.client.events.RadarRenderEvent;
@@ -161,7 +162,7 @@ public class ClientPacketHandler {
 				case DASH -> animatable.dragonminez$triggerDash(variant);
 				case KI_BLAST_SHOT -> animatable.dragonminez$setShootingKi(variant == 0);
 				case KI_ANIMATION -> {
-					String anim = KiAnimations.resolve(stringPayload);
+					String anim = stringPayload.startsWith("evs.") ? EvasionAnimations.resolve(stringPayload) : KiAnimations.resolve(stringPayload);
 					animatable.dragonminez$playKiAnimation(anim, variant == 1);
 				}
 				case KI_ANIMATION_STOP -> animatable.dragonminez$stopKiAnimation();

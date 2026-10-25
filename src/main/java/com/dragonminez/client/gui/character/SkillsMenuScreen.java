@@ -60,7 +60,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 	private static final String CLASS_PASSIVE_ENTRY = "__class_passive__";
 	private static final List<String> PREVIEW_FORM_TYPE_ORDER = List.of("superforms", "androidforms", "legendaryforms", "godforms");
 
-	private enum SkillCategory {SKILLS, KI, FORMS, STRIKE}
+	private enum SkillCategory {SKILLS, KI, FORMS, STRIKE, EVASION}
 
 	private SkillCategory currentCategory = SkillCategory.SKILLS;
 
@@ -82,7 +82,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 	private boolean isBinding = false;
 	private boolean isImportingTechnique = false;
 
-	private ClippableTextureButton skillsButton, kiButton, formsButton, stacksButton;
+	private ClippableTextureButton skillsButton, kiButton, formsButton, stacksButton, evasionButton;
 	private CustomTextureButton btnDmg, btnSize, btnSpeed, btnPen, btnCast, btnCd;
 	private float buttonRevealProgress = 0.0f;
 	private float formsTransitionProgress = 0.0f;
@@ -289,10 +289,28 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 				})
 				.build();
 
+		evasionButton = new ClippableTextureButton.Builder()
+				.position(hiddenX, buttonY + 128)
+				.size(26, 32)
+				.texture(MENU_BIG)
+				.textureCoords(142, 77, 142, 77)
+				.clipping(true, scissorXScreen, scissorYScreen, scissorRight, scissorBottom)
+				.onPress(btn -> {
+					currentCategory = SkillCategory.EVASION;
+					selectedSkill = null;
+					targetScroll = 0;
+					currentScroll = 0;
+					targetDescScroll = 0;
+					currentDescScroll = 0;
+					refreshButtons();
+				})
+				.build();
+
 		this.addRenderableWidget(skillsButton);
 		this.addRenderableWidget(kiButton);
 		this.addRenderableWidget(formsButton);
 		this.addRenderableWidget(stacksButton);
+		this.addRenderableWidget(evasionButton);
 	}
 
 	private List<String> getVisibleSkillNames() {
@@ -308,6 +326,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 				skills.getAllSkills().forEach((name, skill) -> {
 					if (!skillsConfig.getKiSkills().contains(name)
 							&& !skillsConfig.getStrikeSkills().contains(name)
+							&& !skillsConfig.getEvasionSkills().contains(name)
 							&& !skillsConfig.getStackSkills().contains(name)
 							&& !skillsConfig.getFormSkills().contains(name)
 							&& skillsConfig.isSkillAllowedForRace(name, race)) {
@@ -318,7 +337,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 			case KI:
 				skillNames.add(NEW_SKILL_ENTRY);
 				statsData.getTechniques().getUnlockedTechniques().forEach((id, technique) -> {
-					if (technique instanceof KiAttackData && skillsConfig.isSkillAllowedForRace(id, race)) skillNames.add(id);
+					if (technique instanceof KiAttackData) skillNames.add(id);
 				});
 				break;
 			case FORMS:
@@ -331,7 +350,12 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 				break;
 			case STRIKE:
 				statsData.getTechniques().getUnlockedTechniques().forEach((id, technique) -> {
-					if (technique instanceof StrikeAttackData && skillsConfig.isSkillAllowedForRace(id, race)) skillNames.add(id);
+					if (technique instanceof StrikeAttackData) skillNames.add(id);
+				});
+				break;
+			case EVASION:
+				statsData.getTechniques().getUnlockedTechniques().forEach((id, technique) -> {
+					if (technique instanceof EvasionAttackData) skillNames.add(id);
 				});
 				break;
 		}
@@ -382,7 +406,8 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 	}
 
 	private void initTechniqueUpgradeButtons() {
-		if (selectedSkill == null || statsData == null || (currentCategory != SkillCategory.KI && currentCategory != SkillCategory.STRIKE)) return;
+		if (selectedSkill == null || statsData == null
+				|| (currentCategory != SkillCategory.KI && currentCategory != SkillCategory.STRIKE && currentCategory != SkillCategory.EVASION)) return;
 		if (NEW_SKILL_ENTRY.equals(selectedSkill)) return;
 
 		TechniqueData tech = statsData.getTechniques().getUnlockedTechniques().get(selectedSkill);
@@ -419,6 +444,12 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 				this.addRenderableWidget(btnPen);
 			}
 			yOffset += 12;
+		} else if (tech instanceof EvasionAttackData) {
+			if (shouldShowTechniqueUpgradeButton(tech, "duration")) {
+				btnDmg = createUpgradeBtn(btnX, yOffset, "duration", true);
+				this.addRenderableWidget(btnDmg);
+			}
+			yOffset += 12;
 		} else {
 			if (shouldShowTechniqueUpgradeButton(tech, "damage")) {
 				btnDmg = createUpgradeBtn(btnX, yOffset, "damage", true);
@@ -451,6 +482,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 	private boolean shouldShowTechniqueUpgradeButton(TechniqueData tech, String statName) {
 		if (!hasEnoughTechniqueXpForUpgrade(tech, statName)) return false;
 		if (tech instanceof KiAttackData kiAttackData) return kiAttackData.canUpgradeStat(statName);
+		if (tech instanceof EvasionAttackData evasionAttackData) return evasionAttackData.canUpgradeStat(statName);
 		return "damage".equals(statName) || "cooldown".equals(statName);
 	}
 
@@ -461,11 +493,13 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 	private int getTechniqueUpgradeXpCost(TechniqueData tech, String statName) {
 		if (tech instanceof KiAttackData kiAttackData) return kiAttackData.getUpgradeXpCost(statName);
 		if (tech instanceof StrikeAttackData strikeAttackData) return strikeAttackData.getUpgradeXpCost(statName);
+		if (tech instanceof EvasionAttackData evasionAttackData) return evasionAttackData.getUpgradeXpCost(statName);
 		return 100;
 	}
 
 	private void initBindButtons() {
-		if (selectedSkill == null || statsData == null || (currentCategory != SkillCategory.KI && currentCategory != SkillCategory.STRIKE)) return;
+		if (selectedSkill == null || statsData == null
+				|| (currentCategory != SkillCategory.KI && currentCategory != SkillCategory.STRIKE && currentCategory != SkillCategory.EVASION)) return;
 		if (NEW_SKILL_ENTRY.equals(selectedSkill)) return;
 
 		int rightPanelX = getUiWidth() - 158;
@@ -474,6 +508,8 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		TechniqueData tech = statsData.getTechniques().getUnlockedTechniques().get(selectedSkill);
 		boolean isKi = tech instanceof KiAttackData;
 		boolean canShare = isKi && !PredefinedTechniques.isPredefinedTechniqueId(selectedSkill);
+		boolean raceAllowed = isTechniqueRaceAllowed(selectedSkill);
+		if (!raceAllowed) isBinding = false;
 
 		if (!isBinding) {
 			int yPos = rightPanelY + 185;
@@ -514,7 +550,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 						initBindButtons();
 					})
 					.build();
-			this.addRenderableWidget(bindButton);
+			if (raceAllowed) this.addRenderableWidget(bindButton);
 
 			if (canShare) {
 				var exportButton = new CustomTextureButton.Builder()
@@ -957,7 +993,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		int hotZoneX = hiddenX;
 		int hotZoneY = leftPanelY + 6;
 		int hotZoneWidth = (visibleX - hiddenX) + buttonWidth;
-		int hotZoneHeight = 133;
+		int hotZoneHeight = 165;
 
 		boolean overPanel = mouseX >= currentLeftX && mouseX < currentLeftX + panelWidth &&
 				mouseY >= leftPanelY && mouseY < leftPanelY + panelHeight;
@@ -974,6 +1010,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		kiButton.setX(newX);
 		formsButton.setX(newX);
 		stacksButton.setX(newX);
+		evasionButton.setX(newX);
 
 		int scissorXScreen = toScreenCoord(currentLeftX + 141);
 		int scissorYScreen = toScreenCoord(0);
@@ -983,6 +1020,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		kiButton.setScissorRect(scissorXScreen, scissorYScreen, scissorRight, scissorBottom);
 		formsButton.setScissorRect(scissorXScreen, scissorYScreen, scissorRight, scissorBottom);
 		stacksButton.setScissorRect(scissorXScreen, scissorYScreen, scissorRight, scissorBottom);
+		evasionButton.setScissorRect(scissorXScreen, scissorYScreen, scissorRight, scissorBottom);
 	}
 
 	private float approach01(float current, float target, float step) {
@@ -1040,14 +1078,14 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 
 				Skill skill = statsData.getSkills().getSkill(skillName);
 				String displayName;
-				if (currentCategory == SkillCategory.KI || currentCategory == SkillCategory.STRIKE)
+				if (currentCategory == SkillCategory.KI || currentCategory == SkillCategory.STRIKE || currentCategory == SkillCategory.EVASION)
 					displayName = getDisplayNameForEntry(skillName);
 				else if (CLASS_PASSIVE_ENTRY.equals(skillName)) displayName = getClassPassiveTitle();
 				else displayName = tr("skill.dragonminez." + skillName).getString();
 
 				TextUtil.drawStringWithBorder(graphics, this.font, txt(displayName), panelX + 15, itemY + 5, color);
 
-				if (currentCategory == SkillCategory.KI || currentCategory == SkillCategory.STRIKE) {
+				if (currentCategory == SkillCategory.KI || currentCategory == SkillCategory.STRIKE || currentCategory == SkillCategory.EVASION) {
 					TechniqueData technique = NEW_SKILL_ENTRY.equals(skillName) ? null : statsData.getTechniques().getUnlockedTechniques().get(skillName);
 					if (technique != null) {
 						String xpText = String.valueOf(technique.getExperience());
@@ -1084,6 +1122,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 			case KI -> title = "gui.dragonminez.skills.tab.kiattacks";
 			case FORMS -> title = "gui.dragonminez.skills.tab.forms";
 			case STRIKE -> title = "gui.dragonminez.skills.tab.strikeattacks";
+			case EVASION -> title = "gui.dragonminez.skills.tab.evasionattacks";
 		}
 
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr(title)
@@ -1093,7 +1132,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 	private void renderRightPanel(GuiGraphics graphics, int panelX, int panelY, int mouseX, int mouseY) {
 		RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
 
-		if (currentCategory == SkillCategory.KI || currentCategory == SkillCategory.STRIKE) {
+		if (currentCategory == SkillCategory.KI || currentCategory == SkillCategory.STRIKE || currentCategory == SkillCategory.EVASION) {
 			graphics.blit(MENU_BIG, panelX, panelY, 0, 0, 141, 213, 256, 256);
 			graphics.blit(MENU_BIG, panelX + 17, panelY + 10, 142, 22, 107, 21, 256, 256);
 		} else {
@@ -1108,7 +1147,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		if (selectedSkill != null && statsData != null) {
 			if (currentCategory == SkillCategory.KI && NEW_SKILL_ENTRY.equals(selectedSkill))
 				renderNewSkillPlaceholder(graphics, panelX, panelY);
-			else if (currentCategory == SkillCategory.KI || currentCategory == SkillCategory.STRIKE)
+			else if (currentCategory == SkillCategory.KI || currentCategory == SkillCategory.STRIKE || currentCategory == SkillCategory.EVASION)
 				renderTechniqueDetails(graphics, panelX, panelY, mouseX, mouseY);
 			else renderSkillDetails(graphics, panelX, panelY);
 		}
@@ -1138,6 +1177,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 
 			TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.type").append(": ").append(tr("technique.type." + ki.getKiType().name().toLowerCase())), panelX + 15, yOffset, 0xDDDDDD);
 			yOffset += 12;
+			yOffset = renderAllowedRaces(graphics, panelX, yOffset);
 
 			String utilKey = ki.getEffectiveUtility() == KiAttackData.Utility.HEAL ? "gui.dragonminez.technique.heal" : "gui.dragonminez.technique.damage";
 			TextUtil.drawStringWithBorder(graphics, this.font, tr(utilKey).append(": ").append(txt(String.valueOf(scaledKiDamage))), panelX + 15, yOffset, 0xFFFFFF);
@@ -1154,18 +1194,40 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 			int scaledStrikeDamage = (int) (statsData.getStrikeDamage() * st.getDamageMultiplier());
 			TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.type").append(": ").append(tr("technique.type.strike")), panelX + 15, yOffset, 0xDDDDDD);
 			yOffset += 12;
+			yOffset = renderAllowedRaces(graphics, panelX, yOffset);
 			TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.damage").append(": ").append(txt(String.valueOf(scaledStrikeDamage))), panelX + 15, yOffset, 0xFFFFFF);
+			yOffset += 12;
+		} else if (tech instanceof EvasionAttackData ev) {
+			xpReq = ev.getUpgradeXpCost("duration");
+			cooldownTicks = ev.getActualCooldown();
+			TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.type").append(": ").append(tr("technique.type.evasion")), panelX + 15, yOffset, 0xDDDDDD);
+			yOffset += 12;
+			yOffset = renderAllowedRaces(graphics, panelX, yOffset);
+			TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.duration").append(": ").append(txt(String.format(Locale.US, "%.1fs", ev.getActualDurationTicks() / 20.0f))), panelX + 15, yOffset, 0xFFFFFF);
 			yOffset += 12;
 		}
 
 		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.cooldown").append(": ").append(txt(String.format(Locale.US, "%.1fs", cooldownTicks / 20.0f))), panelX + 15, yOffset, 0xFFFFFF);
-		yOffset += 16;
+		yOffset += 12;
 
 		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.energy_cost").append(": ").append(txt(String.format(Locale.US, "%.1f", tech.getCalculatedCost(statsData)))), panelX + 15, yOffset, 0xFFAAAA);
-		yOffset += 16;
+		yOffset += 12;
 
 		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.req_xp", xpReq), panelX + 15, yOffset, 0xFFAAAAAA);
+		if (!isTechniqueRaceAllowed(selectedSkill))
+			TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.race_locked"), panelX + 70, panelY + 191, 0xFFFF5555);
 		renderActionStatus(graphics, panelX, panelY);
+	}
+
+	private boolean isTechniqueRaceAllowed(String techniqueId) {
+		if (statsData == null || techniqueId == null) return true;
+		return ConfigManager.getSkillsConfig().isSkillAllowedForRace(techniqueId, statsData.getCharacter().getRaceName());
+	}
+
+	private int renderAllowedRaces(GuiGraphics graphics, int panelX, int yOffset) {
+		int labelColor = isTechniqueRaceAllowed(selectedSkill) ? 0xDDDDDD : 0xFF5555;
+		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.races").append(": ").append(ConfigManager.getSkillsConfig().describeAllowedRaces(selectedSkill)), panelX + 15, yOffset, labelColor);
+		return yOffset + 12;
 	}
 
 	private void attemptTechniqueImport() {

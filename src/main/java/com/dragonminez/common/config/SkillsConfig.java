@@ -4,10 +4,14 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 @Getter
@@ -24,6 +28,7 @@ public class SkillsConfig {
 	private final Map<String, SkillCosts> skills = new HashMap<>();
 	private final Map<String, List<String>> skillOfferings = new HashMap<>();
 	@ConfigNonPreservable private final List<String> strikeSkills = new ArrayList<>();
+	@ConfigNonPreservable private final List<String> evasionSkills = new ArrayList<>();
 
 	public SkillsConfig() {
 		createDefaults();
@@ -85,13 +90,24 @@ public class SkillsConfig {
 		kiSkills.add("final_explosion");
 		kiSkills.add("soul_punisher");
 		kiSkills.add("fake_moon");
-		kiSkills.add("taiyoken");
+		evasionSkills.add("taiyoken");
+		evasionSkills.add("rage_scream");
+		evasionSkills.add("afterimage");
+		evasionSkills.add("sleep_recovery");
+		evasionSkills.add("dimensional_teleport");
+		evasionSkills.add("candy_beam");
+		evasionSkills.add("gum_bind");
 
 		skills.put("ki_barrage", new SkillCosts(List.of(1000)));
 		skills.put("masenko", new SkillCosts(List.of(1500)));
 		skills.put("kamehameha", new SkillCosts(List.of(2000)));
 		skills.put("galick_gun", new SkillCosts(List.of(2000)));
 		skills.put("taiyoken", new SkillCosts(List.of(2000)));
+		skills.put("afterimage", new SkillCosts(List.of(2500)));
+		skills.put("dimensional_teleport", new SkillCosts(List.of(12000)));
+		skills.put("sleep_recovery", new SkillCosts(new ArrayList<>(List.of(3000)), new ArrayList<>(List.of("majin"))));
+		skills.put("candy_beam", new SkillCosts(new ArrayList<>(List.of(5000)), new ArrayList<>(List.of("majin"))));
+		skills.put("gum_bind", new SkillCosts(new ArrayList<>(List.of(9000)), new ArrayList<>(List.of("majin"))));
 		skills.put("death_beam", new SkillCosts(List.of(2500)));
 		skills.put("fake_moon", new SkillCosts(List.of(3000)));
 		skills.put("kienzan", new SkillCosts(List.of(3000)));
@@ -332,6 +348,7 @@ public class SkillsConfig {
 		roshiSkills.add("meditation");
 		roshiSkills.add("kicontrol");
 		roshiSkills.add("kamehameha");
+		roshiSkills.add("afterimage");
 		skillOfferings.put("roshi", roshiSkills);
 
 		List<String> gokuSkills = new ArrayList<>();
@@ -396,6 +413,7 @@ public class SkillsConfig {
 		krillinSkills.add("kienzan_doble");
 		krillinSkills.add("ki_barrage");
 		krillinSkills.add("taiyoken");
+		krillinSkills.add("afterimage");
 		krillinSkills.add("deadly_dance");
 		skillOfferings.put("krillin", krillinSkills);
 
@@ -438,6 +456,7 @@ public class SkillsConfig {
 		cellSkills.add("masenko");
 		cellSkills.add("death_beam");
 		cellSkills.add("ki_barrage");
+		cellSkills.add("afterimage");
 		cellSkills.add("deadly_dance");
 		cellSkills.add("meteor");
 		skillOfferings.put("cell", cellSkills);
@@ -451,6 +470,14 @@ public class SkillsConfig {
 		yamchaSkills.add("ki_barrage");
 		skillOfferings.put("yamcha", yamchaSkills);
 
+		// Zenkai: da lista do Majin Buu mestre da v2.2 (ab3cd4152, 698ca3f1f) so as tres esquivas; o mestre ainda nao
+		// existe no fork e os outros itens dela (assault_rain, gum_punch, mystic_ball) nao vieram.
+		List<String> buuSkills = new ArrayList<>();
+		buuSkills.add("sleep_recovery");
+		buuSkills.add("candy_beam");
+		buuSkills.add("gum_bind");
+		skillOfferings.put("buu", buuSkills);
+
 		List<String> defaultSkills = new ArrayList<>();
 		defaultSkills.add("jump");
 		skillOfferings.put("default", defaultSkills);
@@ -458,6 +485,28 @@ public class SkillsConfig {
 
 	public SkillCosts getSkillCosts(String skillName) {
 		return skills.getOrDefault(skillName.toLowerCase(), new SkillCosts(new ArrayList<>(), new ArrayList<>()));
+	}
+
+	public boolean isTechniqueSkill(String skillName) {
+		if (skillName == null) return false;
+		String id = skillName.toLowerCase(Locale.ROOT);
+		return kiSkills.contains(id) || strikeSkills.contains(id) || evasionSkills.contains(id);
+	}
+
+	public MutableComponent describeAllowedRaces(String skillName) {
+		List<String> races = skillName == null ? null : getSkillCosts(skillName).getAllowedRaces();
+		if (races == null || races.isEmpty() || races.stream().anyMatch("all"::equalsIgnoreCase))
+			return Component.translatable("gui.dragonminez.technique.races.all").withStyle(ChatFormatting.GREEN);
+
+		MutableComponent out = Component.empty();
+		boolean first = true;
+		for (String race : races) {
+			if (race == null || race.isBlank()) continue;
+			if (!first) out.append(", ");
+			out.append(Component.translatableWithFallback("race.dragonminez." + race.toLowerCase(Locale.ROOT), race));
+			first = false;
+		}
+		return out;
 	}
 
 	public boolean isSkillAllowedForRace(String skillName, String raceName) {

@@ -549,6 +549,38 @@ public class NetworkHandler {
 				.encoder(MeleeAttackStartC2S::encode)
 				.consumerMainThread(MeleeAttackStartC2S::handle)
 				.add();
+
+		// Combate 2.0 da v2.2: tecnicas de esquiva (EvasionAttackHandler) e os efeitos delas. O TaiyokenCastC2S antigo
+		// fica no lugar dele, repassando para a esquiva do Taiyoken.
+		net.messageBuilder(EvasionCastC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(EvasionCastC2S::new)
+				.encoder(EvasionCastC2S::toBytes)
+				.consumerMainThread(EvasionCastC2S::handle)
+				.add();
+
+		net.messageBuilder(GumStruggleC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(GumStruggleC2S::new)
+				.encoder(GumStruggleC2S::encode)
+				.consumerMainThread(GumStruggleC2S::handle)
+				.add();
+
+		net.messageBuilder(RageScreamVfxS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(RageScreamVfxS2C::new)
+				.encoder(RageScreamVfxS2C::encode)
+				.consumerMainThread(RageScreamVfxS2C::handle)
+				.add();
+
+		net.messageBuilder(AfterimageVfxS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(AfterimageVfxS2C::new)
+				.encoder(AfterimageVfxS2C::encode)
+				.consumerMainThread(AfterimageVfxS2C::handle)
+				.add();
+
+		net.messageBuilder(DimensionalShatterS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(DimensionalShatterS2C::new)
+				.encoder(DimensionalShatterS2C::encode)
+				.consumerMainThread(DimensionalShatterS2C::handle)
+				.add();
 	}
 
 	public static <MSG> void sendToServer(MSG message) {

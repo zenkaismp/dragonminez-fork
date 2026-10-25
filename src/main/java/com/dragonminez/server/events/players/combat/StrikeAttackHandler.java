@@ -166,6 +166,18 @@ public class StrikeAttackHandler {
 		}
 	}
 
+	// Zenkai: da v2.2 so o que a amarra de chiclete (gum_bind) pergunta antes de soltar a trava. Na v2.2 tambem contam
+	// os golpes de strike novos, o choque de strike e o agarrao, que nao vieram.
+	public static boolean isStrikeLockOwned(ServerPlayer player) {
+		UUID id = player.getUUID();
+		if (com.dragonminez.common.init.entities.ki.GumBindEntity.isBound(id)) return true;
+		if (PENDING.containsKey(id) || ACTIVE.containsKey(id)) return true;
+		for (ActiveStrike active : ACTIVE.values()) {
+			if (id.equals(active.targetId())) return true;
+		}
+		return false;
+	}
+
 	@SubscribeEvent
 	public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
 		if (event.phase != TickEvent.Phase.END || event.player.level().isClientSide) return;
@@ -1371,7 +1383,7 @@ public class StrikeAttackHandler {
 		);
 	}
 
-	private static void setStrikeLocked(LivingEntity entity, boolean locked) {
+	public static void setStrikeLocked(LivingEntity entity, boolean locked) {
 		if (entity instanceof ServerPlayer serverPlayer) {
 			StatsProvider.get(StatsCapability.INSTANCE, serverPlayer).ifPresent(stats -> {
 				stats.getStatus().setStrikeLocked(locked);

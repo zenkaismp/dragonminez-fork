@@ -13,6 +13,7 @@ import com.dragonminez.common.stats.skills.Skill;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.stats.techniques.EvasionAttackData;
 import com.dragonminez.common.stats.techniques.KiAttackData;
 import com.dragonminez.common.stats.techniques.PredefinedTechniques;
 import com.dragonminez.common.stats.techniques.StrikeAttackData;
@@ -51,7 +52,13 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 	private static final int SKILL_ITEM_HEIGHT = 20;
 	private static final int MAX_VISIBLE_SKILLS = 8;
 
-	private enum SkillCategory {SKILLS, KI, FORMS, STRIKE}
+	private enum SkillCategory {
+		SKILLS, KI, FORMS, STRIKE, EVASION;
+
+		boolean isTechnique() {
+			return this == KI || this == STRIKE || this == EVASION;
+		}
+	}
 
 	private SkillCategory currentCategory = SkillCategory.SKILLS;
 
@@ -120,8 +127,13 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 			case KI: return 170;
 			case FORMS: return 198;
 			case STRIKE: return 226;
+			case EVASION: return 142;
 		}
 		return 142;
+	}
+
+	private int textureVForCategory(SkillCategory category) {
+		return category == SkillCategory.EVASION ? 77 : 44;
 	}
 
 	private void initDynamicButtons() {
@@ -138,7 +150,7 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 		int scissorRight = toScreenCoord(getUiWidth());
 		int scissorBottom = toScreenCoord(getUiHeight());
 		activeCategories.clear();
-		for (SkillCategory category : new SkillCategory[]{SkillCategory.SKILLS, SkillCategory.KI, SkillCategory.FORMS, SkillCategory.STRIKE}) {
+		for (SkillCategory category : SkillCategory.values()) {
 			if (!getSkillsForCategory(category).isEmpty()) activeCategories.add(category);
 		}
 
@@ -150,11 +162,12 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 		int index = 0;
 		for (SkillCategory category : activeCategories) {
 			int u = textureUForCategory(category);
+			int v = textureVForCategory(category);
 			ClippableTextureButton button = new ClippableTextureButton.Builder()
 					.position(hiddenX, buttonY + index * 32)
 					.size(26, 32)
 					.texture(MENU_BIG)
-					.textureCoords(u, 44, u, 44)
+					.textureCoords(u, v, u, v)
 					.clipping(true, scissorXScreen, scissorYScreen, scissorRight, scissorBottom)
 					.onPress(btn -> {
 						currentCategory = category;
@@ -192,18 +205,20 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 			boolean isFormSkill = skillsConfig.getFormSkills().contains(skillId);
 			boolean isStackSkill = skillsConfig.getStackSkills().contains(skillId);
 			boolean isStrike = skillsConfig.getStrikeSkills().contains(skillId);
+			boolean isEvasion = skillsConfig.getEvasionSkills().contains(skillId);
 			boolean isForm = isFormSkill || isStackSkill;
 
 			if (isFormSkill) {
 				var raceConfig = ConfigManager.getRaceCharacter(playerRace);
 				if (raceConfig == null || !raceConfig.hasFormSkill(skillId)) continue;
-			} else if (!skillsConfig.isSkillAllowedForRace(skillId, playerRace)) continue;
+			} else if (!isKi && !isStrike && !isEvasion && !skillsConfig.isSkillAllowedForRace(skillId, playerRace)) continue;
 
 			switch (category) {
-				case SKILLS -> { if (!isKi && !isForm && !isStrike) visibleSkills.add(skillId); }
+				case SKILLS -> { if (!isKi && !isForm && !isStrike && !isEvasion) visibleSkills.add(skillId); }
 				case KI -> { if (isKi) visibleSkills.add(skillId); }
 				case FORMS -> { if (isForm) visibleSkills.add(skillId); }
 				case STRIKE -> { if (isStrike) visibleSkills.add(skillId); }
+				case EVASION -> { if (isEvasion) visibleSkills.add(skillId); }
 			}
 		}
 
@@ -224,7 +239,8 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 
 	private void initPurchaseButton() {
 		if (selectedSkill == null || statsData == null) return;
-		if (!ConfigManager.getSkillsConfig().isSkillAllowedForRace(selectedSkill, getPlayerRaceName())) return;
+		if (!ConfigManager.getSkillsConfig().isSkillAllowedForRace(selectedSkill, getPlayerRaceName())
+				&& !ConfigManager.getSkillsConfig().isTechniqueSkill(selectedSkill)) return;
 
 		Skill skill = statsData.getSkills().getSkill(selectedSkill);
 		if (skill == null) skill = new Skill(selectedSkill, 0, false, 10);
@@ -398,7 +414,7 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 
 				Skill skill = statsData.getSkills().getSkill(skillName);
 				String displayName;
-				if (currentCategory == SkillCategory.KI || currentCategory == SkillCategory.STRIKE) displayName = Component.translatable("technique.dragonminez." + skillName).getString();
+				if (currentCategory.isTechnique()) displayName = Component.translatable("technique.dragonminez." + skillName).getString();
 				else displayName = Component.translatable("skill.dragonminez." + skillName).getString();
 
 				TextUtil.drawStringWithBorder(graphics, this.font, txt(displayName), panelX + 15, itemY + 5, color);
@@ -433,6 +449,7 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 			case KI -> title = "gui.dragonminez.skills.tab.kiattacks";
 			case FORMS -> title = "gui.dragonminez.skills.tab.forms";
 			case STRIKE -> title = "gui.dragonminez.skills.tab.strikeattacks";
+			case EVASION -> title = "gui.dragonminez.skills.tab.evasionattacks";
 		}
 
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr(title).withStyle(style -> style.withBold(true)), 80, getUiHeight() / 2 - 88, 0xFBC51C);
@@ -445,7 +462,7 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 
 		RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
 
-		if (currentCategory == SkillCategory.KI || currentCategory == SkillCategory.STRIKE) {
+		if (currentCategory.isTechnique()) {
 			graphics.blit(MENU_BIG, rightPanelX, rightPanelY, 0, 0, 141, 213, 256, 256);
 			graphics.blit(MENU_BIG, getUiWidth() - 141, centerY - 95, 142, 22, 107, 21, 256, 256);
 		} else {
@@ -461,6 +478,7 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 		if (selectedSkill != null && statsData != null) {
 			if (currentCategory == SkillCategory.KI) renderKiTechniqueDetails(graphics, rightPanelX, rightPanelY);
 			else if (currentCategory == SkillCategory.STRIKE) renderStrikeTechniqueDetails(graphics, rightPanelX, rightPanelY);
+			else if (currentCategory == SkillCategory.EVASION) renderEvasionTechniqueDetails(graphics, rightPanelX, rightPanelY);
 			else renderSkillDetails(graphics, rightPanelX, rightPanelY);
 		}
 	}
@@ -477,14 +495,15 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 		String utilKey = tech.getUtility() == KiAttackData.Utility.HEAL ? "gui.dragonminez.technique.heal" : "gui.dragonminez.technique.damage";
 
 		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.type").append(": ").append(tr("technique.type." + tech.getKiType().name().toLowerCase())), panelX + 15, yOffset, 0xDDDDDD); yOffset += 12;
+		yOffset = renderAllowedRaces(graphics, panelX, yOffset);
 		TextUtil.drawStringWithBorder(graphics, this.font, tr(utilKey).append(": ").append(txt(String.valueOf(scaledKiDamage))), panelX + 15, yOffset, 0xFFFFFF); yOffset += 12;
 		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.size").append(": ").append(txt(String.format(Locale.US, "%.1f", tech.getSize()))), panelX + 15, yOffset, 0xFFFFFF); yOffset += 12;
 		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.speed").append(": ").append(txt(String.format(Locale.US, "%.1f", tech.getSpeed()))), panelX + 15, yOffset, 0xFFFFFF); yOffset += 12;
 		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.armor_pen").append(": ").append(txt(String.valueOf(tech.getArmorPenetration()))), panelX + 15, yOffset, 0xFFFFFF); yOffset += 12;
 		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.cast_time").append(": ").append(txt(String.format(Locale.US, "%.1fs", tech.getActualCastTime() / 20.0f))), panelX + 15, yOffset, 0xFFFFFF); yOffset += 12;
-		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.cooldown").append(": ").append(txt(String.format(Locale.US, "%.1fs", tech.getActualCooldown() / 20.0f))), panelX + 15, yOffset, 0xFFFFFF); yOffset += 16;
+		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.cooldown").append(": ").append(txt(String.format(Locale.US, "%.1fs", tech.getActualCooldown() / 20.0f))), panelX + 15, yOffset, 0xFFFFFF); yOffset += 12;
 
-		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.energy_cost").append(": ").append(txt(String.format(Locale.US, "%.1f", tech.getCalculatedCost(statsData)))), panelX + 15, yOffset, 0xFFAAAA); yOffset += 16;
+		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.energy_cost").append(": ").append(txt(String.format(Locale.US, "%.1f", tech.getCalculatedCost(statsData)))), panelX + 15, yOffset, 0xFFAAAA); yOffset += 12;
 
 		renderLearnedFooter(graphics, panelX, yOffset);
 	}
@@ -500,13 +519,42 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 		int scaledStrikeDamage = (int) (statsData.getStrikeDamage() * tech.getDamageMultiplier());
 
 		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.type").append(": ").append(tr("technique.type.strike")), panelX + 15, yOffset, 0xDDDDDD); yOffset += 12;
+		yOffset = renderAllowedRaces(graphics, panelX, yOffset);
 		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.damage").append(": ").append(txt(String.valueOf(scaledStrikeDamage))), panelX + 15, yOffset, 0xFFFFFF); yOffset += 12;
 		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.cast_time").append(": ").append(txt(String.format(Locale.US, "%.1fs", tech.getActualCastTime() / 20.0f))), panelX + 15, yOffset, 0xFFFFFF); yOffset += 12;
-		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.cooldown").append(": ").append(txt(String.format(Locale.US, "%.1fs", tech.getActualCooldown() / 20.0f))), panelX + 15, yOffset, 0xFFFFFF); yOffset += 16;
+		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.cooldown").append(": ").append(txt(String.format(Locale.US, "%.1fs", tech.getActualCooldown() / 20.0f))), panelX + 15, yOffset, 0xFFFFFF); yOffset += 12;
 
-		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.energy_cost").append(": ").append(txt(String.format(Locale.US, "%.1f", tech.getCalculatedCost(statsData)))), panelX + 15, yOffset, 0xFFAAAA); yOffset += 16;
+		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.energy_cost").append(": ").append(txt(String.format(Locale.US, "%.1f", tech.getCalculatedCost(statsData)))), panelX + 15, yOffset, 0xFFAAAA); yOffset += 12;
 
 		renderLearnedFooter(graphics, panelX, yOffset);
+	}
+
+	private void renderEvasionTechniqueDetails(GuiGraphics graphics, int panelX, int panelY) {
+		EvasionAttackData tech = PredefinedTechniques.EVASION_REGISTRY.get(selectedSkill);
+		if (tech == null) return;
+
+		int yOffset = panelY + 40;
+
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr(tech.getName()).withStyle(ChatFormatting.BOLD), panelX + 70, yOffset, 0xFFFFFFFF); yOffset += 24;
+
+		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.type").append(": ").append(tr("technique.type.evasion")), panelX + 15, yOffset, 0xDDDDDD); yOffset += 12;
+		yOffset = renderAllowedRaces(graphics, panelX, yOffset);
+		if (tech.getActualDamageMultiplier() > 0.0f) {
+			TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.damage").append(": ").append(txt(String.valueOf((int) tech.getActualHitDamage(statsData)))), panelX + 15, yOffset, 0xFFFFFF); yOffset += 12;
+		}
+		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.duration").append(": ").append(txt(String.format(Locale.US, "%.1fs", tech.getActualDurationTicks() / 20.0f))), panelX + 15, yOffset, 0xFFFFFF); yOffset += 12;
+		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.cooldown").append(": ").append(txt(String.format(Locale.US, "%.1fs", tech.getActualCooldown() / 20.0f))), panelX + 15, yOffset, 0xFFFFFF); yOffset += 12;
+
+		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.energy_cost").append(": ").append(txt(String.format(Locale.US, "%.1f", tech.getCalculatedCost(statsData)))), panelX + 15, yOffset, 0xFFAAAA); yOffset += 12;
+
+		renderLearnedFooter(graphics, panelX, yOffset);
+	}
+
+	private int renderAllowedRaces(GuiGraphics graphics, int panelX, int yOffset) {
+		SkillsConfig skillsConfig = ConfigManager.getSkillsConfig();
+		int labelColor = skillsConfig.isSkillAllowedForRace(selectedSkill, getPlayerRaceName()) ? 0xDDDDDD : 0xFF5555;
+		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.races").append(": ").append(skillsConfig.describeAllowedRaces(selectedSkill)), panelX + 15, yOffset, labelColor);
+		return yOffset + 12;
 	}
 
 	private void renderLearnedFooter(GuiGraphics graphics, int panelX, int yOffset) {

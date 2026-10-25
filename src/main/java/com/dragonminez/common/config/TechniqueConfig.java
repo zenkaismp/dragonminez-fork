@@ -21,6 +21,8 @@ public class TechniqueConfig {
 	private final Map<String, TechniqueTypeConfig> kiAttacks = new HashMap<>();
 	@SerializedName("StrikeAttacks")
 	private final Map<String, StrikeAttackConfig> strikeAttacks = new HashMap<>();
+	@SerializedName("EvasionAttacks")
+	private final Map<String, EvasionAttackConfig> evasionAttacks = new HashMap<>();
 
 	public TechniqueConfig() {
 		createDefaults();
@@ -40,6 +42,23 @@ public class TechniqueConfig {
 			cfg.setCooldownTicks(defaultStrikeCooldownTicks(strikeId));
 			strikeAttacks.put(strikeId, cfg);
 		}
+		for (String evasionId : PredefinedTechniques.EVASION_IDS) {
+			EvasionAttackConfig cfg = EvasionAttackConfig.defaults();
+			cfg.setCooldownTicks(defaultEvasionCooldownTicks(evasionId));
+			evasionAttacks.put(evasionId, cfg);
+		}
+	}
+
+	private static int defaultEvasionCooldownTicks(String evasionId) {
+		return switch (evasionId) {
+			case "taiyoken" -> 900;
+			case "sleep_recovery" -> 1200;
+			case "rage_scream" -> 80;
+			case "afterimage" -> 200;
+			case "candy_beam" -> 600;
+			case "gum_bind" -> 900;
+			default -> 80;
+		};
 	}
 
 	private static int defaultStrikeCooldownTicks(String strikeId) {
@@ -141,6 +160,15 @@ public class TechniqueConfig {
 		return config != null ? config : StrikeAttackConfig.defaults();
 	}
 
+	public EvasionAttackConfig getEvasionConfig(String evasionId) {
+		if (evasionId == null || evasionId.isEmpty()) return EvasionAttackConfig.defaults();
+		EvasionAttackConfig config = evasionAttacks.get(evasionId.toLowerCase());
+		if (config != null) return config;
+		EvasionAttackConfig fallback = EvasionAttackConfig.defaults();
+		fallback.setCooldownTicks(defaultEvasionCooldownTicks(evasionId.toLowerCase()));
+		return fallback;
+	}
+
 	@Getter
 	@Setter
 	public static class TechniqueTypeConfig {
@@ -184,6 +212,23 @@ public class TechniqueConfig {
 
 		public static StrikeAttackConfig defaults() {
 			return new StrikeAttackConfig();
+		}
+	}
+
+	@Getter
+	@Setter
+	public static class EvasionAttackConfig {
+		private int minXPCost = 100;
+		private int maxXPCost = -1;
+		private double xpCostMultiplier = 1.0;
+		private double xpGainMultiplier = 1.0;
+		private int xpGainPerHit = 2;
+		private double kiCostMultiplier = 1.0;
+		private double damageMultiplier = 1.0;
+		private int cooldownTicks = 80;
+
+		public static EvasionAttackConfig defaults() {
+			return new EvasionAttackConfig();
 		}
 	}
 }

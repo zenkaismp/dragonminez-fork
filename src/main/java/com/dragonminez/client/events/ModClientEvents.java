@@ -99,6 +99,7 @@ public class ModClientEvents {
 				ArmorTextureResolver.clearCache();
 				CombatAnimationResolver.reload(resourceManager);
 				KiAnimations.reload(resourceManager);
+				com.dragonminez.client.animation.EvasionAnimations.reload(resourceManager);
 				SkinCacheManager.revalidate();
 			}
 		});
@@ -263,6 +264,8 @@ public class ModClientEvents {
         event.registerEntityRenderer(MainEntities.SP_DRAGON_FIST.get(), SPDragonFistRenderer::new);
         event.registerEntityRenderer(MainEntities.SP_OZARU_FIST.get(), SPOzaruFistRenderer::new);
         event.registerEntityRenderer(MainEntities.SP_MAJIN_CANDY.get(), SPMajinCandyRenderer::new);
+        event.registerEntityRenderer(MainEntities.GUM_BIND.get(), com.dragonminez.client.init.entities.renderer.ki.GumBindRenderer::new);
+        event.registerEntityRenderer(MainEntities.GUM_BALL.get(), com.dragonminez.client.init.entities.renderer.ki.GumBindRenderer.BallRenderer::new);
         event.registerEntityRenderer(MainEntities.KI_LASER.get(), KiLaserRenderer::new);
         event.registerEntityRenderer(MainEntities.KI_WAVE.get(), KiWaveRenderer::new);
         event.registerEntityRenderer(MainEntities.MAJIN_SKILL.get(), MajinSkillRenderer::new);
@@ -299,6 +302,7 @@ public class ModClientEvents {
         event.registerSpriteSet(MainParticles.DUST.get(), DustParticle.Provider::new);
         event.registerSpriteSet(MainParticles.ROCK.get(), RockParticle.Provider::new);
         event.registerSpriteSet(MainParticles.DIVINE.get(), DivineParticle.Provider::new);
+        event.registerSpriteSet(MainParticles.SLEEP_Z.get(), com.dragonminez.common.init.particles.SleepZParticle.Provider::new);
 
     }
 

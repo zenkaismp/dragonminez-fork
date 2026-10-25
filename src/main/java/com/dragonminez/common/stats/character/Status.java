@@ -50,6 +50,7 @@ public class Status {
 	private UUID fusionPrevPartyId;
 	private boolean fusionPrevPartyLeader;
 	private int potaraPoseTimer;
+	private int evasionLockTicks;
 	private UUID potaraPartnerUUID;
 	private boolean potaraLeader;
 	private CompoundTag originalAppearance;
@@ -60,6 +61,7 @@ public class Status {
 	private String pothalaColor;
 	private boolean isPermanentAura;
 	private boolean isStrikeLocked;
+	private boolean sleepRecovering;
 	private int flightMode;
 	private final Set<String> visitedDimensions;
 
@@ -98,6 +100,7 @@ public class Status {
 		this.fusionPrevPartyId = null;
 		this.fusionPrevPartyLeader = false;
 		this.potaraPoseTimer = 0;
+		this.evasionLockTicks = 0;
 		this.potaraPartnerUUID = null;
 		this.potaraLeader = false;
 		this.originalAppearance = new CompoundTag();
@@ -108,6 +111,7 @@ public class Status {
 		this.pothalaColor = "";
 		this.isPermanentAura = false;
 		this.isStrikeLocked = false;
+		this.sleepRecovering = false;
 		this.flightMode = FLIGHT_SEARCH;
 		this.visitedDimensions = new LinkedHashSet<>();
 		this.activeShadowDummyUUID = null;
@@ -146,6 +150,7 @@ public class Status {
 		this.fusionPrevPartyId = null;
 		this.fusionPrevPartyLeader = false;
 		this.potaraPoseTimer = 0;
+		this.evasionLockTicks = 0;
 		this.potaraPartnerUUID = null;
 		this.potaraLeader = false;
 		this.originalAppearance = new CompoundTag();
@@ -156,6 +161,7 @@ public class Status {
 		this.pothalaColor = "";
 		this.isPermanentAura = false;
 		this.isStrikeLocked = false;
+		this.sleepRecovering = false;
 		this.flightMode = FLIGHT_SEARCH;
 		this.visitedDimensions.clear();
 		this.activeShadowDummyUUID = null;
@@ -164,7 +170,7 @@ public class Status {
 	}
 
 	public boolean isStunned() {
-		return stunEffect || isKnockedDown || isStrikeLocked;
+		return stunEffect || isKnockedDown || isStrikeLocked || sleepRecovering;
 	}
 
 	public void validateKiWeaponType() {
@@ -218,6 +224,7 @@ public class Status {
 		if (fusionPrevPartyId != null) tag.putUUID("FusionPrevPartyId", fusionPrevPartyId);
 		tag.putBoolean("FusionPrevPartyLeader", fusionPrevPartyLeader);
 		tag.putInt("PotaraPoseTimer", potaraPoseTimer);
+		tag.putInt("EvasionLockTicks", evasionLockTicks);
 		if (potaraPartnerUUID != null) tag.putUUID("PotaraPartnerUUID", potaraPartnerUUID);
 		tag.putBoolean("PotaraLeader", potaraLeader);
 		tag.put("OriginalAppearance", originalAppearance);
@@ -228,6 +235,7 @@ public class Status {
 		tag.putString("PothalaColor", pothalaColor);
 		tag.putBoolean("IsPermanentAura", isPermanentAura);
 		tag.putBoolean("IsStrikeLocked", isStrikeLocked);
+		tag.putBoolean("SleepRecovering", sleepRecovering);
 		tag.putInt("FlightMode", flightMode);
 
 		ListTag visitedDimensionsTag = new ListTag();
@@ -273,6 +281,7 @@ public class Status {
 		this.fusionPrevPartyId = tag.hasUUID("FusionPrevPartyId") ? tag.getUUID("FusionPrevPartyId") : null;
 		this.fusionPrevPartyLeader = tag.getBoolean("FusionPrevPartyLeader");
 		this.potaraPoseTimer = tag.getInt("PotaraPoseTimer");
+		this.evasionLockTicks = tag.getInt("EvasionLockTicks");
 		this.potaraPartnerUUID = tag.hasUUID("PotaraPartnerUUID") ? tag.getUUID("PotaraPartnerUUID") : null;
 		this.potaraLeader = tag.getBoolean("PotaraLeader");
 		if (tag.contains("OriginalAppearance")) this.originalAppearance = tag.getCompound("OriginalAppearance");
@@ -284,6 +293,7 @@ public class Status {
 		this.pothalaColor = tag.getString("PothalaColor");
 		this.isPermanentAura = tag.getBoolean("IsPermanentAura");
 		this.isStrikeLocked = tag.getBoolean("IsStrikeLocked");
+		this.sleepRecovering = tag.getBoolean("SleepRecovering");
 		this.flightMode = tag.getInt("FlightMode");
 		this.visitedDimensions.clear();
 		if (tag.contains("VisitedDimensions", Tag.TAG_LIST)) {
@@ -327,6 +337,7 @@ public class Status {
 		this.fusionPrevPartyId = other.fusionPrevPartyId;
 		this.fusionPrevPartyLeader = other.fusionPrevPartyLeader;
 		this.potaraPoseTimer = other.potaraPoseTimer;
+		this.evasionLockTicks = other.evasionLockTicks;
 		this.potaraPartnerUUID = other.potaraPartnerUUID;
 		this.potaraLeader = other.potaraLeader;
 		this.originalAppearance = other.originalAppearance.copy();
@@ -337,6 +348,7 @@ public class Status {
 		this.scouterItem = other.scouterItem;
 		this.isPermanentAura = other.isPermanentAura;
 		this.isStrikeLocked = other.isStrikeLocked;
+		this.sleepRecovering = other.sleepRecovering;
 		this.flightMode = other.flightMode;
 		this.visitedDimensions.clear();
 		this.visitedDimensions.addAll(other.visitedDimensions);

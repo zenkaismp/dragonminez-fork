@@ -141,7 +141,7 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 			);
 		}
 
-		if (FlySkillEvent.getInstance().isFlyingFast(entity)) {
+		if (FlySkillEvent.getInstance().isFlyingFast(entity) && !com.dragonminez.common.init.entities.ki.GumBindEntity.isClientBound(entity)) {
 			float roll = entity == Minecraft.getInstance().player ? FlightRollHandler.getRoll(partialTick) : 0f;
 			float pitch = entity.getViewXRot(partialTick);
 			float pivotY = entity.getBbHeight() / 2f;

@@ -1,5 +1,7 @@
 package com.dragonminez.client.model;
 
+import com.dragonminez.common.init.entities.ki.GumBindEntity;
+import com.dragonminez.server.events.players.combat.EvasionAttackHandler;
 import com.dragonminez.client.render.effects.CandyEffect;
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
@@ -75,7 +77,8 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
         new ResourceLocation(Reference.MOD_ID, "animations/entity/races/combat.animation.json"),
         new ResourceLocation(Reference.MOD_ID, "animations/entity/races/ki.animation.json"),
         new ResourceLocation(Reference.MOD_ID, "animations/entity/races/transf.animation.json"),
-        new ResourceLocation(Reference.MOD_ID, "animations/entity/races/skp.animation.json")
+        new ResourceLocation(Reference.MOD_ID, "animations/entity/races/skp.animation.json"),
+        new ResourceLocation(Reference.MOD_ID, "animations/entity/races/evs.animation.json")
     };
 
     // v2.2: o boneco de NPC (DMZRendererCache.NpcPuppet) procura primeiro no saga_base e depois nos arquivos do
@@ -308,13 +311,22 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
         return null;
     }
 
+    // Zenkai: da lista da v2.2 so as esquivas; os outros clipes dela sao dos golpes de strike novos, que nao vieram.
+    private static boolean clipOwnsHead(String anim) {
+        return EvasionAttackHandler.CANDY_BEAM_ANIMATION.equals(anim)
+                || EvasionAttackHandler.GUM_BIND_ANIMATION.equals(anim) || GumBindEntity.BOUND_ANIMATION.equals(anim);
+    }
+
     @Override
     public void setCustomAnimations(T animatable, long instanceId, AnimationState<T> animationState) {
         super.setCustomAnimations(animatable, instanceId, animationState);
         boolean transfAnimPlaying = animatable instanceof IPlayerAnimatable pa && pa.dragonminez$getCurrentPlayingAnimation().startsWith("transf.");
         boolean actuallyTransforming = StatsProvider.get(StatsCapability.INSTANCE, animatable)
                 .map(data -> data.getStatus().isActionCharging()).orElse(false);
-        boolean skipHead = transfAnimPlaying && actuallyTransforming;
+        String playingAnim = animatable instanceof IPlayerAnimatable playing ? playing.dragonminez$getCurrentPlayingAnimation() : "";
+        String kiAnim = animatable instanceof IPlayerAnimatable playing ? playing.dragonminez$getCurrentKiAnimation() : "";
+        boolean ownsHead = clipOwnsHead(playingAnim) || clipOwnsHead(kiAnim);
+        boolean skipHead = (transfAnimPlaying && actuallyTransforming) || ownsHead;
 
         float partialTick = animationState.getPartialTick();
         float bodyYaw = Mth.lerp(partialTick, animatable.yBodyRotO, animatable.yBodyRot);

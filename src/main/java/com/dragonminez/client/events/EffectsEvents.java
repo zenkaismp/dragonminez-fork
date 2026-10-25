@@ -1,6 +1,7 @@
 package com.dragonminez.client.events;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.render.effects.RageScreamEffect;
 import com.dragonminez.client.systems.KiBurstShakeState;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.entities.ki.AbstractKiProjectile;
@@ -140,6 +141,27 @@ public class EffectsEvents {
             event.setYaw(event.getYaw() + (player.getRandom().nextFloat() - 0.5F) * strength * intensity);
             event.setRoll(event.getRoll() + (player.getRandom().nextFloat() - 0.5F) * strength * 0.5F * intensity);
             break;
+        }
+
+        double rageScreamShakeRadius = 15.0D;
+        for (var mapEntry : RageScreamEffect.getActiveProgress().entrySet()) {
+            Entity source = player.level().getEntity(mapEntry.getKey());
+            if (source == null) continue;
+
+            double distance = player.distanceTo(source);
+            if (distance > rageScreamShakeRadius) continue;
+
+            float progress = mapEntry.getValue();
+            float fade = 1.0f - progress;
+            float intensity = (float) (1.0D - (distance / rageScreamShakeRadius)) * fade;
+
+            float shakePitch = (player.getRandom().nextFloat() - 0.5F) * 3.0F * intensity;
+            float shakeYaw = (player.getRandom().nextFloat() - 0.5F) * 3.0F * intensity;
+            float shakeRoll = (player.getRandom().nextFloat() - 0.5F) * 1.5F * intensity;
+
+            event.setPitch(event.getPitch() + shakePitch);
+            event.setYaw(event.getYaw() + shakeYaw);
+            event.setRoll(event.getRoll() + shakeRoll);
         }
 
 		if (player.hasEffect(MainEffects.STAGGER.get())) {
