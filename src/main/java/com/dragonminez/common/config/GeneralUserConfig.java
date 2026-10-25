@@ -39,6 +39,9 @@ public class GeneralUserConfig {
 	private Boolean showAccumulativeDamage = true;
 	private Boolean taiyokenInvertPalette = false;
 	private Boolean transformationOutlines = true;
+	private Boolean aura3DPersonal = false;
+	private Boolean aura3DEntities = false;
+	private String aura3DStyle = FormConfig.AURA_3D_SMOOTH;
 
 	public static final String HAIR_PHYSICS_HIGH = "HIGH";
 	public static final String HAIR_PHYSICS_LOW = "LOW";
@@ -93,6 +96,21 @@ public class GeneralUserConfig {
 	public Boolean getTaiyokenInvertPalette() {
 		if (taiyokenInvertPalette == null) taiyokenInvertPalette = false;
 		return taiyokenInvertPalette;
+	}
+
+	public Boolean getAura3DPersonal() {
+		if (aura3DPersonal == null) aura3DPersonal = false;
+		return aura3DPersonal;
+	}
+
+	public Boolean getAura3DEntities() {
+		if (aura3DEntities == null) aura3DEntities = false;
+		return aura3DEntities;
+	}
+
+	public String getAura3DStyle() {
+		aura3DStyle = FormConfig.sanitizeAura3DPreference(aura3DStyle);
+		return aura3DStyle;
 	}
 
 	public Boolean getTransformationOutlines() {

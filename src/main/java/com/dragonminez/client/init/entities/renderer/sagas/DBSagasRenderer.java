@@ -3,8 +3,13 @@ package com.dragonminez.client.init.entities.renderer.sagas;
 import com.dragonminez.Reference;
 import com.dragonminez.client.init.entities.model.sagas.DBSagaModel;
 import com.dragonminez.client.init.entities.renderer.sagas.layer.DMZSagaItemInHandLayer;
+import com.dragonminez.client.render.effects.Aura3DRenderer;
+import com.dragonminez.client.render.effects.AuraBorderRenderer;
+import com.dragonminez.client.render.effects.AuraModeState;
 import com.dragonminez.client.render.effects.AuraRenderer;
+import com.dragonminez.client.render.effects.LightningBoltRenderer;
 import com.dragonminez.client.init.entities.renderer.sagas.layer.DMZSagaArmorLayer;
+import com.dragonminez.client.init.entities.renderer.sagas.layer.SagaSupervillainLayer;
 import com.dragonminez.client.render.shader.DMZShaders;
 import com.dragonminez.client.render.util.AuraMeshFactory;
 import com.dragonminez.client.render.util.IrisCompat;
@@ -22,14 +27,10 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.Mth;
 import org.jetbrains.annotations.Nullable;
-import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import software.bernie.geckolib.core.object.Color;
 import software.bernie.geckolib.renderer.GeoEntityRenderer;
-
-import java.util.Random;
 
 public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<T> {
 
@@ -42,6 +43,7 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
 
         this.addRenderLayer(new DMZSagaItemInHandLayer<>(this));
         this.addRenderLayer(new DMZSagaArmorLayer<>(this));
+        this.addRenderLayer(new SagaSupervillainLayer<>(this));
     }
 
     @Override
@@ -59,7 +61,13 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
 
         poseStack.scale(sc,sc,sc);
 
-        super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
+        MultiBufferSource borderSource = AuraBorderRenderer.begin(entity, bufferSource, SagaSupervillainLayer.borderColor(entity),
+                SagaSupervillainLayer.borderInnerColor(entity), partialTick);
+        try {
+            super.render(entity, entityYaw, partialTick, poseStack, borderSource, packedLight);
+        } finally {
+            AuraBorderRenderer.end(borderSource);
+        }
 
 
         boolean showAura = entity.isTransforming() || entity.isCharge();
@@ -93,15 +101,19 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
         poseStack.pushPose();
 
         if (showAura) {
+            boolean use3D = Aura3DRenderer.isAvailable() && AuraModeState.entityPreference();
+
             if (entity.onGround()) {
                 poseStack.pushPose();
                 poseStack.translate(0.0, 0.05, 0.0);
-                renderPulseAura(entity, poseStack, mc, partialTick);
+                if (use3D) drawPulseAura3D(entity, poseStack, partialTick);
+                else renderPulseAura(entity, poseStack, mc, partialTick);
                 poseStack.popPose();
             }
 
             poseStack.pushPose();
-            executeAuraShaderDraw(entity, poseStack, mc, partialTick);
+            if (use3D) drawAura3D(entity, poseStack, partialTick);
+            else executeAuraShaderDraw(entity, poseStack, mc, partialTick);
             poseStack.popPose();
         }
 
@@ -137,6 +149,36 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
         }
 
         return super.getRenderColor(animatable, partialTick, packedLight);
+    }
+
+    private static final float STANDARD_PLAYER_HEIGHT = 1.8f;
+
+    private void drawAura3D(T animatable, PoseStack poseStack, float partialTick) {
+        Aura3DRenderer.drawEntity(poseStack, RenderSystem.getProjectionMatrix(), animatable.getAuraType3D(),
+                ColorUtils.rgbIntToFloat(animatable.getAuraColor()), animatable.tickCount + partialTick,
+                animatable.getBbHeight() / STANDARD_PLAYER_HEIGHT);
+    }
+
+    private void drawPulseAura3D(T animatable, PoseStack poseStack, float partialTick) {
+        float height = animatable.getBbHeight() / STANDARD_PLAYER_HEIGHT;
+        float age = animatable.tickCount + partialTick;
+        float[] color = ColorUtils.rgbIntToFloat(animatable.getAuraColor());
+        float spin = age * 2.5f;
+
+        float phase = (age * 0.02f) % 1.0f;
+        drawPulseInstance3D(animatable, poseStack, height, color, age, spin, phase);
+        drawPulseInstance3D(animatable, poseStack, height, color, age, spin, (phase + 0.5f) % 1.0f);
+    }
+
+    private void drawPulseInstance3D(T animatable, PoseStack poseStack, float height, float[] color,
+                                     float age, float spin, float progress) {
+        float expansion = 1.0f + (3.0f * progress);
+        float alphaCurve = (float) Math.sin(progress * Math.PI);
+
+        String type = animatable.getAuraType3D();
+        Aura3DRenderer.drawEntityGroundPulse(poseStack, RenderSystem.getProjectionMatrix(), type,
+                color, alphaCurve * 0.5f, age,
+                height * Aura3DRenderer.widthFactor(type) * expansion * 0.75f, height * 0.22f, spin);
     }
 
     private void renderPulseAura(T animatable, PoseStack poseStack, Minecraft mc, float partialTick) {
@@ -178,10 +220,7 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
         shader.safeGetUniform("modelMatrix").set(poseStack.last().pose());
 
         float[] color = ColorUtils.rgbIntToFloat(animatable.getAuraColor());
-        shader.safeGetUniform("color1").set(color[0] * 1.6f, color[1] * 1.6f, color[2] * 1.6f, 1.0f);
-        shader.safeGetUniform("color2").set(color[0] * 1.3f, color[1] * 1.3f, color[2] * 1.3f, 1.0f);
-        shader.safeGetUniform("color3").set(color[0] * 1.0f, color[1] * 1.0f, color[2] * 1.0f, 0.85f);
-        shader.safeGetUniform("color4").set(color[0] * 0.75f, color[1] * 0.75f, color[2] * 0.75f, 0.65f);
+        AuraRenderer.applyAuraColors(shader, color);
 
         shader.safeGetUniform("alp1").set(alphaCurve * 0.6f);
 
@@ -193,6 +232,7 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
         VertexBuffer mesh = AuraMeshFactory.getGroundQuad();
         mesh.bind();
         mesh.drawWithShader(poseStack.last().pose(), projectionMatrix, shader);
+        AuraRenderer.captureAuraBloom(mesh, crossTex, poseStack.last().pose(), projectionMatrix, color, alphaCurve * 0.6f, animSpeed);
 
         AuraRenderer.customClear(pulseRender);
         VertexBuffer.unbind();
@@ -218,10 +258,7 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
 
         float[] color = ColorUtils.rgbIntToFloat(animatable.getAuraColor());
 
-        shader.safeGetUniform("color1").set(color[0] * 1.6f, color[1] * 1.6f, color[2] * 1.6f, 1.0f);
-        shader.safeGetUniform("color2").set(color[0] * 1.3f, color[1] * 1.3f, color[2] * 1.3f, 1.0f);
-        shader.safeGetUniform("color3").set(color[0] * 1.0f, color[1] * 1.0f, color[2] * 1.0f, 0.85f);
-        shader.safeGetUniform("color4").set(color[0] * 0.75f, color[1] * 0.75f, color[2] * 0.75f, 0.65f);
+        AuraRenderer.applyAuraColors(shader, color);
 
         float cameraPitch = mc.gameRenderer.getMainCamera().getXRot();
         float cameraYaw = mc.gameRenderer.getMainCamera().getYRot();
@@ -255,6 +292,7 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
             shader.apply();
             mesh.bind();
             mesh.drawWithShader(poseStack.last().pose(), projectionMatrix, shader);
+            AuraRenderer.captureAuraBloom(mesh, mainTex, poseStack.last().pose(), projectionMatrix, color, 1.0f - crossFactor, animSpeed);
             AuraRenderer.customClear(mainRender);
 
             poseStack.pushPose();
@@ -269,6 +307,7 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
             shader.apply();
             mesh.bind();
             mesh.drawWithShader(poseStack.last().pose(), projectionMatrix, shader);
+            AuraRenderer.captureAuraBloom(mesh, sparkingTex, poseStack.last().pose(), projectionMatrix, color, (1.0f - crossFactor) * 0.8f, animSpeed);
             AuraRenderer.customClear(sparkingRender);
             poseStack.popPose();
 
@@ -297,6 +336,7 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
             VertexBuffer groundMesh = AuraMeshFactory.getGroundQuad();
             groundMesh.bind();
             groundMesh.drawWithShader(poseStack.last().pose(), projectionMatrix, shader);
+            AuraRenderer.captureAuraBloom(groundMesh, crossTex, poseStack.last().pose(), projectionMatrix, color, crossFactor, animSpeed);
             AuraRenderer.customClear(crossRender);
 
             poseStack.popPose();
@@ -307,67 +347,13 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
     }
 
     private void executeLightningShaderDraw(T animatable, PoseStack poseStack, float partialTick) {
-        ShaderInstance shader = DMZShaders.lightningShader;
-        if (shader == null) return;
+        float scale = Math.max(animatable.getScale(), 0.01f);
+        float height = animatable.getBbHeight() / scale;
+        float radius = Math.max(LightningBoltRenderer.PLAYER_RADIUS * height / STANDARD_PLAYER_HEIGHT, animatable.getBbWidth() / scale);
+        boolean charged = animatable.isCharge() || animatable.isTransforming();
 
-        boolean isAuraActive = animatable.isCharge() || animatable.isTransforming();
-        float speedMod = isAuraActive ? 1.0f : 0.20f;
-        int maxBranches = isAuraActive ? 5 : 3;
-        float maxScale = isAuraActive ? 0.5f : 0.25f;
-
-        float[] colorRgb = ColorUtils.rgbIntToFloat(animatable.getLightningColor());
-        float time = (animatable.tickCount + partialTick) / 20.0f;
-        Matrix4f projectionMatrix = RenderSystem.getProjectionMatrix();
-
-        shader.safeGetUniform("projectionMatrix").set(projectionMatrix);
-        shader.safeGetUniform("time").set(time);
-        shader.safeGetUniform("speedModifier").set(speedMod);
-
-        shader.safeGetUniform("color1").set(
-                Mth.lerp(0.8f, colorRgb[0], 1.0f),
-                Mth.lerp(0.8f, colorRgb[1], 1.0f),
-                Mth.lerp(0.8f, colorRgb[2], 1.0f)
-        );
-        shader.safeGetUniform("color2").set(colorRgb[0], colorRgb[1], colorRgb[2]);
-        shader.safeGetUniform("alp1").set(1.0f);
-        shader.safeGetUniform("alp2").set(0.1f);
-        shader.safeGetUniform("power").set(3.0f);
-        shader.safeGetUniform("divis").set(1.0f);
-
-        ResourceLocation lightningTex = new ResourceLocation(Reference.MOD_ID, "textures/entity/races/null.png");
-        RenderType renderType = AuraRenderer.lightningType(lightningTex);
-        AuraRenderer.customSetup(renderType, lightningTex, shader);
-
-        shader.apply();
-        VertexBuffer mesh = AuraRenderer.getLightningMesh();
-        mesh.bind();
-
-        long timeHash = animatable.level().getGameTime() / 2L;
-        Random seededRand = new Random(animatable.getId() + timeHash);
-        float bbHeight = animatable.getBbHeight() - 0.6f;
-
-        for (int i = 0; i < maxBranches; i++) {
-            poseStack.pushPose();
-
-            float spread = isAuraActive ? 1.8f : 1.2f;
-            float randomY = seededRand.nextFloat() * bbHeight;
-
-            poseStack.translate((seededRand.nextFloat() - 0.5f) * spread, randomY, (seededRand.nextFloat() - 0.5f) * spread);
-            poseStack.mulPose(Axis.YP.rotationDegrees(seededRand.nextFloat() * 360));
-
-            float scale = 0.15f + seededRand.nextFloat() * maxScale;
-            poseStack.scale(scale, scale, scale);
-
-            shader.safeGetUniform("modelMatrix").set(poseStack.last().pose());
-            shader.safeGetUniform("normalMatrix").set(new Matrix4f(new Matrix3f(poseStack.last().normal())));
-            shader.apply();
-
-            mesh.drawWithShader(poseStack.last().pose(), projectionMatrix, shader);
-            poseStack.popPose();
-        }
-
-        VertexBuffer.unbind();
-        shader.clear();
-        AuraRenderer.customClear(renderType);
+        LightningBoltRenderer.draw(poseStack.last().pose(), RenderSystem.getProjectionMatrix(), animatable.getId(),
+                animatable.tickCount + partialTick, height * 1.05f, radius, ColorUtils.rgbIntToFloat(animatable.getLightningColor()),
+                charged, 1.0f, 1.0f);
     }
 }

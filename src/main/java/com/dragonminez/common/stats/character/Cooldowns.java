@@ -27,6 +27,7 @@ public class Cooldowns {
 	public static final String STAMINA_PAUSE = "StaminaPause";
 	public static final String COMBAT_FLY_LOCK = "CombatFlyLock";
 	public static final String COMBATFLY_IMPULSE_CD = "CombatFlyImpulseCd";
+	public static final String KI_SURGE_CD = "KiSurgeCooldown";
 
     public Cooldowns() {
         this.cooldowns = new HashMap<>();

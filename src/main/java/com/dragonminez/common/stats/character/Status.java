@@ -29,6 +29,8 @@ public class Status {
 	private boolean isDescending;
 	private boolean isInKaioPlanet;
 	private boolean isChargingKi;
+	private boolean kiBurstArmed;
+	private boolean surgeActive;
 	private boolean isBlocking;
 	private long lastBlockTime;
 	private long lastHurtTime;
@@ -75,6 +77,8 @@ public class Status {
 		this.isDescending = false;
 		this.isInKaioPlanet = false;
 		this.isChargingKi = false;
+		this.kiBurstArmed = false;
+		this.surgeActive = false;
 		this.isBlocking = false;
 		this.lastBlockTime = 0;
 		this.lastHurtTime = 0;
@@ -121,6 +125,8 @@ public class Status {
 		this.isDescending = false;
 		this.isInKaioPlanet = false;
 		this.isChargingKi = false;
+		this.kiBurstArmed = false;
+		this.surgeActive = false;
 		this.isBlocking = false;
 		this.lastBlockTime = 0;
 		this.lastHurtTime = 0;
@@ -191,6 +197,8 @@ public class Status {
 		tag.putBoolean("Descending", isDescending);
 		tag.putBoolean("InKaioPlanet", isInKaioPlanet);
 		tag.putBoolean("IsChargingKi", isChargingKi);
+		tag.putBoolean("KiBurstArmed", kiBurstArmed);
+		tag.putBoolean("SurgeActive", surgeActive);
 		tag.putBoolean("IsBlocking", isBlocking);
 		tag.putLong("LastBlockTime", lastBlockTime);
 		tag.putLong("LastHurtTime", lastHurtTime);
@@ -242,6 +250,8 @@ public class Status {
 		this.isDescending = tag.getBoolean("Descending");
 		this.isInKaioPlanet = tag.getBoolean("InKaioPlanet");
 		this.isChargingKi = tag.getBoolean("IsChargingKi");
+		this.kiBurstArmed = tag.getBoolean("KiBurstArmed");
+		this.surgeActive = tag.getBoolean("SurgeActive");
 		this.isBlocking = tag.getBoolean("IsBlocking");
 		this.lastBlockTime = tag.getLong("LastBlockTime");
 		this.lastHurtTime = tag.getLong("LastHurtTime");
@@ -296,6 +306,8 @@ public class Status {
 		this.isDescending = other.isDescending;
 		this.isInKaioPlanet = other.isInKaioPlanet;
 		this.isChargingKi = other.isChargingKi;
+		this.kiBurstArmed = other.kiBurstArmed;
+		this.surgeActive = other.surgeActive;
 		this.isBlocking = other.isBlocking;
 		this.lastBlockTime = other.lastBlockTime;
 		this.lastHurtTime = other.lastHurtTime;

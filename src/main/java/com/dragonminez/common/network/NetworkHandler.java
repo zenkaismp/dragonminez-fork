@@ -515,6 +515,24 @@ public class NetworkHandler {
 				.encoder(KnockbackFlightS2C::encode)
 				.consumerMainThread(KnockbackFlightS2C::handle)
 				.add();
+
+		net.messageBuilder(AuraModeC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(AuraModeC2S::new)
+				.encoder(AuraModeC2S::encode)
+				.consumerMainThread(AuraModeC2S::handle)
+				.add();
+
+		net.messageBuilder(KiBurstVfxS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(KiBurstVfxS2C::new)
+				.encoder(KiBurstVfxS2C::encode)
+				.consumerMainThread(KiBurstVfxS2C::handle)
+				.add();
+
+		net.messageBuilder(SilentDamageS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(SilentDamageS2C::new)
+				.encoder(SilentDamageS2C::encode)
+				.consumerMainThread(SilentDamageS2C::handle)
+				.add();
 	}
 
 	public static <MSG> void sendToServer(MSG message) {

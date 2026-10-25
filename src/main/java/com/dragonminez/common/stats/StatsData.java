@@ -1280,9 +1280,20 @@ public class StatsData {
 		return 1.0;
 	}
 
+	public double getFlightStateSpeedMultiplier() {
+		CombatConfig combatConfig = ConfigManager.getCombatConfig();
+		if (combatConfig == null) return 1.0;
+		return status.isSurgeActive() ? combatConfig.getSurgeFlySpeedMultiplier() : 1.0;
+	}
+
 	public double getKiAttackDamageModifier() {
-		if (isAndroidRacialActive()) return 0.85;
-		return 1.0;
+		double modifier = isAndroidRacialActive() ? 0.85 : 1.0;
+		if (status.isSurgeActive()) modifier *= ConfigManager.getCombatConfig().getSurgeKiDamageMultiplier();
+		return modifier;
+	}
+
+	public double getKiAttackSpeedModifier() {
+		return status.isSurgeActive() ? ConfigManager.getCombatConfig().getSurgeKiSpeedMultiplier() : 1.0;
 	}
 
 	public double getRaceTpCostMultiplier() {

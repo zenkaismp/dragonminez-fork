@@ -7,18 +7,22 @@ import com.dragonminez.client.gui.buttons.SwitchButton;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
 import com.dragonminez.client.gui.character.util.BaseMenuScreen;
 import com.dragonminez.client.gui.config.OverShoulderCameraScreen;
+import com.dragonminez.client.render.effects.AuraModeState;
 import com.dragonminez.client.util.ScrollbarState;
 import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.config.GeneralUserConfig;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.network.C2S.DynamicGrowthToggleC2S;
 import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.racial.impl.GlindDivinity;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.extras.DynamicGrowthStat;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
@@ -34,6 +38,8 @@ import java.util.function.Consumer;
 
 @OnlyIn(Dist.CLIENT)
 public class ConfigMenuScreen extends BaseMenuScreen {
+
+	private static final String AURA_STYLE_KEY = "config.aura3DStyle";
 
 	private static final ResourceLocation MENU_BIG = new ResourceLocation(Reference.MOD_ID,
 			"textures/gui/menu/menubig.png");
@@ -93,6 +99,18 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 		configOptions.add(new ConfigOption("config.transformationOutlines",
 				ConfigType.BOOLEAN, userConfig.getTransformationOutlines() ? 1 : 0, 0, 1,
 				v -> userConfig.setTransformationOutlines(v > 0)));
+
+		configOptions.add(new ConfigOption("config.aura3DPersonal",
+				ConfigType.BOOLEAN, userConfig.getAura3DPersonal() ? 1 : 0, 0, 1,
+				v -> userConfig.setAura3DPersonal(v > 0)));
+
+		configOptions.add(new ConfigOption(AURA_STYLE_KEY,
+				ConfigType.INT, auraStyleIndex(AuraModeState.localStyle()), 0, godAuraAllowed() ? 2 : 1,
+				v -> userConfig.setAura3DStyle(auraStyleAt(v.intValue()))));
+
+		configOptions.add(new ConfigOption("config.aura3DEntities",
+				ConfigType.BOOLEAN, userConfig.getAura3DEntities() ? 1 : 0, 0, 1,
+				v -> userConfig.setAura3DEntities(v > 0)));
 
 		configOptions.add(new ConfigOption("config.showAccumulativeDamage",
 				ConfigType.BOOLEAN, userConfig.getShowAccumulativeDamage() ? 1 : 0, 0, 1,
@@ -448,7 +466,13 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 
 			if (option.type != ConfigType.BOOLEAN && option.type != ConfigType.ACTION) {
 				String valueText;
-				if (option.type == ConfigType.FLOAT) {
+				if (AURA_STYLE_KEY.equals(option.key)) {
+					valueText = tr(switch ((int) option.value) {
+						case 1 -> "gui.dragonminez.customization.aura.sparking";
+						case 2 -> "gui.dragonminez.customization.aura.god";
+						default -> "gui.dragonminez.customization.aura.smooth";
+					}).getString();
+				} else if (option.type == ConfigType.FLOAT) {
 					valueText = String.format("%.2f", option.value);
 				} else {
 					valueText = String.valueOf((int) option.value);
@@ -490,6 +514,10 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 
 		if ("config.menuScaleMultiplier".equals(option.key)) {
 			rebuildWidgetsWithoutTransition();
+		}
+
+		if ("config.aura3DPersonal".equals(option.key) || AURA_STYLE_KEY.equals(option.key)) {
+			AuraModeState.pushLocalPreference();
 		}
 
 		if ("config.liveCrowdinTranslations".equals(option.key) && this.minecraft != null) {
@@ -565,6 +593,26 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 			ConfigManager.saveGeneralUserConfig();
 		}
 		super.removed();
+	}
+
+	private static boolean godAuraAllowed() {
+		Minecraft mc = Minecraft.getInstance();
+		if (mc.player == null) return false;
+		return StatsProvider.get(StatsCapability.INSTANCE, mc.player)
+				.map(data -> GlindDivinity.grantsGodAura(data.getCharacter().getRaceName())).orElse(false);
+	}
+
+	private static int auraStyleIndex(String style) {
+		if (FormConfig.AURA_3D_GOD.equals(style)) return 2;
+		return FormConfig.AURA_3D_SPARKING.equals(style) ? 1 : 0;
+	}
+
+	private static String auraStyleAt(int index) {
+		return switch (index) {
+			case 1 -> FormConfig.AURA_3D_SPARKING;
+			case 2 -> FormConfig.AURA_3D_GOD;
+			default -> FormConfig.AURA_3D_SMOOTH;
+		};
 	}
 
 	private enum ConfigType {

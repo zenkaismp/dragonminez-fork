@@ -19,13 +19,11 @@ public final class TransformationMaskBufferSource implements MultiBufferSource {
 	private final LazyMaskBuffers maskBufferSource = new LazyMaskBuffers();
 	@Nullable
 	private MultiBufferSource delegate;
-	@Setter
 	private boolean maskCaptureEnabled = true;
 	@Setter
 	private boolean includeOriginal = true;
 	@Setter
 	private boolean forceCaptureAll = false;
-	@Setter
 	private boolean maskCaptureBlocked = false;
 	private int packedR = 255;
 	private int packedG = 255;
@@ -38,6 +36,30 @@ public final class TransformationMaskBufferSource implements MultiBufferSource {
 		this.forceCaptureAll = false;
 		this.maskCaptureBlocked = false;
 		return this;
+	}
+
+	public void setMaskCaptureEnabled(boolean enabled) {
+		this.maskCaptureEnabled = enabled;
+		if (this.delegate instanceof TransformationMaskBufferSource inner) inner.setMaskCaptureEnabled(enabled);
+	}
+
+	public void setMaskCaptureBlocked(boolean blocked) {
+		this.maskCaptureBlocked = blocked;
+		if (this.delegate instanceof TransformationMaskBufferSource inner) inner.setMaskCaptureBlocked(blocked);
+	}
+
+	public void setRawColor(int r, int g, int b) {
+		this.packedR = r;
+		this.packedG = g;
+		this.packedB = b;
+	}
+
+	public void detach() {
+		this.delegate = null;
+		this.maskCaptureEnabled = true;
+		this.includeOriginal = true;
+		this.forceCaptureAll = false;
+		this.maskCaptureBlocked = false;
 	}
 
 	public void setEntityColors(float primaryR, float primaryG, float primaryB, float secondaryR, float secondaryG, float secondaryB) {
@@ -83,6 +105,16 @@ public final class TransformationMaskBufferSource implements MultiBufferSource {
 		this.maskCaptureBlocked = false;
 	}
 
+	// Not in v2.2: drops what was captured without drawing it (AuraBorderRenderer.discard).
+	public void discardMaskBatch() {
+		this.maskBufferSource.discard();
+		this.delegate = null;
+		this.maskCaptureEnabled = true;
+		this.includeOriginal = true;
+		this.forceCaptureAll = false;
+		this.maskCaptureBlocked = false;
+	}
+
 	private static final class LazyMaskBuffers {
 		private final Map<RenderType, BufferBuilder> builders = new LinkedHashMap<>();
 
@@ -99,6 +131,12 @@ public final class TransformationMaskBufferSource implements MultiBufferSource {
 				if (entry.getValue().building()) {
 					entry.getKey().end(entry.getValue(), RenderSystem.getVertexSorting());
 				}
+			}
+		}
+
+		void discard() {
+			for (BufferBuilder builder : this.builders.values()) {
+				if (builder.building()) builder.end().release();
 			}
 		}
 	}

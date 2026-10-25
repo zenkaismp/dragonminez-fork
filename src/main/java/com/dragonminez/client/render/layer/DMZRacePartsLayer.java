@@ -33,6 +33,7 @@ import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.renderer.GeoRenderer;
 import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
+import software.bernie.geckolib.util.RenderUtils;
 import top.theillusivec4.curios.api.CuriosApi;
 
 public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> extends GeoRenderLayer<T> {
@@ -41,6 +42,8 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 
 	private static final ResourceLocation ACCESORIES_MODEL = new ResourceLocation(Reference.MOD_ID, "geo/entity/races/accesories.geo.json");
 	private static final ResourceLocation SCOUTER_MODEL = new ResourceLocation(Reference.MOD_ID, "geo/entity/scouter.geo.json");
+	private static final ResourceLocation DEMON_EYE_TEXTURE = new ResourceLocation(Reference.MOD_ID, "textures/item/demon_eye.png");
+	private static final float DEMON_EYE_HALF_SIZE = 3.0f / 16.0f;
 
 	private static final ResourceLocation YAJIROBE_SWORD_MODEL = new ResourceLocation(Reference.MOD_ID, "geo/weapons/yajirobe_katana.geo.json");
 	private static final ResourceLocation YAJIROBE_SWORD_TEXTURE = new ResourceLocation(Reference.MOD_ID, "textures/item/weapons/yajirobe_katana.png");
@@ -124,6 +127,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 			if ("head".equals(anchor) && !stats.getCharacter().isOozaruCached()) {
 				renderAccessories(poseStack, animatable, playerModel, bufferSource, partialTick, packedLight);
 				renderScouter(poseStack, animatable, playerModel, bufferSource, partialTick, packedLight);
+				renderDemonEye(poseStack, bufferSource, packedLight, getRenderableCurio(animatable, "head_tech", 0));
 			} else {
 				renderSword(poseStack, animatable, playerBone, bufferSource, partialTick, packedLight);
 				if ("body".equals(anchor) && !stats.getCharacter().isOozaruCached()) {
@@ -468,6 +472,32 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 				renderTargetedBone(bone, poseStack, bufferSource, animatable, accRenderType, 1.0f, 1.0f, 1.0f, 1.0f, partialTick, packedLight);
 			});
 		}
+	}
+
+	private void renderDemonEye(PoseStack poseStack, MultiBufferSource bufferSource, int packedLight, ItemStack stack) {
+		if (stack.isEmpty() || stack.getItem() != MainItems.DEMON_EYE.get()) return;
+
+		BakedGeoModel partsModel = getGeoModel().getBakedModel(RACES_PARTS_MODEL);
+		if (partsModel == null) return;
+
+		partsModel.getBone("evil_eye").ifPresent(bone -> {
+			poseStack.pushPose();
+			RenderUtils.prepMatrixForBone(poseStack, bone);
+			poseStack.translate(bone.getPivotX() / 16f, bone.getPivotY() / 16f, bone.getPivotZ() / 16f);
+			PoseStack.Pose pose = poseStack.last();
+			VertexConsumer consumer = bufferSource.getBuffer(RenderType.entityCutoutNoCull(DEMON_EYE_TEXTURE));
+			float h = DEMON_EYE_HALF_SIZE;
+			demonEyeVertex(consumer, pose, h, h, 0f, 0f, packedLight);
+			demonEyeVertex(consumer, pose, -h, h, 1f, 0f, packedLight);
+			demonEyeVertex(consumer, pose, -h, -h, 1f, 1f, packedLight);
+			demonEyeVertex(consumer, pose, h, -h, 0f, 1f, packedLight);
+			poseStack.popPose();
+		});
+	}
+
+	private static void demonEyeVertex(VertexConsumer consumer, PoseStack.Pose pose, float x, float y, float u, float v, int packedLight) {
+		consumer.vertex(pose.pose(), x, y, 0f).color(1f, 1f, 1f, 1f).uv(u, v)
+				.overlayCoords(OverlayTexture.NO_OVERLAY).uv2(packedLight).normal(pose.normal(), 0f, 0f, -1f).endVertex();
 	}
 
 	private void renderScouter(PoseStack poseStack, T animatable, BakedGeoModel playerModel, MultiBufferSource bufferSource, float partialTick, int packedLight) {

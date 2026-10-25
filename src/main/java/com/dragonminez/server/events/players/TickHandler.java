@@ -85,6 +85,8 @@ public class TickHandler {
 	private static final double MEDITATION_BONUS_PER_LEVEL = 0.05;
 	private static final Map<UUID, Integer> masterySecondsByPlayer = new HashMap<>();
 	private static final Map<UUID, Integer> chargeTicksByPlayer = new HashMap<>();
+	private static final Map<UUID, Integer> flySprintAuraTicks = new HashMap<>();
+	private static final int FLY_SPRINT_AURA_LINGER_TICKS = 6;
 	private static final Map<UUID, Integer> playerTickCounters = new HashMap<>();
 	private static final Map<UUID, BlockPos> auraLightPositions = new HashMap<>();
 	private static final Map<UUID, Integer> auraLightLevels = new HashMap<>();
@@ -127,6 +129,7 @@ public class TickHandler {
 				data.getStatus().setActionCharging(false);
 				data.getTechniques().clearTechniqueCharge();
 				data.getResources().setActionCharge(0);
+				KiSurgeService.breakSurge(serverPlayer, data);
 				if (!data.getStatus().isStunEffect()) data.getStatus().setStunEffect(true);
 			} else if (data.getStatus().isStunEffect()) data.getStatus().setStunEffect(false);
 
@@ -201,7 +204,7 @@ public class TickHandler {
 				playerTickCounters.put(playerId, tickCounter);
 			}
 
-			boolean isMovementRestricted = TechniqueDispatcher.isMovementRestrictedKiAttack(serverPlayer, data);
+			boolean isMovementRestricted = TechniqueDispatcher.isMovementRestrictedKiAttack(serverPlayer, data) || isChargingKi;
 			boolean isFiring = TechniqueDispatcher.isFiringKiAttack(serverPlayer);
 			boolean wasExecuting = serverPlayer.getPersistentData().getBoolean("dmz_was_executing_ki");
 
@@ -322,8 +325,17 @@ public class TickHandler {
 				if (chargeTicks % 2 == 0) chargePowerRelease(data, chargeTicks, isChargingKi && isDescending);
 			} else if (chargeTicksByPlayer.containsKey(playerId)) chargeTicksByPlayer.remove(playerId);
 
+			KiSurgeService.tick(serverPlayer, data);
+
 			boolean auraFromActions = isChargingKi || (data.getStatus().isActionCharging() && (data.getStatus().getSelectedAction() == ActionMode.FORM || data.getStatus().getSelectedAction() == ActionMode.STACK));
-			boolean auraFromFlySprint = data.getSkills().isSkillActive("fly") && serverPlayer.isSprinting() && serverPlayer.getDeltaMovement().length() > 0.65F;
+			if (data.getSkills().isSkillActive("fly") && serverPlayer.isSprinting() && !serverPlayer.onGround()) {
+				flySprintAuraTicks.put(playerId, FLY_SPRINT_AURA_LINGER_TICKS);
+			} else {
+				int linger = flySprintAuraTicks.getOrDefault(playerId, 0) - 1;
+				if (linger > 0) flySprintAuraTicks.put(playerId, linger);
+				else flySprintAuraTicks.remove(playerId);
+			}
+			boolean auraFromFlySprint = flySprintAuraTicks.containsKey(playerId);
 			data.getStatus().setAuraActive(auraFromActions || auraFromFlySprint);
 
 			if (tickCounter % 5 == 0) {
@@ -462,6 +474,7 @@ public class TickHandler {
 		CHARGING_CACHE.remove(playerId);
 		CHARGE_COST_ACCUM.remove(playerId);
 		chargeTicksByPlayer.remove(playerId);
+		flySprintAuraTicks.remove(playerId);
 		masterySecondsByPlayer.remove(playerId);
 		playerTickCounters.remove(playerId);
 		forceKillGraceByPlayer.remove(playerId);
@@ -880,6 +893,7 @@ public class TickHandler {
 		boolean outOfKi = false;
 		if (percent < ceiling - 0.01f) {
 			float rate = (percent < 100.0f) ? 100.0f / baseTicks : KiAttackData.OVERCHARGE_TIER_PERCENT / (float) baseTicks;
+			if (data.getStatus().isSurgeActive()) rate *= ConfigManager.getCombatConfig().getSurgeKiChargeSpeedMultiplier().floatValue();
 			float newP = Math.min(ceiling, percent + rate);
 
 			if (creative) percent = newP;
@@ -1099,7 +1113,7 @@ public class TickHandler {
 			boolean hasEnoughHealth = healthDrain <= 0 || player.getHealth() > healthDrain;
 
 			if (hasEnoughEnergy && hasEnoughStamina && hasEnoughHealth) {
-				if (energyDrain > 0) data.getResources().removeEnergy(energyDrain);
+				if (energyDrain > 0) data.getResources().removeEnergy(energyDrain, false);
 				else if (energyDrain < 0) data.getResources().addEnergy(-energyDrain);
 				if (staminaDrain > 0) data.getResources().removeStamina(staminaDrain);
 				else if (staminaDrain < 0) data.getResources().addStamina(-staminaDrain);
@@ -1217,6 +1231,7 @@ public class TickHandler {
 		STATUS_EFFECT_HANDLERS.add(new MightFruitStatusHandler());
 		STATUS_EFFECT_HANDLERS.add(new MutantStatusHandler());
 		STATUS_EFFECT_HANDLERS.add(new SaiyanPassiveHandler());
+		STATUS_EFFECT_HANDLERS.add(new RelicItemsStatusHandler());
 	}
 
 	public static void registerActionModeHandler(String actionMode, IActionModeHandler actionModeHandler) {

@@ -33,7 +33,20 @@ public class DefaultFormsFactory {
 		form.setPassiveMasteryEveryFiveSeconds(0.006);
 		form.setStackOnMastery(25.0);
 		form.setAuraType("kakarot");
+		form.setAuraType3D(FormConfig.AURA_3D_USER_PREFERENCE);
 		form.setAuraLayer(0);
+	}
+
+	private static FormConfig.Aura3DStyle aura3D() {
+		return new FormConfig.Aura3DStyle();
+	}
+
+	private static FormConfig.Aura3DStyle kaiokenAura(float amplitude) {
+		return aura3D().size(1.18f, 1.20f, 1.12f).waves(2.1f, 5.0f, amplitude).turbulence(1.0f, 0.51f).rim(0.02f, 1.0f, 5.0f, 0.01f).colors("#FF0000", "#FF0000", "#FF0066");
+	}
+
+	private static FormConfig.Aura3DStyle darkAura(String noise) {
+		return aura3D().waves(2.1f, 5.0f, 0.76f).turbulence(0.5f, 0.54f).rim(0.04f, 1.0f, 4.5f, 0.06f).colors("", "", noise).secondBorder("#000000");
 	}
 
 	public void createDefaultFormsForRace(String raceName, Path formsPath, Map<String, FormConfig> forms) throws IOException {
@@ -44,6 +57,20 @@ public class DefaultFormsFactory {
 			case "frostdemon" -> createFrostDemonForms(formsPath, forms);
 			case "majin" -> createMajinForms(formsPath, forms);
 			case "bioandroid" -> createBioAndroidForms(formsPath, forms);
+		}
+		forceGroupAura3D(forms, LEGENDARY_FORM_TYPE, FormConfig.AURA_3D_SPARKING);
+	}
+
+	private static final String LEGENDARY_FORM_TYPE = "legendaryforms";
+
+	private static void forceGroupAura3D(Map<String, FormConfig> forms, String formType, String auraType) {
+		for (FormConfig config : forms.values()) {
+			if (config == null || !formType.equalsIgnoreCase(config.getFormType())) continue;
+			for (FormConfig.FormData form : config.getForms().values()) {
+				if (form == null) continue;
+				form.setAuraType3D(auraType);
+				form.setExtraAuraType3D(auraType);
+			}
 		}
 	}
 
@@ -77,6 +104,7 @@ public class DefaultFormsFactory {
 		x2.setHasLightnings(false);
 		x2.setHairType("");
 		setDefaultMasteryValues(x2);
+		x2.setAura3DStyle(kaiokenAura(0.67f));
 		x2.setAuraLayer(1);
 		x2.setStackOnMastery(0.0);
 		x2.setShareMasteryWith(List.of(StackForms.GROUP_KAIOKEN + "." + StackForms.X3));
@@ -100,6 +128,7 @@ public class DefaultFormsFactory {
 		x3.setAuraColor("#DB182C");
 		x3.setHairType("");
 		setDefaultMasteryValues(x3);
+		x3.setAura3DStyle(kaiokenAura(0.70f));
 		x3.setAuraLayer(1);
 		x3.setStackOnMastery(0.0);
 		x3.setShareMasteryWith(List.of(StackForms.GROUP_KAIOKEN + "." + StackForms.X4));
@@ -122,6 +151,7 @@ public class DefaultFormsFactory {
 		x4.setAuraColor("#DB182C");
 		x4.setHairType("");
 		setDefaultMasteryValues(x4);
+		x4.setAura3DStyle(kaiokenAura(0.72f));
 		x4.setAuraLayer(1);
 		x4.setStackOnMastery(0.0);
 		x4.setShareMasteryWith(List.of(StackForms.GROUP_KAIOKEN + "." + StackForms.X10));
@@ -144,6 +174,7 @@ public class DefaultFormsFactory {
 		x10.setAuraColor("#DB182C");
 		x10.setHairType("");
 		setDefaultMasteryValues(x10);
+		x10.setAura3DStyle(kaiokenAura(0.76f));
 		x10.setAuraLayer(1);
 		x10.setStackOnMastery(0.0);
 		x10.setShareMasteryWith(List.of(StackForms.GROUP_KAIOKEN + "." + StackForms.X20));
@@ -166,6 +197,7 @@ public class DefaultFormsFactory {
 		x20.setAuraColor("#DB182C");
 		x20.setHairType("");
 		setDefaultMasteryValues(x20);
+		x20.setAura3DStyle(kaiokenAura(0.80f));
 		x20.setAuraLayer(1);
 		x20.setStackOnMastery(0.0);
 		x20.setShareMasteryWith(List.of(StackForms.GROUP_KAIOKEN + "." + StackForms.X100));
@@ -213,6 +245,7 @@ public class DefaultFormsFactory {
 
 		FormConfig.FormData ultimate = new FormConfig.FormData();
 		ultimate.setName(StackForms.ULTIMATE);
+		ultimate.setAuraType3D(FormConfig.AURA_3D_SMOOTH);
 		ultimate.setCustomModel("finalbase");
 		ultimate.setUnlockOnSkillLevel(1);
 		ultimate.setAuraColor("#FFFFFF");
@@ -235,6 +268,7 @@ public class DefaultFormsFactory {
 		ultimate.setFormStackable(false);
 		ultimate.setStackDrainMultiplier(1.0);
 		ultimate.setAllowFreeTransformOnMastery(0.0);
+		ultimate.setAura3DStyle(aura3D().waves(1.8f, 3.6f, 0.5f).turbulence(0.05f, 0.5f).rim(0.03f, 0.9f, 3.0f, 0.08f));
 
 		Map<String, FormConfig.FormData> stackFormData = new LinkedHashMap<>();
 		stackFormData.put(StackForms.ULTIMATE, ultimate);
@@ -260,6 +294,7 @@ public class DefaultFormsFactory {
 		sign.setStaminaDrain(0.03);
 		sign.setAuraLayer(1);
 		sign.setAuraColor("#E0E0E0");
+		sign.setAura3DStyle(aura3D().waves(1.7f, 3.2f, 0.45f).turbulence(0.06f, 0.48f).rim(0.02f, 0.9f, 2.6f, 0.09f).colors("", "", "#8FA8FF"));
 		sign.setHasLightnings(false);
 		sign.setHairType("");
 		setDefaultMasteryValues(sign);
@@ -276,6 +311,7 @@ public class DefaultFormsFactory {
 		mastered.setStaminaDrain(0.06);
 		mastered.setAuraLayer(1);
 		mastered.setAuraColor("#E0E0E0");
+		mastered.setAura3DStyle(aura3D().waves(1.7f, 3.0f, 0.42f).turbulence(0.04f, 0.46f).rim(0.02f, 0.85f, 2.4f, 0.10f).colors("", "", "#A8BFFF"));
 		mastered.setHairColor("#E0E0E0");
 		mastered.setBodyColor2("#E0E0E0");
 		mastered.setHairType("");
@@ -308,6 +344,7 @@ public class DefaultFormsFactory {
 		sign.setStaminaDrain(0.03);
 		sign.setAuraLayer(1);
 		sign.setAuraColor("#66023C");
+		sign.setAura3DStyle(aura3D().waves(2.2f, 5.4f, 0.8f).turbulence(0.35f, 0.55f).rim(0.04f, 1.0f, 3.65f, 0.06f).colors("", "", "#FF00EB"));
 		sign.setHasLightnings(false);
 		sign.setHairType("");
 		setDefaultMasteryValues(sign);
@@ -324,6 +361,7 @@ public class DefaultFormsFactory {
 		mastered.setStaminaDrain(0.06);
 		mastered.setAuraLayer(1);
 		mastered.setAuraColor("#66023C");
+		mastered.setAura3DStyle(aura3D().size(1.12f, 1.2f, 1.04f).waves(1.85f, 5.0f, 0.7f).turbulence(0.45f, 0.54f).rim(0.02f, 1.0f, 3.65f, 0.06f).colors("", "", "#FF00EB"));
 		mastered.setHairColor("#66023C");
 		mastered.setBodyColor2("#66023C");
 		mastered.setHairType("ssj2");
@@ -358,6 +396,7 @@ public class DefaultFormsFactory {
 		buffed.setEnergyDrain(0.08);
 		buffed.setHairType("base");
 		setDefaultMasteryValues(buffed);
+		buffed.setAura3DStyle(aura3D().waves(2.0f, 5.0f, 0.78f).turbulence(0.12f, 0.54f));
 		buffed.setStackDrainMultiplier(2.0);
 		buffed.setAllowFreeTransformOnMastery(0.0);
 		buffed.setIncompatibleWith(List.of(""));
@@ -372,6 +411,7 @@ public class DefaultFormsFactory {
 		fullPower.setPwrMultiplier(1.9);
 		fullPower.setEnergyDrain(0.16);
 		fullPower.setHairType("ssj");
+		fullPower.setAura3DStyle(aura3D().waves(2.0f, 5.3f, 0.8f).turbulence(0.15f, 0.54f));
 		setDefaultMasteryValues(fullPower);
 		fullPower.setStackDrainMultiplier(2.0);
 		fullPower.setIncompatibleWith(List.of(""));
@@ -390,6 +430,7 @@ public class DefaultFormsFactory {
 		overdrive.setLightningColor("#E6F2F5");
 		overdrive.setHairType("ssj2");
 		setDefaultMasteryValues(overdrive);
+		overdrive.setAura3DStyle(aura3D().size(1.12f, 1.2f, 1.04f).waves(2.1f, 5.8f, 0.82f).turbulence(0.2f, 0.55f));
 		overdrive.setStackDrainMultiplier(2.0);
 		overdrive.setIncompatibleWith(List.of(""));
 
@@ -404,6 +445,7 @@ public class DefaultFormsFactory {
 		solaris.setEnergyDrain(0.22);
 		solaris.setHairType("ssj2");
 		setDefaultMasteryValues(solaris);
+		solaris.setAura3DStyle(aura3D().waves(1.9f, 4.6f, 0.66f).turbulence(0.10f, 0.52f).rim(0.04f, 1.0f, 3.2f, 0.07f).colors("", "", "#FFB300"));
 		solaris.setStackDrainMultiplier(2.0);
 		solaris.setIncompatibleWith(List.of(""));
 
@@ -439,6 +481,7 @@ public class DefaultFormsFactory {
         shiyoken.setHasLightnings(true);
         shiyoken.setLightningColor("#FF4F4F");
 		setDefaultMasteryValues(shiyoken);
+		shiyoken.setAura3DStyle(darkAura("#FF1A1A").waves(2.1f, 5.2f, 0.78f).turbulence(0.45f, 0.54f));
 		shiyoken.setStackDrainMultiplier(2.0);
 		shiyoken.setAllowFreeTransformOnMastery(0.0);
         shiyoken.setModelScaling(new Float[]{1.1f, 1.1f, 1.1f});
@@ -459,6 +502,7 @@ public class DefaultFormsFactory {
         shin_shiyoken.setHasLightnings(true);
         shin_shiyoken.setLightningColor("#FF4F4F");
 		setDefaultMasteryValues(shin_shiyoken);
+		shin_shiyoken.setAura3DStyle(darkAura("#FF1A1A").size(1.12f, 1.2f, 1.03f).waves(2.1f, 5.2f, 0.8f).turbulence(0.45f, 0.54f));
 		shin_shiyoken.setStackDrainMultiplier(2.0);
         shin_shiyoken.setModelScaling(new Float[]{1.3f, 1.3f, 1.3f});
 
@@ -484,6 +528,7 @@ public class DefaultFormsFactory {
         chou_shiyoken.setHasLightnings(true);
         chou_shiyoken.setLightningColor("#FF4F4F");
         setDefaultMasteryValues(chou_shiyoken);
+        chou_shiyoken.setAura3DStyle(darkAura("#FF1A1A").size(1.18f, 1.24f, 1.08f).waves(2.1f, 5.4f, 0.82f).turbulence(0.5f, 0.55f));
         chou_shiyoken.setStackDrainMultiplier(2.0);
         chou_shiyoken.setModelScaling(new Float[]{1.5f, 1.5f, 1.5f});
 
@@ -516,6 +561,7 @@ public class DefaultFormsFactory {
 		androidBase.setPwrMultiplier(2.3);
 		androidBase.setHairType("base");
 		setDefaultMasteryValues(androidBase);
+		androidBase.setAura3DStyle(aura3D().waves(1.9f, 4.5f, 0.6f).turbulence(0.05f, 0.52f));
 		androidBase.setStackDrainMultiplier(2.0);
 		androidBase.setAllowFreeTransformOnMastery(0.0);
 
@@ -530,6 +576,7 @@ public class DefaultFormsFactory {
 		superAndroid.setPwrMultiplier(3.3);
 		superAndroid.setHairType("ssj");
 		setDefaultMasteryValues(superAndroid);
+		superAndroid.setAura3DStyle(aura3D().waves(2.0f, 5.0f, 0.72f).turbulence(0.1f, 0.54f));
 		superAndroid.setStackDrainMultiplier(2.0);
 
 		FormConfig.FormData fusedAndroid = new FormConfig.FormData();
@@ -552,6 +599,7 @@ public class DefaultFormsFactory {
 		fusedAndroid.setHairType("ssj2");
 		fusedAndroid.setForcedHairCode("");
 		setDefaultMasteryValues(fusedAndroid);
+		fusedAndroid.setAura3DStyle(aura3D().size(1.14f, 1.2f, 1.06f).waves(2.1f, 5.4f, 0.8f).turbulence(0.3f, 0.55f));
 		fusedAndroid.setStackDrainMultiplier(2.0);
 
 		Map<String, FormConfig.FormData> androidFormData = new LinkedHashMap<>();
@@ -634,6 +682,7 @@ public class DefaultFormsFactory {
 		ssj4gt.setHairType("base");
 		ssj4gt.setForcedHairCode("DMZ1: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");
 		setDefaultMasteryValues(ssj4gt);
+		ssj4gt.setAura3DStyle(aura3D().waves(2.0f, 5.0f, 0.78f).turbulence(0.13f, 0.54f).colors("", "", "#C8102E"));
 		ssj4gt.setStackDrainMultiplier(2.0);
 		ssj4gt.setAllowFreeTransformOnMastery(50.0);
 		ssj4gt.setIncompatibleWith(List.of(""));
@@ -666,6 +715,7 @@ public class DefaultFormsFactory {
 		ssj1.setEnergyDrain(0.08);
 		ssj1.setHairType("ssj");
 		setDefaultMasteryValues(ssj1);
+		ssj1.setAura3DStyle(aura3D().waves(2.0f, 5.0f, 0.77f).turbulence(0.14f, 0.54f));
 		ssj1.setStackDrainMultiplier(2.0);
 		ssj1.setAllowFreeTransformOnMastery(0.0);
 		ssj1.setIncompatibleWith(List.of(""));
@@ -690,6 +740,7 @@ public class DefaultFormsFactory {
 		ssg2.setStaminaDrainMultiplier(1.3);
 		ssg2.setHairType("ssj");
 		setDefaultMasteryValues(ssg2);
+		ssg2.setAura3DStyle(aura3D().size(1.14f, 1.18f, 1.06f).waves(2.0f, 5.2f, 0.8f).turbulence(0.16f, 0.54f));
 		ssg2.setStackDrainMultiplier(2.0);
 		ssg2.setIncompatibleWith(List.of(""));
 
@@ -713,6 +764,7 @@ public class DefaultFormsFactory {
 		ssg3.setAttackSpeed(0.75);
 		ssg3.setHairType("ssj");
 		setDefaultMasteryValues(ssg3);
+		ssg3.setAura3DStyle(aura3D().size(1.22f, 1.22f, 1.12f).waves(2.0f, 4.4f, 0.86f).turbulence(0.2f, 0.5f));
 		ssg3.setStackDrainMultiplier(2.0);
 		ssg3.setIncompatibleWith(List.of(""));
 
@@ -744,6 +796,7 @@ public class DefaultFormsFactory {
 		ssj1Mastered.setEnergyDrain(0.03);
 		ssj1Mastered.setHairType("ssj");
 		setDefaultMasteryValues(ssj1Mastered);
+		ssj1Mastered.setAura3DStyle(aura3D().waves(1.9f, 4.6f, 0.7f).turbulence(0.08f, 0.54f));
 		ssj1Mastered.setStackDrainMultiplier(2.0);
 		ssj1Mastered.setAllowFreeTransformOnMastery(0.0);
 		ssj1Mastered.setIncompatibleWith(List.of(""));
@@ -766,6 +819,7 @@ public class DefaultFormsFactory {
 		ssj2.setEnergyDrain(0.16);
 		ssj2.setHairType("ssj2");
 		setDefaultMasteryValues(ssj2);
+		ssj2.setAura3DStyle(aura3D().waves(2.1f, 5.6f, 0.8f).turbulence(0.18f, 0.55f).colors("", "", "#FFF6C8"));
 		ssj2.setStackDrainMultiplier(2.0);
 		ssj2.setIncompatibleWith(List.of(""));
 
@@ -788,6 +842,7 @@ public class DefaultFormsFactory {
 		ssj3.setEnergyDrain(0.34);
 		ssj3.setHairType("ssj3");
 		setDefaultMasteryValues(ssj3);
+		ssj3.setAura3DStyle(aura3D().size(1.12f, 1.24f, 1.05f).waves(2.1f, 5.4f, 0.84f).turbulence(0.2f, 0.56f).colors("", "", "#FFF6C8"));
 		ssj3.setStackDrainMultiplier(2.0);
 		ssj3.setIncompatibleWith(List.of(""));
 
@@ -819,6 +874,7 @@ public class DefaultFormsFactory {
         ssj4d.setHasLightnings(true);
         ssj4d.setStackDrainMultiplier(2.0);
         setDefaultMasteryValues(ssj4d);
+        ssj4d.setAura3DStyle(aura3D().waves(2.0f, 5.0f, 0.78f).turbulence(0.13f, 0.54f).colors("", "", "#C8102E"));
         ssj4d.setAllowFreeTransformOnMastery(50.0);
 		ssj4d.setIncompatibleWith(List.of(""));
 
@@ -862,6 +918,7 @@ public class DefaultFormsFactory {
         ikari.setModelScaling(new Float[]{1.1f, 1.1f, 1.1f});
         ikari.setHairType("ssj");
 		setDefaultMasteryValues(ikari);
+		ikari.setAura3DStyle(aura3D().waves(2.2f, 5.6f, 0.8f).turbulence(0.3f, 0.55f).colors("", "", "#1B8C00"));
 		ikari.setStackDrainMultiplier(2.0);
 		ikari.setAllowFreeTransformOnMastery(0.0);
 
@@ -885,6 +942,7 @@ public class DefaultFormsFactory {
         ssjHybrid.setModelScaling(new Float[]{1.15f, 1.15f, 1.15f});
         ssjHybrid.setHairType("ssj");
 		setDefaultMasteryValues(ssjHybrid);
+		ssjHybrid.setAura3DStyle(aura3D().size(1.14f, 1.2f, 1.06f).waves(2.2f, 5.8f, 0.84f).turbulence(0.35f, 0.56f).colors("", "", "#1B8C00"));
 		ssjHybrid.setStackDrainMultiplier(2.0);
 
 		FormConfig.FormData ssjFullPower = new FormConfig.FormData();
@@ -907,6 +965,7 @@ public class DefaultFormsFactory {
         ssjFullPower.setModelScaling(new Float[]{1.4f, 1.3f, 1.4f});
         ssjFullPower.setHairType("ssj2");
 		setDefaultMasteryValues(ssjFullPower);
+		ssjFullPower.setAura3DStyle(aura3D().size(1.22f, 1.26f, 1.12f).waves(2.2f, 6.0f, 0.9f).turbulence(0.42f, 0.56f).colors("", "", "#0F5C00"));
 		ssjFullPower.setStackDrainMultiplier(2.0);
 
 		Map<String, FormConfig.FormData> saiyanLegendaryData = new LinkedHashMap<>();
@@ -954,6 +1013,7 @@ public class DefaultFormsFactory {
 		fullPower.setDefMultiplier(2.3125);
 		fullPower.setPwrMultiplier(2.85);
 		fullPower.setEnergyDrain(0.18);
+		fullPower.setAura3DStyle(aura3D().waves(2.0f, 5.0f, 0.8f).turbulence(0.15f, 0.54f));
 		fullPower.setHairType("base");
 		setDefaultMasteryValues(fullPower);
 		fullPower.setStackDrainMultiplier(2.0);
@@ -975,6 +1035,7 @@ public class DefaultFormsFactory {
 		superNamekian.setEnergyDrain(0.27);
 		superNamekian.setHairType("base");
 		setDefaultMasteryValues(superNamekian);
+		superNamekian.setAura3DStyle(aura3D().waves(1.9f, 4.8f, 0.7f).turbulence(0.12f, 0.52f).rim(0.04f, 1.0f, 3.2f, 0.07f).colors("", "", "#E8FFB0"));
 		superNamekian.setStackDrainMultiplier(2.0);
 		superNamekian.setIncompatibleWith(List.of(""));
 
@@ -1012,6 +1073,7 @@ public class DefaultFormsFactory {
         evilNamek.setHairType("base");
         evilNamek.setKeepBaseFormHeadBones(true);
 		setDefaultMasteryValues(evilNamek);
+		evilNamek.setAura3DStyle(darkAura("#FF0000").size(1.12f, 1.2f, 1.03f));
 		evilNamek.setStackDrainMultiplier(2.0);
 		evilNamek.setAllowFreeTransformOnMastery(0.0);
 
@@ -1037,6 +1099,7 @@ public class DefaultFormsFactory {
 		evilGiant.setHairType("base");
         evilGiant.setKeepBaseFormHeadBones(true);
         setDefaultMasteryValues(evilGiant);
+		evilGiant.setAura3DStyle(darkAura("#FF0000"));
 		evilGiant.setStackDrainMultiplier(2.0);
 
 		FormConfig.FormData buffedNamek = new FormConfig.FormData();
@@ -1064,6 +1127,7 @@ public class DefaultFormsFactory {
         buffedNamek.setHairType("base");
         buffedNamek.setKeepBaseFormHeadBones(true);
         setDefaultMasteryValues(buffedNamek);
+		buffedNamek.setAura3DStyle(darkAura("#FF0000").size(1.14f, 1.2f, 1.05f).waves(2.1f, 5.2f, 0.8f));
 		buffedNamek.setStackDrainMultiplier(2.0);
 
 		Map<String, FormConfig.FormData> namekianLegendaryData = new LinkedHashMap<>();
@@ -1140,6 +1204,7 @@ public class DefaultFormsFactory {
 		fullPower.setDefMultiplier(2.5);
 		fullPower.setPwrMultiplier(3.15);
 		fullPower.setEnergyDrain(0.22);
+		fullPower.setAura3DStyle(aura3D().waves(2.1f, 5.6f, 0.82f).turbulence(0.2f, 0.55f));
 		fullPower.setStaminaDrainMultiplier(2.5);
 		fullPower.setAttackSpeed(0.75);
 		fullPower.setLightningColor("#F02B16");
@@ -1165,6 +1230,7 @@ public class DefaultFormsFactory {
 		fifthForm.setLightningColor("#F02B16");
 		fifthForm.setHairType("base");
 		setDefaultMasteryValues(fifthForm);
+		fifthForm.setAura3DStyle(aura3D().size(1.12f, 1.2f, 1.04f).waves(2.1f, 5.6f, 0.84f).turbulence(0.25f, 0.55f));
 		fifthForm.setStackDrainMultiplier(2.0);
 		fifthForm.setIncompatibleWith(List.of(""));
 
@@ -1197,6 +1263,7 @@ public class DefaultFormsFactory {
         mecha.setHasLightnings(true);
         mecha.setLightningColor("#FF6052");
 		setDefaultMasteryValues(mecha);
+		mecha.setAura3DStyle(aura3D().waves(1.9f, 4.4f, 0.6f).turbulence(0.05f, 0.52f));
 		mecha.setStackDrainMultiplier(2.0);
 		mecha.setAllowFreeTransformOnMastery(0.0);
 
@@ -1218,6 +1285,7 @@ public class DefaultFormsFactory {
         metal.setLightningColor("#B5FDFF");
         metal.setHairType("base");
 		setDefaultMasteryValues(metal);
+		metal.setAura3DStyle(aura3D().waves(1.9f, 4.5f, 0.65f).turbulence(0.1f, 0.52f).rim(0.03f, 1.0f, 3.0f, 0.07f).colors("", "", "#B5FDFF"));
 		metal.setStackDrainMultiplier(2.0);
 
 		FormConfig.FormData metalCore = new FormConfig.FormData();
@@ -1234,6 +1302,7 @@ public class DefaultFormsFactory {
 		metalCore.setAttackSpeed(0.25);
         metalCore.setModelScaling(new Float[]{3.8f, 3.8f, 3.8f});
         setDefaultMasteryValues(metalCore);
+		metalCore.setAura3DStyle(aura3D().waves(1.9f, 4.5f, 0.65f).turbulence(0.1f, 0.52f).rim(0.03f, 1.0f, 3.0f, 0.07f).colors("", "", "#B5FDFF"));
 		metalCore.setStackDrainMultiplier(2.0);
 
 		Map<String, FormConfig.FormData> frostLegendaryData = new LinkedHashMap<>();
@@ -1265,6 +1334,7 @@ public class DefaultFormsFactory {
 		kid.setPwrMultiplier(1.75);
 		kid.setHairType("base");
 		setDefaultMasteryValues(kid);
+		kid.setAura3DStyle(aura3D().waves(2.3f, 6.2f, 0.82f).turbulence(0.3f, 0.56f));
 		kid.setStackDrainMultiplier(2.0);
 		kid.setAllowFreeTransformOnMastery(0.0);
 		kid.setIncompatibleWith(List.of(""));
@@ -1287,6 +1357,7 @@ public class DefaultFormsFactory {
 		evil.setBodyColor3("#917979");
 		evil.setHairType("base");
 		setDefaultMasteryValues(evil);
+		evil.setAura3DStyle(aura3D().waves(2.1f, 5.4f, 0.8f).turbulence(0.4f, 0.55f).colors("", "", "#FF2A6D"));
 		evil.setStackDrainMultiplier(2.0);
 		evil.setIncompatibleWith(List.of(""));
 
@@ -1321,6 +1392,7 @@ public class DefaultFormsFactory {
 		ultra.setLightningColor("#F02B16");
 		ultra.setHairType("base");
 		setDefaultMasteryValues(ultra);
+		ultra.setAura3DStyle(aura3D().size(1.14f, 1.2f, 1.06f).waves(2.1f, 5.4f, 0.85f).turbulence(0.25f, 0.55f));
 		ultra.setStackDrainMultiplier(2.0);
 		ultra.setIncompatibleWith(List.of(""));
 
@@ -1352,6 +1424,7 @@ public class DefaultFormsFactory {
 		innocence.setHairType("empty");
         innocence.setModelScaling(new Float[]{1.4f, 1.4f, 1.4f});
         setDefaultMasteryValues(innocence);
+		innocence.setAura3DStyle(aura3D().waves(2.2f, 5.6f, 0.8f).turbulence(0.35f, 0.55f).colors("", "", "#FF61D8"));
 		innocence.setStackDrainMultiplier(2.0);
 		innocence.setAllowFreeTransformOnMastery(0.0);
 
@@ -1371,6 +1444,7 @@ public class DefaultFormsFactory {
         giant_innocence_demon.setBodyColor1("#FFFC82");
         giant_innocence_demon.setModelScaling(new Float[]{3.0f, 3.0f, 3.0f});
         setDefaultMasteryValues(giant_innocence_demon);
+        giant_innocence_demon.setAura3DStyle(aura3D().waves(2.2f, 5.2f, 0.8f).turbulence(0.35f, 0.55f).colors("", "", "#FF61D8"));
         giant_innocence_demon.setStackDrainMultiplier(2.0);
 
 		FormConfig.FormData superDemon = new FormConfig.FormData();
@@ -1389,6 +1463,7 @@ public class DefaultFormsFactory {
         superDemon.setEye2Color("#303030");
         superDemon.setModelScaling(new Float[]{1.1f, 1.1f, 1.1f});
         setDefaultMasteryValues(superDemon);
+        superDemon.setAura3DStyle(aura3D().size(1.12f, 1.2f, 1.04f).waves(2.2f, 5.6f, 0.84f).turbulence(0.4f, 0.55f).colors("", "", "#FF61D8"));
 		superDemon.setStackDrainMultiplier(2.0);
 
 		Map<String, FormConfig.FormData> majinLegendaryData = new LinkedHashMap<>();
@@ -1446,6 +1521,7 @@ public class DefaultFormsFactory {
 		perfect.setBodyColor3("");
 		perfect.setHairType("base");
 		setDefaultMasteryValues(perfect);
+		perfect.setAura3DStyle(aura3D().waves(1.9f, 4.6f, 0.68f).turbulence(0.1f, 0.52f).rim(0.04f, 1.0f, 3.4f, 0.07f));
 		perfect.setStackDrainMultiplier(2.0);
 		perfect.setIncompatibleWith(List.of(""));
 
@@ -1469,6 +1545,7 @@ public class DefaultFormsFactory {
 		superPerfect.setLightningColor("#1AA1C7");
 		superPerfect.setHairType("base");
 		setDefaultMasteryValues(superPerfect);
+		superPerfect.setAura3DStyle(aura3D().waves(2.0f, 5.2f, 0.78f).turbulence(0.16f, 0.54f));
 		superPerfect.setStackDrainMultiplier(2.0);
 		superPerfect.setIncompatibleWith(List.of(""));
 
@@ -1495,6 +1572,7 @@ public class DefaultFormsFactory {
 		ultraperfect.setLightningColor("#1AA1C7");
 		ultraperfect.setHairType("base");
 		setDefaultMasteryValues(ultraperfect);
+		ultraperfect.setAura3DStyle(aura3D().size(1.18f, 1.22f, 1.08f).waves(2.0f, 4.6f, 0.86f).turbulence(0.22f, 0.54f));
 		ultraperfect.setStackDrainMultiplier(2.0);
 		ultraperfect.setIncompatibleWith(List.of(""));
 
@@ -1533,6 +1611,7 @@ public class DefaultFormsFactory {
         xeno.setHairColor("#4C3554");
         xeno.setHairType("base");
 		setDefaultMasteryValues(xeno);
+		xeno.setAura3DStyle(darkAura("#9D00FF"));
         xeno.setModelScaling(new Float[]{1.1f, 1.1f, 1.1f});
         xeno.setStackDrainMultiplier(2.0);
 		xeno.setAllowFreeTransformOnMastery(0.0);
@@ -1556,6 +1635,7 @@ public class DefaultFormsFactory {
         xenoFP.setHairColor("#4C3554");
         xenoFP.setHairType("base");
 		setDefaultMasteryValues(xenoFP);
+		xenoFP.setAura3DStyle(darkAura("#9D00FF").size(1.12f, 1.2f, 1.03f).waves(2.1f, 5.2f, 0.8f));
         xenoFP.setModelScaling(new Float[]{1.3f, 1.3f, 1.3f});
         xenoFP.setStackDrainMultiplier(2.0);
 
@@ -1578,6 +1658,7 @@ public class DefaultFormsFactory {
         xenoMax.setHairColor("#4C3554");
         xenoMax.setHairType("base");
 		setDefaultMasteryValues(xenoMax);
+		xenoMax.setAura3DStyle(darkAura("#9D00FF"));
         xenoMax.setModelScaling(new Float[]{1.5f, 1.5f, 1.5f});
         xenoMax.setStackDrainMultiplier(2.0);
 

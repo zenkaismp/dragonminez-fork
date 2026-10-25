@@ -73,6 +73,8 @@ public class StatsEvents {
 	public static final UUID DMZ_HEALTH_MODIFIER_UUID = UUID.fromString("b065b873-f4c8-4a0f-aa8c-6e778cd410e0");
 	public static final UUID FORM_SPEED_UUID = UUID.fromString("c8c07577-3365-4b1c-9917-26b237da6e08");
 	public static final UUID TURBO_SPEED_UUID = UUID.fromString("b3f4a1d2-6c8e-4b0a-9f21-7d5e3c9a1b64");
+	public static final UUID SURGE_SPEED_UUID = UUID.fromString("7d41b9a6-0e52-4c37-8fb0-3a6c15d9e824");
+	public static final UUID SURGE_ATTACK_SPEED_UUID = UUID.fromString("4e83c027-9a1b-4d65-b3f8-6c20d74a1e9b");
 	private static final double TURBO_SPEED_BONUS = 0.30;
 	public static final UUID FORM_REACH_UUID = UUID.fromString("d8d18684-4476-5c2d-ba28-37c348eb521f");
 	public static final UUID FORM_ATTACK_SPEED_UUID = UUID.fromString("f2e0aaf0-a4ab-4921-a5b0-f34cf1c3533b");
@@ -99,6 +101,17 @@ public class StatsEvents {
 		}
 		double multiplier = 1.0 - (penalty / 10.5);
 		return Math.max(0.001, multiplier);
+	}
+
+	private static void applySpeedModifier(AttributeInstance attribute, UUID uuid, String name, double amount) {
+		AttributeModifier existing = attribute.getModifier(uuid);
+		double current = existing != null ? existing.getAmount() : 0.0;
+		if (Math.abs(amount - current) <= 1.0E-9) return;
+
+		attribute.removeModifier(uuid);
+		if (amount != 0.0) {
+			attribute.addTransientModifier(new AttributeModifier(uuid, name, amount, AttributeModifier.Operation.MULTIPLY_TOTAL));
+		}
 	}
 
 	private static void applyWeightAttributeModifier(Player player, net.minecraft.world.entity.ai.attributes.Attribute attribute, UUID uuid, String name, double amount) {
@@ -764,6 +777,18 @@ public class StatsEvents {
 							speedAttr.addTransientModifier(new AttributeModifier(TURBO_SPEED_UUID, "Turbo Speed Bonus", expectedTurboBonus, AttributeModifier.Operation.MULTIPLY_TOTAL));
 						}
 					}
+
+					double expectedSurgeBonus = data.getStatus().isSurgeActive()
+							? Math.max(0.0, ConfigManager.getCombatConfig().getSurgeMoveSpeedMultiplier() - 1.0)
+							: 0.0;
+					applySpeedModifier(speedAttr, SURGE_SPEED_UUID, "Ki Surge Speed", expectedSurgeBonus);
+				}
+
+				if (attackSpeedAttr != null) {
+					double expectedSurgeAttackSpeed = data.getStatus().isSurgeActive()
+							? Math.max(0.0, ConfigManager.getCombatConfig().getSurgeAttackSpeedMultiplier() - 1.0)
+							: 0.0;
+					applySpeedModifier(attackSpeedAttr, SURGE_ATTACK_SPEED_UUID, "Ki Surge Attack Speed", expectedSurgeAttackSpeed);
 				}
 
 				if (attackSpeedAttr != null) {
