@@ -85,6 +85,8 @@ public class TickHandler {
 	private static final double MEDITATION_BONUS_PER_LEVEL = 0.05;
 	private static final Map<UUID, Integer> masterySecondsByPlayer = new HashMap<>();
 	private static final Map<UUID, Integer> chargeTicksByPlayer = new HashMap<>();
+	private static final Map<UUID, Integer> flySprintAuraTicks = new HashMap<>();
+	private static final int FLY_SPRINT_AURA_LINGER_TICKS = 6;
 	private static final Map<UUID, Integer> playerTickCounters = new HashMap<>();
 	private static final Map<UUID, BlockPos> auraLightPositions = new HashMap<>();
 	private static final Map<UUID, Integer> auraLightLevels = new HashMap<>();
@@ -323,7 +325,14 @@ public class TickHandler {
 			} else if (chargeTicksByPlayer.containsKey(playerId)) chargeTicksByPlayer.remove(playerId);
 
 			boolean auraFromActions = isChargingKi || (data.getStatus().isActionCharging() && (data.getStatus().getSelectedAction() == ActionMode.FORM || data.getStatus().getSelectedAction() == ActionMode.STACK));
-			boolean auraFromFlySprint = data.getSkills().isSkillActive("fly") && serverPlayer.isSprinting() && serverPlayer.getDeltaMovement().length() > 0.65F;
+			if (data.getSkills().isSkillActive("fly") && serverPlayer.isSprinting() && !serverPlayer.onGround()) {
+				flySprintAuraTicks.put(playerId, FLY_SPRINT_AURA_LINGER_TICKS);
+			} else {
+				int linger = flySprintAuraTicks.getOrDefault(playerId, 0) - 1;
+				if (linger > 0) flySprintAuraTicks.put(playerId, linger);
+				else flySprintAuraTicks.remove(playerId);
+			}
+			boolean auraFromFlySprint = flySprintAuraTicks.containsKey(playerId);
 			data.getStatus().setAuraActive(auraFromActions || auraFromFlySprint);
 
 			if (tickCounter % 5 == 0) {
@@ -462,6 +471,7 @@ public class TickHandler {
 		CHARGING_CACHE.remove(playerId);
 		CHARGE_COST_ACCUM.remove(playerId);
 		chargeTicksByPlayer.remove(playerId);
+		flySprintAuraTicks.remove(playerId);
 		masterySecondsByPlayer.remove(playerId);
 		playerTickCounters.remove(playerId);
 		forceKillGraceByPlayer.remove(playerId);

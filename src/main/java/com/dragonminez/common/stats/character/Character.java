@@ -64,6 +64,8 @@ public class Character {
 
 	private boolean hasSaiyanTail = false;
 	private boolean renderHairBase = true;
+	private boolean aura3D = false;
+	private String aura3DType = FormConfig.AURA_3D_SMOOTH;
 
 	private final Map<String, MasterLocation> interactedMasters = new HashMap<>();
 
@@ -229,6 +231,31 @@ public class Character {
 	public float[] getRgbAuraColor() {
 		if (rgbAuraColor == null) rgbAuraColor = ColorUtils.hexToRgb(auraColor != null ? auraColor : "#FFFFFF");
 		return rgbAuraColor;
+	}
+
+	public String getAura3DType() {
+		aura3DType = FormConfig.sanitizeAura3DPreference(aura3DType);
+		return FormConfig.sanitizeAura3DPreference(aura3DType, getRaceName());
+	}
+
+	public void setAura3DType(String type) {
+		this.aura3DType = FormConfig.sanitizeAura3DPreference(type);
+	}
+
+	public String getActiveAuraColor() {
+		if (hasActiveStackForm()) {
+			FormConfig.FormData stackForm = getActiveStackFormData();
+			if (stackForm != null && stackForm.getAuraColor() != null && !stackForm.getAuraColor().isEmpty()) {
+				return stackForm.getAuraColor();
+			}
+		}
+		if (hasActiveForm()) {
+			FormConfig.FormData form = getActiveFormData();
+			if (form != null && form.getAuraColor() != null && !form.getAuraColor().isEmpty()) {
+				return form.getAuraColor();
+			}
+		}
+		return auraColor != null && !auraColor.isEmpty() ? auraColor : "#FFFFFF";
 	}
 
 	public void updateOozaruCache() {
@@ -443,6 +470,8 @@ public class Character {
 		tag.put("StackFormsUsedBefore", (stackFormsUsedBefore != null ? stackFormsUsedBefore : new UsedForms()).save());
 		tag.putBoolean("HasSaiyanTail", hasSaiyanTail);
 		tag.putBoolean("RenderHairBase", renderHairBase);
+		tag.putBoolean("Aura3D", aura3D);
+		tag.putString("Aura3DType", getAura3DType());
 		tag.putBoolean("isArmored", armored);
 
 		ListTag mastersList = new ListTag();
@@ -521,6 +550,8 @@ public class Character {
 		if (tag.contains("StackFormsUsedBefore")) stackFormsUsedBefore.load(tag.getCompound("StackFormsUsedBefore"));
 		this.hasSaiyanTail = tag.getBoolean("HasSaiyanTail");
 		this.renderHairBase = tag.getBoolean("RenderHairBase");
+		this.aura3D = tag.getBoolean("Aura3D");
+		setAura3DType(tag.getString("Aura3DType"));
 		this.armored = tag.getBoolean("isArmored");
 
 		this.interactedMasters.clear();
@@ -765,6 +796,8 @@ public class Character {
 		this.stackFormMasteries.copyFrom(other.stackFormMasteries);
 		this.hasSaiyanTail = other.hasSaiyanTail;
 		this.renderHairBase = other.renderHairBase;
+		this.aura3D = other.aura3D;
+		this.aura3DType = other.getAura3DType();
 		this.armored = other.armored;
 		this.interactedMasters.clear();
 		this.interactedMasters.putAll(other.interactedMasters);

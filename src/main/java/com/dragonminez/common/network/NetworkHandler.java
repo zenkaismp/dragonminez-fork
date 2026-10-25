@@ -515,6 +515,12 @@ public class NetworkHandler {
 				.encoder(KnockbackFlightS2C::encode)
 				.consumerMainThread(KnockbackFlightS2C::handle)
 				.add();
+
+		net.messageBuilder(AuraModeC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(AuraModeC2S::new)
+				.encoder(AuraModeC2S::encode)
+				.consumerMainThread(AuraModeC2S::handle)
+				.add();
 	}
 
 	public static <MSG> void sendToServer(MSG message) {

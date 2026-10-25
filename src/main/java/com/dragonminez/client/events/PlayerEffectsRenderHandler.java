@@ -2,6 +2,7 @@ package com.dragonminez.client.events;
 
 import com.dragonminez.Reference;
 import com.dragonminez.client.render.effects.AuraRenderer;
+import com.dragonminez.client.render.effects.AuraTrailRenderer;
 import com.dragonminez.client.render.effects.KiWeaponRenderer;
 import com.dragonminez.client.render.shader.DMZShaders;
 import com.dragonminez.client.render.shader.KiBloomRenderer;
@@ -30,6 +31,7 @@ public class PlayerEffectsRenderHandler {
 	@SubscribeEvent
 	public static void onRenderTick(TickEvent.RenderTickEvent event) {
 		if (event.phase == TickEvent.Phase.START) {
+			AuraRenderer.resetBloomCapture();
 			PlayerEffectQueue.getAndClearAuras();
 			PlayerEffectQueue.getAndClearSparks();
 			PlayerEffectQueue.getAndClearWeapons();
@@ -46,6 +48,10 @@ public class PlayerEffectsRenderHandler {
 
 		boolean shaderPack = IrisCompat.isShaderPackInUse(mc.level.getGameTime());
 		RenderLevelStageEvent.Stage stage = event.getStage();
+
+		if (stage == RenderLevelStageEvent.Stage.AFTER_SKY) {
+			AuraRenderer.beginBloomCapture();
+		}
 
 		if (shaderPack) {
 
@@ -101,7 +107,16 @@ public class PlayerEffectsRenderHandler {
 		}
 
 		AuraRenderer.processFusionFlashes(mc, gameTime, partialTick, poseStack, buffers);
-		buffers.endBatch();
+		PoseStack modelView = RenderSystem.getModelViewStack();
+		modelView.pushPose();
+		modelView.setIdentity();
+		RenderSystem.applyModelViewMatrix();
+		try {
+			buffers.endBatch();
+		} finally {
+			modelView.popPose();
+			RenderSystem.applyModelViewMatrix();
+		}
 
 		var kiAttacks = PlayerEffectQueue.getAndClearKiAttacks();
 		if (!kiAttacks.isEmpty()) {
@@ -120,21 +135,29 @@ public class PlayerEffectsRenderHandler {
 			RenderSystem.enableCull();
 			RenderSystem.depthMask(true);
 			RenderSystem.disableBlend();
-
-			if (!IrisCompat.isShaderPackInUse(gameTime)) {
-				KiBloomRenderer.render(kiAttacks, poseStack, projectionMatrix, partialTick);
-			}
-
-			if (DMZShaders.ki3dShader != null) DMZShaders.ki3dShader.safeGetUniform("globalAlpha").set(1.0f);
 		}
 
-		AuraRenderer.processThirdPersonAuras(mc, poseStack, projectionMatrix, CURRENT_FRAME_PLAYERS, isFirstPerson, isCameraColliding);
-		AuraRenderer.processFirstPersonAuras(mc, poseStack, projectionMatrix, partialTick, CURRENT_FRAME_PLAYERS, isFirstPerson);
-		AuraRenderer.processGhostAuras(mc, poseStack, projectionMatrix, partialTick, CURRENT_FRAME_PLAYERS);
-		AuraRenderer.processSparks(poseStack, projectionMatrix, isFirstPerson);
+		try {
+			AuraRenderer.processThirdPersonAuras(mc, poseStack, projectionMatrix, CURRENT_FRAME_PLAYERS, isFirstPerson, isCameraColliding);
+			AuraRenderer.processFirstPersonAuras(mc, poseStack, projectionMatrix, partialTick, CURRENT_FRAME_PLAYERS, isFirstPerson);
+			AuraRenderer.processGhostAuras(mc, poseStack, projectionMatrix, partialTick, CURRENT_FRAME_PLAYERS);
+			AuraTrailRenderer.renderDetached(poseStack, projectionMatrix, partialTick);
+			AuraRenderer.processSparks(poseStack, projectionMatrix, isFirstPerson);
 
-		var entityEffects = PlayerEffectQueue.getAndClearEntityEffects();
-		for (var task : entityEffects) task.render();
+			var entityEffects = PlayerEffectQueue.getAndClearEntityEffects();
+			for (var task : entityEffects) task.render();
+		} finally {
+			AuraRenderer.endBloomCapture();
+		}
+
+		// As in v2.2 the bloom runs after the auras, so whoever composes it can also take the aura redraws captured
+		// above (AuraRenderer.renderBloomDraws). This fork's KiBloomRenderer only knows the ki attacks.
+		if (!IrisCompat.isShaderPackInUse(gameTime) && !kiAttacks.isEmpty()) {
+			KiBloomRenderer.render(kiAttacks, poseStack, projectionMatrix, partialTick);
+		}
+		AuraRenderer.resetBloomCapture();
+
+		if (DMZShaders.ki3dShader != null) DMZShaders.ki3dShader.safeGetUniform("globalAlpha").set(1.0f);
 
 		AuraRenderer.cleanCaches(CURRENT_FRAME_PLAYERS);
 	}
