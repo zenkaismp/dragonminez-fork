@@ -135,9 +135,9 @@ public class KiLaserEntity extends AbstractKiProjectile{
         this.setupKiMakkankosanpo(owner, damage, speed, 0xFFFFFF, castTime);
     }
 
-    public void setupKiLaserPlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder, int colorOutline) {
+    public void setupKiLaserPlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder, int colorOutline, float size) {
         this.setKiRenderType(0);
-        this.setSize(1.0f);
+        this.setSize(size);
         this.setKiDamage(damage);
         this.setKiSpeed(speed);
         this.setColors(color, colorBorder, colorOutline);
@@ -149,13 +149,19 @@ public class KiLaserEntity extends AbstractKiProjectile{
         
     }
 
-    public void setupKiLaserPlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder) {
-        this.setupKiLaserPlayer(owner, damage, speed, color, colorBorder, 0xFFFFFF);
+    public void setupKiLaserPlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder, float size) {
+        this.setupKiLaserPlayer(owner, damage, speed, color, colorBorder, 0xFFFFFF, size);
     }
 
-    public void setupKiMakkankosanpoPlayer(LivingEntity owner, float damage, float speed, int colorOutline){
+    // Zenkai: a assinatura antiga (tres cores, tamanho 1) continua para quem chama sem o tamanho. Sem ela, uma chamada
+    // com as tres cores cairia calada na de cima (a terceira cor viraria o tamanho e o contorno ficaria branco).
+    public void setupKiLaserPlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder, int colorOutline) {
+        this.setupKiLaserPlayer(owner, damage, speed, color, colorBorder, colorOutline, 1.0f);
+    }
+
+    public void setupKiMakkankosanpoPlayer(LivingEntity owner, float damage, float speed, int colorOutline, float size){
         this.setKiRenderType(1);
-        this.setSize(1.0f);
+        this.setSize(size);
         this.setKiDamage(damage);
         this.setKiSpeed(speed);
         this.setColors(0xFFE657, 0xF5A627, colorOutline);
@@ -167,8 +173,8 @@ public class KiLaserEntity extends AbstractKiProjectile{
         
     }
 
-    public void setupKiMakkankosanpoPlayer(LivingEntity owner, float damage, float speed){
-        this.setupKiMakkankosanpoPlayer(owner, damage, speed, 0x8B17CF);
+    public void setupKiMakkankosanpoPlayer(LivingEntity owner, float damage, float speed, float size){
+        this.setupKiMakkankosanpoPlayer(owner, damage, speed, 0x8B17CF, size);
     }
 
     public void setupKiDodonpaPlayer(LivingEntity owner, float damage, float speed, int colorOutline) {
@@ -185,9 +191,9 @@ public class KiLaserEntity extends AbstractKiProjectile{
         
     }
 
-    public void setupKiBeamPlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder, int colorOutline) {
+    public void setupKiBeamPlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder, int colorOutline, float size) {
         this.setKiRenderType(2);
-        this.setSize(1.0f);
+        this.setSize(size);
         this.setKiDamage(damage);
         this.setKiSpeed(speed);
         this.setColors(color, colorBorder, colorOutline);
@@ -199,8 +205,8 @@ public class KiLaserEntity extends AbstractKiProjectile{
 
     }
 
-    public void setupKiBeamPlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder) {
-        this.setupKiBeamPlayer(owner, damage, speed, color, colorBorder, 0xFFFFFF);
+    public void setupKiBeamPlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder, float size) {
+        this.setupKiBeamPlayer(owner, damage, speed, color, colorBorder, 0xFFFFFF, size);
     }
 
 
@@ -268,7 +274,7 @@ public class KiLaserEntity extends AbstractKiProjectile{
     }
 
     public float getBeamLength() {return this.entityData.get(BEAM_LENGTH);}
-    private void setBeamLength(float len) {this.entityData.set(BEAM_LENGTH, len);}
+    public void setBeamLength(float len) {this.entityData.set(BEAM_LENGTH, len);}
     public float getFixedYaw() {return this.entityData.get(FIXED_YAW);}
     public float getFixedPitch() {return this.entityData.get(FIXED_PITCH);}
     public void setCastTime(int ticks) { this.entityData.set(CAST_TIME, ticks); }
@@ -373,16 +379,15 @@ public class KiLaserEntity extends AbstractKiProjectile{
         Vec3 up = right.cross(look).normalize();
 
         double centerX = owner.getX();
-        double centerY = owner.getY() + (owner.getBbHeight() / 2.0D);
+        double centerY = ownerCastCenterY(owner);
         double centerZ = owner.getZ();
         Vec3 hitboxCenter = new Vec3(centerX, centerY, centerZ);
 
         Vec3 offset;
 
         if (!this.isFiring()) {
-            offset = right.scale(this.entityData.get(OFFSET_X))
-                    .add(up.scale(this.entityData.get(OFFSET_Y)))
-                    .add(look.scale(this.entityData.get(OFFSET_Z)));
+            offset = castOffset(owner, right, up, look,
+                    this.entityData.get(OFFSET_X), this.entityData.get(OFFSET_Y), this.entityData.get(OFFSET_Z));
         } else {
             double forwardDistance = (owner.getBbWidth() / 2.0D) + 0.3D;
 
@@ -543,7 +548,7 @@ public class KiLaserEntity extends AbstractKiProjectile{
         for (LivingEntity target : targets) {
             if (!this.shouldDamage(target)) continue;
             if (target.is(this.getOwner())) continue;
-            if (target.invulnerableTime > 0) continue;
+            if (target.invulnerableTime > 0 && !this.isBreakthroughTarget(target)) continue;
 
             float hitPrecision = this.getSize() / 3.0F;
             boolean beamHit = false;
@@ -556,7 +561,7 @@ public class KiLaserEntity extends AbstractKiProjectile{
             }
 
             if (beamHit) {
-                boolean wasHit = this.applyDamageOrHeal(target, this.getDamagePerHit());
+                boolean wasHit = this.applyBeamHit(target);
 
                 if (wasHit) {
                     this.onSuccessfulHit(target);

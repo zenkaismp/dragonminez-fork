@@ -139,6 +139,7 @@ public class BeamClash {
 
         winner.beam().clearClashLock();
         winner.beam().setMaxLife(winner.beam().tickCount + WINNER_BREAKTHROUGH_TICKS);
+        winner.beam().setBreakthroughTarget(loser.owner().getUUID());
 
         loser.beam().clearClashLock();
         if (!loser.beam().isRemoved()) {

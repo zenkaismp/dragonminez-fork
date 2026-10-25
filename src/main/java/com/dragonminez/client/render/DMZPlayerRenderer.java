@@ -9,6 +9,7 @@ import com.dragonminez.client.render.layer.*;
 import com.dragonminez.client.render.shader.TransformationPostShaderManager;
 import com.dragonminez.client.render.shader.TransformationMaskBufferSource;
 import com.dragonminez.client.render.util.IrisCompat;
+import com.dragonminez.client.render.effects.TechniquePreview;
 import com.dragonminez.client.util.BoneVisibilityHandler;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.stats.StatsCapability;
@@ -113,6 +114,8 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 		}
 
 		poseStack.pushPose();
+		float previewLift = TechniquePreview.modelLift(entity, partialTick);
+		if (previewLift != 0.0F) poseStack.translate(0.0F, previewLift, 0.0F);
 
 		boolean shaderPack = IrisCompat.isShaderPackInUse();
 		boolean captureMask = !shaderPack || TransformationPostShaderManager.isShaderpackMainPass();

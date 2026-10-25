@@ -12,6 +12,8 @@ import java.util.function.Consumer;
 @OnlyIn(Dist.CLIENT)
 public class ColorSlider extends AbstractSliderButton {
 
+    public enum Gradient { NONE, HUE, SATURATION, VALUE }
+
     private final int minValue;
     private final int maxValue;
     private final Consumer<Integer> onValueChange;
@@ -22,6 +24,7 @@ public class ColorSlider extends AbstractSliderButton {
     private final int sliderHeight;
     private float currentHue = 0;
     private float currentSaturation = 100;
+    private Gradient gradient = Gradient.NONE;
 
     public ColorSlider(int x, int y, int width, int height,
                        int minValue, int maxValue, int currentValue,
@@ -83,6 +86,14 @@ public class ColorSlider extends AbstractSliderButton {
     }
 
     private void drawGradientBackground(GuiGraphics graphics) {
+        // v2.2: o degrade escolhido no construtor (Gradient). Zenkai: sem ele, continua a escolha pelo texto do
+        // slider, que as outras telas do fork usam.
+        switch (gradient) {
+            case HUE -> { drawHueGradient(graphics); return; }
+            case SATURATION -> { drawSaturationGradient(graphics); return; }
+            case VALUE -> { drawValueGradient(graphics); return; }
+            default -> { }
+        }
         Component msg = this.getMessage();
         String messageText = msg.getString();
 
@@ -162,6 +173,10 @@ public class ColorSlider extends AbstractSliderButton {
         this.currentSaturation = saturation;
     }
 
+    public void setGradient(Gradient gradient) {
+        this.gradient = gradient == null ? Gradient.NONE : gradient;
+    }
+
     public static class Builder {
         private int x, y, width, height;
         private int minValue = 0;
@@ -174,6 +189,7 @@ public class ColorSlider extends AbstractSliderButton {
         private int sliderHeight = 0;
         private Component message = Component.empty();
         private Consumer<Integer> onValueChange;
+        private Gradient gradient = Gradient.NONE;
 
         public Builder position(int x, int y) {
             this.x = x;
@@ -217,14 +233,19 @@ public class ColorSlider extends AbstractSliderButton {
             return this;
         }
 
+        public Builder gradient(Gradient gradient) {
+            this.gradient = gradient;
+            return this;
+        }
+
         public ColorSlider build() {
-            if (texture != null) {
-                return new ColorSlider(x, y, width, height, minValue, maxValue, currentValue,
-                        texture, sliderU, sliderV, sliderWidth, sliderHeight, message, onValueChange);
-            } else {
-                return new ColorSlider(x, y, width, height, minValue, maxValue, currentValue,
-                        message, onValueChange);
-            }
+            ColorSlider slider = texture != null
+                    ? new ColorSlider(x, y, width, height, minValue, maxValue, currentValue,
+                            texture, sliderU, sliderV, sliderWidth, sliderHeight, message, onValueChange)
+                    : new ColorSlider(x, y, width, height, minValue, maxValue, currentValue,
+                            message, onValueChange);
+            slider.setGradient(gradient);
+            return slider;
         }
     }
 }

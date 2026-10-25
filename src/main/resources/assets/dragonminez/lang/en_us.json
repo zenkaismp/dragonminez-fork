@@ -889,6 +889,15 @@
   "gui.dragonminez.skills.creator.color.exterior": "Border",
   "gui.dragonminez.skills.creator.ki_cost_label": "Ki Cost:",
   "gui.dragonminez.skills.creator.tp_cost_label": "TP Cost:",
+  "gui.dragonminez.skills.creator.appearance": "Appearance",
+  "gui.dragonminez.skills.creator.colors": "Colors",
+  "gui.dragonminez.skills.creator.instant": "Instant",
+  "gui.dragonminez.skills.creator.step": "Step %s of %s",
+  "gui.dragonminez.skills.creator.camera_hint": "Drag to rotate the camera, scroll to zoom",
+  "gui.dragonminez.skills.creator.continue": "Continue",
+  "gui.dragonminez.skills.creator.back": "Back",
+  "gui.dragonminez.skills.creator.available_tp": "Your TP:",
+  "gui.dragonminez.skills.creator.not_enough_tp": "Not enough TP: you have %s and it costs %s.",
   "gui.dragonminez.common.hex": "Hex",
   "technique.charge.charging": "Charging — hold to overcharge",
   "technique.charge.overcharging": "Overcharging — release to fire",
@@ -1172,6 +1181,7 @@
   "technique.dragonminez.wolf_fang": "Wolf Fang",
   "technique.dragonminez.oozaru_fist": "Oozaru Fist",
   "technique.dragonminez.super_god_fist": "Super God Fist",
+  "technique.dragonminez.blue_hurricane": "Blue Hurricane",
   "//": "EFFECTS",
   "effect.dragonminez.stun": "Stunned",
   "effect.dragonminez.ki_slow": "Ki Slow",
@@ -3226,5 +3236,6 @@
   "death.attack.strike_attack.kaioken_attack": "%1$s was crushed by %2$s's Kaioken Assault",
   "death.attack.strike_attack.wolf_fang": "%1$s was shredded by %2$s's Wolf Fang Fist",
   "death.attack.strike_attack.oozaru_fist": "%1$s was smashed by %2$s's Oozaru Fist",
-  "death.attack.strike_attack.super_god_fist": "%1$s was obliterated by %2$s's Super God Fist"
+  "death.attack.strike_attack.super_god_fist": "%1$s was obliterated by %2$s's Super God Fist",
+  "death.attack.strike_attack.blue_hurricane": "%1$s was swept away by %2$s's Blue Hurricane"
 }

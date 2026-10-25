@@ -52,6 +52,23 @@ public class KiBlastEntity extends AbstractKiProjectile {
         int type = this.getKiRenderType();
         return type == RENDER_ASSAULT_RAIN || type == RENDER_BLASTER_METEOR;
     }
+
+    // v2.2: a esfera do Blaster Meteor fica no centro do corpo inteiro (com as partes, em quem tem).
+    private static AABB effectiveBounds(LivingEntity owner) {
+        AABB box = owner.getBoundingBox();
+        if (owner.isMultipartEntity() && owner.getParts() != null) {
+            for (net.minecraftforge.entity.PartEntity<?> part : owner.getParts()) {
+                if (part != null) box = box.minmax(part.getBoundingBox());
+            }
+        }
+        return box;
+    }
+
+    @Override
+    protected float castClearanceRadius() {
+        if ((this.getKiRenderType() == RENDER_TRI_BEAM || this.getKiRenderType() == RENDER_SOUL_PUNISHER) && !this.isFiring()) return 0.0F;
+        return this.isAnchoredVolley() ? 0.0F : super.castClearanceRadius();
+    }
     private static final double FAKE_MOON_CLIMB_BLOCKS = 30.0D;
     private static final double FAKE_MOON_CLIMB_SPEED = 1.0D;
     private static final int FAKE_MOON_GLOW_TICKS = 20 * 20;
@@ -61,6 +78,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
     private boolean isDetonating = false;
     private float currentDetonationRadius = 0.0F;
     private float maxDetonationRadius = 0.0F;
+    private static final float MIN_BLAST_CRATER = 2.5F;
 
     private static final EntityDataAccessor<Integer> CAST_TIME = SynchedEntityData.defineId(KiBlastEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Float> OFFSET_X = SynchedEntityData.defineId(KiBlastEntity.class, EntityDataSerializers.FLOAT);
@@ -93,8 +111,25 @@ public class KiBlastEntity extends AbstractKiProjectile {
         return this.getKiRenderType() == 0 ? ClashRole.MINOR : ClashRole.NONE;
     }
 
-    private float calcCenterOffsetY(float sphereSize) {
-        return -(sphereSize / 2.0F);
+    private static final float HAND_LIFT = 0.5F;
+    private static final float FEET_CLEARANCE = 0.1F;
+    private static final float OVERHEAD_GAP = 0.6F;
+
+    private float halfBoxHeight(float sphereSize) {
+        return this.getType().getDimensions().height * sphereSize * 0.5F;
+    }
+
+    private float calcCenterOffsetY(LivingEntity owner, float sphereSize) {
+        float heightScale = ownerScaleOf(owner);
+        float clearFeet = sphereSize * 0.5F + FEET_CLEARANCE - owner.getBbHeight() * 0.5F;
+        float centerLift = Math.max(HAND_LIFT * heightScale, clearFeet);
+        return (centerLift - halfBoxHeight(sphereSize)) / heightScale;
+    }
+
+    private float calcOverheadOffsetY(LivingEntity owner, float sphereSize) {
+        float heightScale = ownerScaleOf(owner);
+        float centerLift = owner.getBbHeight() * 0.5F + OVERHEAD_GAP * heightScale + sphereSize * 0.5F;
+        return (centerLift - halfBoxHeight(sphereSize)) / heightScale;
     }
 
     private float calcForwardOffset(LivingEntity owner, float sphereSize) {
@@ -113,7 +148,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
         this.setFiring(false);
         this.setMaxLife(99999);
         this.setCastTime(100);
-        this.setCastOffsets(0.0f, calcCenterOffsetY(size) + 0.5f, calcForwardOffset(owner, size));
+        this.setCastOffsets(0.0f, calcCenterOffsetY(owner, size), calcForwardOffset(owner, size));
         updatePositionRelativeToOwner(owner);
 
         if (!this.level().isClientSide) { this.level().addFreshEntity(this); }
@@ -185,10 +220,10 @@ public class KiBlastEntity extends AbstractKiProjectile {
         this.setFiring(false);
         this.setMaxLife(99999);
         this.setCastTime(40);
-        this.setCastOffsets(0.0F, 5.5F, 0.0F);
+        this.setCastOffsets(0.0F, calcOverheadOffsetY(owner, size), -this.castClearanceRadius() / ownerWidthScale(owner));
         updatePositionRelativeToOwner(owner);
         if (!this.level().isClientSide) { this.level().addFreshEntity(this); }
-        
+
     }
 
     public void setupKiLargeBlastPlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder, float size) {
@@ -243,10 +278,10 @@ public class KiBlastEntity extends AbstractKiProjectile {
         this.setupKiSoulsPlayer(owner, damage, speed, color, 0xFFFFFF);
     }
 
-    public void setupKiGenkiPlayer(LivingEntity owner, float damage, float speed, int colorOutline) {
+    public void setupKiGenkiPlayer(LivingEntity owner, float damage, float speed, int colorOutline, float size) {
         this.setOwner(owner);
         this.setKiRenderType(5);
-        this.setSize(7.0F);
+        this.setSize(size);
         this.setKiSpeed(speed);
         this.setKiDamage(damage);
         this.setColors(0xC4FFFD, 0x00F8FF, colorOutline);
@@ -259,14 +294,14 @@ public class KiBlastEntity extends AbstractKiProjectile {
         
     }
 
-    public void setupKiGenkiPlayer(LivingEntity owner, float damage, float speed) {
-        this.setupKiGenkiPlayer(owner, damage, speed, 0xFFFFFF);
+    public void setupKiGenkiPlayer(LivingEntity owner, float damage, float speed, float size) {
+        this.setupKiGenkiPlayer(owner, damage, speed, 0xFFFFFF, size);
     }
 
-    public void setupKiNovaPlayer(LivingEntity owner, float damage, float speed, int colorOutline) {
+    public void setupKiNovaPlayer(LivingEntity owner, float damage, float speed, int colorOutline, float size) {
         this.setOwner(owner);
         this.setKiRenderType(6);
-        this.setSize(5.0F);
+        this.setSize(size);
         this.setKiSpeed(speed);
         this.setKiDamage(damage);
         this.setColors(0xFF7438, 0xC92620, colorOutline);
@@ -279,14 +314,14 @@ public class KiBlastEntity extends AbstractKiProjectile {
         
     }
 
-    public void setupKiNovaPlayer(LivingEntity owner, float damage, float speed) {
-        this.setupKiNovaPlayer(owner, damage, speed, 0x800E0E);
+    public void setupKiNovaPlayer(LivingEntity owner, float damage, float speed, float size) {
+        this.setupKiNovaPlayer(owner, damage, speed, 0x800E0E, size);
     }
 
-    public void setupKiNovaCoolerPlayer(LivingEntity owner, float damage, float speed) {
+    public void setupKiNovaCoolerPlayer(LivingEntity owner, float damage, float speed, float size) {
         this.setOwner(owner);
         this.setKiRenderType(6);
-        this.setSize(5.0F);
+        this.setSize(size);
         this.setKiSpeed(speed);
         this.setKiDamage(damage);
         this.setColors(0xFF3866, 0xA3143A, 0x4A0316);
@@ -301,10 +336,10 @@ public class KiBlastEntity extends AbstractKiProjectile {
 
 
 
-    public void setupKiDeathBallPlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder, int colorOutline) {
+    public void setupKiDeathBallPlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder, int colorOutline, float size) {
         this.setOwner(owner);
         this.setKiRenderType(7);
-        this.setSize(2.5F);
+        this.setSize(size);
         this.setKiSpeed(speed);
         this.setKiDamage(damage);
         this.setColors(color, ColorUtils.darkenColor(colorBorder, 0.5f), colorOutline);
@@ -317,12 +352,12 @@ public class KiBlastEntity extends AbstractKiProjectile {
         
     }
 
-    public void setupKiDeathBallPlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder) {
-        this.setupKiDeathBallPlayer(owner, damage, speed, color, colorBorder, 0xFFFFFF);
+    public void setupKiDeathBallPlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder, float size) {
+        this.setupKiDeathBallPlayer(owner, damage, speed, color, colorBorder, 0xFFFFFF, size);
     }
 
-    public void setupKiDeathBallPlayer(LivingEntity owner, float damage, float speed, int color) {
-        this.setupKiDeathBallPlayer(owner, damage, speed, color, color, 0xFFFFFF);
+    public void setupKiDeathBallPlayer(LivingEntity owner, float damage, float speed, int color, float size) {
+        this.setupKiDeathBallPlayer(owner, damage, speed, color, color, 0xFFFFFF, size);
     }
 
     public void setupSokidanPlayer(LivingEntity owner, float damage, float speed, int color, int colorOutline, float size) {
@@ -346,10 +381,10 @@ public class KiBlastEntity extends AbstractKiProjectile {
         this.setupSokidanPlayer(owner, damage, speed, color, 0xFFFFFF, size);
     }
 
-    public void setupKiVolleyPlayer(LivingEntity owner, float damage, float speed, int color, int colorOutline, int castTime) {
+    public void setupKiVolleyPlayer(LivingEntity owner, float damage, float speed, int color, int colorOutline, int castTime, float size) {
         this.setOwner(owner);
         this.setKiRenderType(9);
-        this.setSize(0.4F);
+        this.setSize(size);
         this.setKiDamage(damage);
         this.setKiSpeed(speed);
         this.setColors(color, color, colorOutline);
@@ -365,8 +400,8 @@ public class KiBlastEntity extends AbstractKiProjectile {
         
     }
 
-    public void setupKiVolleyPlayer(LivingEntity owner, float damage, float speed, int color, int castTime) {
-        this.setupKiVolleyPlayer(owner, damage, speed, color, 0xFFFFFF, castTime);
+    public void setupKiVolleyPlayer(LivingEntity owner, float damage, float speed, int color, int castTime, float size) {
+        this.setupKiVolleyPlayer(owner, damage, speed, color, 0xFFFFFF, castTime, size);
     }
 
     public void setupKiSmall(LivingEntity owner, float damage, float speed, int color, int colorOutline) {
@@ -804,7 +839,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
                                     bullet.setTechniqueId(this.getTechniqueId());
 
                                     double spawnX = owner.getX();
-                                    double spawnY = owner.getY() + (owner.getBbHeight() / 2.0D);
+                                    double spawnY = ownerCastCenterY(owner);
                                     double spawnZ = owner.getZ();
                                     bullet.setPos(spawnX, spawnY, spawnZ);
 
@@ -1023,12 +1058,13 @@ public class KiBlastEntity extends AbstractKiProjectile {
         Vec3 right = look.cross(worldUp).normalize();
 
         // Usar worldUp directamente en vez de right.cross(look)
-        Vec3 offset = right.scale(this.entityData.get(OFFSET_X))
-                .add(worldUp.scale(this.entityData.get(OFFSET_Y)))  // <-- cambio aquí
-                .add(look.scale(this.entityData.get(OFFSET_Z)));
+        Vec3 offset = castOffset(owner, right, worldUp, look,
+                this.entityData.get(OFFSET_X), this.entityData.get(OFFSET_Y), this.entityData.get(OFFSET_Z));  // <-- cambio aquí
 
         double centerX = owner.getX();
-        double centerY = owner.getY() + (owner.getBbHeight() / 2.0D);
+        double centerY = this.getKiRenderType() == RENDER_BLASTER_METEOR
+                ? effectiveBounds(owner).getCenter().y
+                : ownerCastCenterY(owner);
         double centerZ = owner.getZ();
 
         Vec3 newPos = new Vec3(centerX, centerY, centerZ).add(offset);
@@ -1167,7 +1203,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
 
         if ((type == 5 || type == 6) && !this.level().isClientSide) {
             this.isDetonating = true;
-            this.maxDetonationRadius = (this.getSize() / 2.0F) * 5.0F;
+            this.maxDetonationRadius = Math.max(this.getSize() * 1.5F, MIN_BLAST_CRATER * 2.0F);
             this.currentDetonationRadius = 0.0F;
             this.setDeltaMovement(0, 0, 0);
 
@@ -1191,13 +1227,13 @@ public class KiBlastEntity extends AbstractKiProjectile {
 
                 KiExplosionVisualEntity explosionVisual = new KiExplosionVisualEntity(MainEntities.KI_EXPLOSION_VISUAL.get(), this.level());
                 explosionVisual.setPos(this.getX(), centerY, this.getZ());
-                explosionVisual.setupExplosion(this.getColor(), this.getColorBorder(), this.getColorOutline(), this.getSize() * 1.2F);
+                explosionVisual.setupExplosion(this.getColor(), this.getColorBorder(), this.getColorOutline(), this.getSize() * 0.9F);
                 this.level().addFreshEntity(explosionVisual);
             }
             return;
         }
 
-        float explosionRadius = (this.getSize() / 2.0F) * 3.0F;
+        float explosionRadius = Math.max(this.getSize() * 0.5F, MIN_BLAST_CRATER);
         float visualParticleSize = explosionRadius * 1.8F;
 
         AABB damageArea = new AABB(this.getX(), centerY, this.getZ(), this.getX(), centerY, this.getZ()).inflate(explosionRadius);
@@ -1212,20 +1248,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
         if (!this.level().isClientSide) {
             BlockPos center = BlockPos.containing(this.getX(), centerY, this.getZ());
 
-            float destructionRadius = this.scaledDestructionRadius(explosionRadius);
-            int blockRadius = Math.round(destructionRadius);
-            for (int x = -blockRadius; x <= blockRadius; x++) {
-                for (int y = -blockRadius; y <= blockRadius; y++) {
-                    for (int z = -blockRadius; z <= blockRadius; z++) {
-                        if (x * x + y * y + z * z <= destructionRadius * destructionRadius) {
-                            BlockPos targetPos = center.offset(x, y, z);
-                            if (this.level().getBlockState(targetPos).getExplosionResistance(this.level(), targetPos, null) < 1000) {
-                                this.setKiBlockToAir(targetPos, 2);
-                            }
-                        }
-                    }
-                }
-            }
+            this.carveKiSphere(center, this.scaledDestructionRadius(explosionRadius), 2);
 
             if (this.level() instanceof ServerLevel serverLevel) {
                 serverLevel.sendParticles(
@@ -1238,7 +1261,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
 
                 KiExplosionVisualEntity explosionVisual = new KiExplosionVisualEntity(MainEntities.KI_EXPLOSION_VISUAL.get(), this.level());
                 explosionVisual.setPos(this.getX(), centerY, this.getZ());
-                explosionVisual.setupExplosion(this.getColor(), this.getColorBorder(), this.getColorOutline(), this.getSize());
+                explosionVisual.setupExplosion(this.getColor(), this.getColorBorder(), this.getColorOutline(), this.getSize() * 0.25F);
                 this.level().addFreshEntity(explosionVisual);
             }
         }
@@ -1249,31 +1272,11 @@ public class KiBlastEntity extends AbstractKiProjectile {
         float prevRadius = this.currentDetonationRadius;
         this.currentDetonationRadius += 2.0F;
 
-        float destructionMult = (float) this.getDestructionMultiplier();
-        float scaledRadius = this.currentDetonationRadius * destructionMult;
-        float scaledPrevRadius = prevRadius * destructionMult;
+        float scaledRadius = this.scaledDestructionRadius(this.currentDetonationRadius);
+        float scaledPrevRadius = this.scaledDestructionRadius(prevRadius);
 
-        int bRad = Math.round(scaledRadius);
-        BlockPos center = BlockPos.containing(this.getX(), this.getVisualCenterY(), this.getZ());
-        Level level = this.level();
-
-        float radSq = scaledRadius * scaledRadius;
-        float prevRadSq = scaledPrevRadius * scaledPrevRadius;
-
-        for (int x = -bRad; x <= bRad; x++) {
-            for (int y = -bRad; y <= bRad; y++) {
-                for (int z = -bRad; z <= bRad; z++) {
-                    float distSq = x * x + y * y + z * z;
-
-                    if (distSq <= radSq && distSq > prevRadSq) {
-                        BlockPos targetPos = center.offset(x, y, z);
-                        if (!level.getBlockState(targetPos).isAir() && level.getBlockState(targetPos).getExplosionResistance(level, targetPos, null) < 1000) {
-                            this.setKiBlockToAir(targetPos, 2);
-                        }
-                    }
-                }
-            }
-        }
+        this.carveKiSphere(BlockPos.containing(this.getX(), this.getVisualCenterY(), this.getZ()),
+                scaledPrevRadius, scaledRadius, 2);
 
         if (this.currentDetonationRadius >= this.maxDetonationRadius) {
             this.discard();
@@ -1281,44 +1284,8 @@ public class KiBlastEntity extends AbstractKiProjectile {
     }
 
     private boolean destroyBlocksInPath() {
-        boolean hitSomething = false;
-        float eatRadius = this.scaledDestructionRadius(this.getSize() * 2.0f);
-        int bRad = Math.round(eatRadius);
-        BlockPos center = BlockPos.containing(this.getX(), this.getVisualCenterY(), this.getZ());
-        Level level = this.level();
-
-        for (int x = -bRad; x <= bRad; x++) {
-            for (int y = -bRad; y <= bRad; y++) {
-                for (int z = -bRad; z <= bRad; z++) {
-                    if (x * x + y * y + z * z <= eatRadius * eatRadius) {
-                        BlockPos targetPos = center.offset(x, y, z);
-
-                        if (!level.getBlockState(targetPos).isAir() && level.getBlockState(targetPos).getExplosionResistance(level, targetPos, null) < 1000 && this.destroyKiBlock(targetPos, false)) {
-                            hitSomething = true;
-
-                            if (level instanceof ServerLevel serverLevel) {
-                                if (this.random.nextFloat() < 0.25F) {
-                                    serverLevel.sendParticles(
-                                            ParticleTypes.CAMPFIRE_COSY_SMOKE,
-                                            targetPos.getX() + 0.5, targetPos.getY() + 0.5, targetPos.getZ() + 0.5,
-                                            1, 0.5D, 0.5D, 0.5D, 0.05D
-                                    );
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        if (hitSomething && !this.level().isClientSide) {
-            KiExplosionVisualEntity explosionVisual = new KiExplosionVisualEntity(MainEntities.KI_EXPLOSION_VISUAL.get(), this.level());
-            explosionVisual.setPos(this.getX(), this.getVisualCenterY(), this.getZ());
-            explosionVisual.setupExplosion(this.getColor(), this.getColorBorder(), this.getColorOutline(), this.getSize());
-            this.level().addFreshEntity(explosionVisual);
-        }
-
-        return hitSomething;
+        return this.eatKiSphere(BlockPos.containing(this.getX(), this.getVisualCenterY(), this.getZ()),
+                this.scaledDestructionRadius(this.getSize() * 1.2F));
     }
 
     @Override

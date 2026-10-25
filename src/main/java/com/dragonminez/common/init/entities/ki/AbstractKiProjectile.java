@@ -1,6 +1,7 @@
 package com.dragonminez.common.init.entities.ki;
 
 import com.dragonminez.client.util.ColorUtils;
+import com.dragonminez.common.combat.util.KiTerrainDestruction;
 import com.dragonminez.common.combat.logic.player.TargetHelper;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainDamageTypes;
@@ -33,6 +34,7 @@ import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
+import net.minecraft.util.Mth;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
@@ -40,7 +42,9 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 public abstract class AbstractKiProjectile extends Projectile {
@@ -76,6 +80,10 @@ public abstract class AbstractKiProjectile extends Projectile {
     private transient int firingStartTick = -1;
 
     private static final float KI_INDESTRUCTIBLE_RESISTANCE = 1000.0F;
+    private static final float VANILLA_PLAYER_HEIGHT = 1.8F;
+    private static final float VANILLA_PLAYER_WIDTH = 0.6F;
+    /** Ceiling so an absurdly tall caster cannot fling the cast point off into space. */
+    private static final float MAX_OWNER_SCALE = 6.0F;
     /** Floor for the render-distance calculation, in vanilla's "box size" units: 2 = 128 blocks. */
     private static final double MIN_RENDER_SIZE = 2.0;
     /** Embers fly out to several ball radii, so the culling box has to cover more than the ball. */
@@ -135,6 +143,9 @@ public abstract class AbstractKiProjectile extends Projectile {
     private transient float clashLockedLength = -1.0F; // -1 = not clash-locked
     @Getter
     private transient UUID clashOpponentId = null;
+    private transient int clashFrozenWindow = -1;
+    private transient UUID breakthroughTargetId = null;
+    private final transient Set<UUID> beamHitTargets = new HashSet<>();
 
     private transient int strikeStunTicks = 0;
     private transient UUID strikeStunExcludeId = null;
@@ -160,6 +171,7 @@ public abstract class AbstractKiProjectile extends Projectile {
     public abstract int getMaxHits();
 
     protected int firingWindowTicks() {
+        if (this.clashFrozenWindow > 0) return this.clashFrozenWindow;
         int fireTick = this.getFireTick();
         int window = fireTick >= 0 ? this.getMaxLife() - fireTick : this.getMaxLife();
         return Math.max(1, window);
@@ -196,6 +208,7 @@ public abstract class AbstractKiProjectile extends Projectile {
 
     /** Locks this beam to a fixed length at the clash point. Length < 0 means unlocked. */
     public void setClashLock(float lockedLength, java.util.UUID opponentId) {
+        if (this.clashFrozenWindow < 0) this.clashFrozenWindow = this.firingWindowTicks();
         this.clashLockedLength = lockedLength;
         this.clashOpponentId = opponentId;
     }
@@ -213,7 +226,34 @@ public abstract class AbstractKiProjectile extends Projectile {
         return this.getKiDamage() / Math.max(1.0F, (float)this.getMaxHits());
     }
 
+    public void setBreakthroughTarget(UUID targetId) {
+        this.breakthroughTargetId = targetId;
+    }
+
+    protected boolean isBreakthroughTarget(Entity target) {
+        return this.breakthroughTargetId != null && TargetHelper.resolveHittable(target).getUUID().equals(this.breakthroughTargetId);
+    }
+
+    protected boolean applyBeamHit(LivingEntity target) {
+        Entity hittable = TargetHelper.resolveHittable(target);
+        boolean breakthrough = this.isBreakthroughTarget(target);
+        float amount = this.getDamagePerHit();
+        if (breakthrough) {
+            hittable.invulnerableTime = 0;
+            amount = this.getKiDamage();
+        } else if (!this.isHeal() && !this.beamHitTargets.contains(hittable.getUUID())) {
+            amount = Math.max(amount, this.getKiDamage() * BEAM_FIRST_HIT_SHARE);
+        }
+        boolean hit = this.applyDamageOrHeal(target, amount);
+        if (hit) {
+            this.beamHitTargets.add(hittable.getUUID());
+            if (breakthrough) this.breakthroughTargetId = null;
+        }
+        return hit;
+    }
+
     public static final int CONTINUOUS_HIT_INTERVAL = 20;
+    private static final float BEAM_FIRST_HIT_SHARE = 0.75F;
 
     private static final float BARRAGE_XP_HIT_WEIGHT = 0.34f;
 
@@ -371,13 +411,68 @@ public abstract class AbstractKiProjectile extends Projectile {
         return false;
     }
 
+
+    /**
+     * How much bigger the caster is than a normal player, used to keep ki attacks in proportion.
+     *
+     * The cast offsets and cast sizes throughout the mod are authored against a 1.8-block player,
+     * so on an Oozaru or a fat Janemba the ball ended up buried near the body's centre at a size
+     * meant for a human hand. Height is the reference rather than width because these casters are
+     * humanoid: a wide model is not necessarily holding its hands further out.
+     */
+    public float getOwnerScale() {
+        return ownerScaleOf(this.getOwner() instanceof LivingEntity living ? living : null);
+    }
+
+    public static double ownerCastCenterY(LivingEntity owner) {
+        if (owner.isMultipartEntity()) return owner.getEyeY();
+        return owner.getY() + (owner.getBbHeight() / 2.0D);
+    }
+
+    public static float ownerScaleOf(LivingEntity owner) {
+        if (owner == null) return 1.0F;
+        return Mth.clamp(owner.getBbHeight() / VANILLA_PLAYER_HEIGHT, 1.0F, MAX_OWNER_SCALE);
+    }
+
+
+    /** Width ratio against a normal player, for the axes that have to clear the body sideways. */
+    public static float ownerWidthScale(LivingEntity owner) {
+        if (owner == null) return 1.0F;
+        return Mth.clamp(owner.getBbWidth() / VANILLA_PLAYER_WIDTH, 1.0F, MAX_OWNER_SCALE);
+    }
+
+    /**
+     * Places a cast offset on a caster of any size.
+     *
+     * The three axes do not share a scale on purpose: a wide but short caster (a fat Janemba)
+     * needs the attack pushed further out to its side and further forward to clear its body, but
+     * NOT further up. Using one factor for all three put the ball above the shoulder on wide
+     * models and inside the chest on tall ones.
+     *
+     * Offsets that already derive from the hitbox must be passed in player-equivalent units, or
+     * they get scaled twice.
+     */
+    protected Vec3 castOffset(LivingEntity owner, Vec3 right, Vec3 up, Vec3 look,
+                              float offsetX, float offsetY, float offsetZ) {
+        float widthScale = ownerWidthScale(owner);
+        float heightScale = ownerScaleOf(owner);
+        // The offset places the attack's CENTRE, so its own radius has to be added or a
+        // power-scaled attack forms around the caster instead of in front of them.
+        return right.scale(offsetX * widthScale)
+                .add(up.scale(offsetY * heightScale))
+                .add(look.scale(offsetZ * widthScale + this.castClearanceRadius()));
+    }
+
+    /** Radius of what actually gets drawn, so the attack clears the body it comes from. */
+    protected float castClearanceRadius() {
+        return this.getSize() * 0.5F;
+    }
+
     protected Entity getKiGriefingSource() {
         Entity owner = this.getOwner();
         return owner != null ? owner : this;
     }
 
-    // Per-instance override to fully suppress block destruction for a specific projectile,
-    // regardless of griefing gamerules (e.g. the cosmetic kamehameha fired during oozaru_fist).
     private transient boolean blockDestructionEnabled = true;
 
     public void setBlockDestructionEnabled(boolean enabled) { this.blockDestructionEnabled = enabled; }
@@ -402,7 +497,40 @@ public abstract class AbstractKiProjectile extends Projectile {
     }
 
     protected float scaledDestructionRadius(float baseRadius) {
-        return (float) (baseRadius * this.getDestructionMultiplier());
+        float scaled = (float) (baseRadius * this.getDestructionMultiplier());
+        return Math.min(scaled, (float) this.getMaxDestructionRadius());
+    }
+
+    private double getMaxDestructionRadius() {
+        KiAttackData.KiType type;
+        try {
+            type = KiAttackData.KiType.valueOf(this.getKiType().name());
+        } catch (IllegalArgumentException e) {
+            type = KiAttackData.KiType.SMALL_BALL;
+        }
+        double configured = ConfigManager.getTechniqueConfig().getKiTypeConfig(type).getMaxDestructionRadius();
+        return configured > 0.0 ? configured : Double.MAX_VALUE;
+    }
+
+
+    protected void carveKiSphere(BlockPos center, float radius, int flags) {
+        this.carveKiSphere(center, 0.0F, radius, flags);
+    }
+
+    protected void carveKiSphere(BlockPos center, float innerRadius, float radius, int flags) {
+        if (!this.blockDestructionEnabled || radius <= 0.0F || !(this.level() instanceof ServerLevel serverLevel)) return;
+        KiTerrainDestruction.carve(serverLevel, center, innerRadius, radius, flags, this.getKiGriefingSource());
+    }
+
+    private transient BlockPos lastEatCenter;
+    private transient float lastEatRadius;
+
+    protected boolean eatKiSphere(BlockPos center, float radius) {
+        if (!this.blockDestructionEnabled || radius <= 0.0F || !(this.level() instanceof ServerLevel serverLevel)) return false;
+        boolean ate = KiTerrainDestruction.eat(serverLevel, center, radius, this.lastEatCenter, this.lastEatRadius, this.getKiGriefingSource());
+        this.lastEatCenter = center.immutable();
+        this.lastEatRadius = radius;
+        return ate;
     }
 
     protected boolean destroyKiBlock(BlockPos pos, boolean dropBlock) {

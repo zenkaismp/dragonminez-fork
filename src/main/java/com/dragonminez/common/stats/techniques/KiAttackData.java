@@ -218,6 +218,31 @@ public class KiAttackData extends TechniqueData {
 		return Math.max(5.0, ((damageDone * 0.5 + complexityFactor) * typeMult * utilMult * configCostMult * secondaryCostMultiplier() * overload) / 2);
 	}
 
+	private static boolean isTransformed(StatsData statsData) {
+		return statsData.getTotalMultiplier("PWR") > 1.0001;
+	}
+	public float resolveCastSize(StatsData statsData) {
+		if (statsData == null) return getSize();
+
+		TechniqueConfig.TechniqueTypeConfig cfg = ConfigManager.getTechniqueConfig()
+				.getKiTypeConfig(this.kiType != null ? this.kiType : KiType.SMALL_BALL);
+
+		double cap = isTransformed(statsData) ? cfg.getTransformedSizeCap() : cfg.getBaseSizeCap();
+		if (cap <= 0.0) return getSize();
+
+		float xpBonus = Math.max(0.0F, this.sizeLevel * 0.1F);
+		float authored = Math.max(0.0F, this.size - xpBonus);
+
+		double floor = Math.min(authored, cap);
+		double power = Math.max(1.0, statsData.getStats().getKiPower());
+		double from = Math.max(1.0, cfg.getSizePowerFloor());
+		double to = Math.max(from * 10.0, cfg.getSizePowerCeiling());
+
+		double progress = Mth.clamp(Math.log(power / from) / Math.log(to / from), 0.0, 1.0);
+
+		return (float) (floor + (cap - floor) * progress) + xpBonus;
+	}
+
 	public int getUpgradeXpCost(String statName) {
 		TechniqueConfig.TechniqueTypeConfig cfg = ConfigManager.getTechniqueConfig().getKiTypeConfig(this.kiType != null ? this.kiType : KiType.SMALL_BALL);
 		int baseMin = Math.max(0, cfg.getMinXPCost());
@@ -560,6 +585,15 @@ public class KiAttackData extends TechniqueData {
 		this.cooldownLevel = tag.getInt("CooldownLevel");
 		this.speedLevel = tag.getInt("SpeedLevel");
 		this.sizeLevel = tag.getInt("SizeLevel");
+
+		KiAttackData template = PredefinedTechniques.REGISTRY.get(this.id);
+		if (template != null && template != this) {
+			this.damageMultiplier = template.getDamageMultiplier() + Math.max(0, this.damageLevel) * 0.05f;
+			this.size = template.getSize() + Math.max(0, this.sizeLevel) * 0.1f;
+			this.speed = template.getSpeed() + Math.max(0, this.speedLevel) * 0.05f;
+			this.armorPenetration = template.getArmorPenetration() + Math.max(0, this.armorPenLevel);
+			this.cooldown = template.getCooldown();
+		}
 
 		try { this.secondaryEffectType = SecondaryEffectType.valueOf(tag.getString("SecondaryEffectType")); }
 		catch (Exception e) { this.secondaryEffectType = SecondaryEffectType.NONE; }
