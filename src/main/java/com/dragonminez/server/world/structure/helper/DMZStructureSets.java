@@ -19,6 +19,8 @@ import net.minecraft.tags.BiomeTags;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.level.levelgen.structure.StructureSet;
+import net.minecraft.world.level.levelgen.structure.placement.RandomSpreadStructurePlacement;
+import net.minecraft.world.level.levelgen.structure.placement.RandomSpreadType;
 import net.minecraft.world.level.levelgen.structure.placement.StructurePlacement;
 
 import java.util.Optional;
@@ -31,7 +33,11 @@ public class DMZStructureSets {
 			CELL_ARENA = createKey("cell_arena"), FRIEZA_SHIP = createKey("frieza_ship"),
 			PICCOLO_HOUSE = createKey("piccolo_house"), OLDKAI_PILLAR = createKey("oldkai_pillar"),
 			YAMCHA_HOUSE = createKey("yamcha_house"), TRUNKS_SHIP = createKey("trunks_ship"),
-			VEGETA_POD = createKey("vegeta_pod");
+			VEGETA_POD = createKey("vegeta_pod"), DEMON_VILLAGE = createKey("demon_village");
+
+	private static final int DEMON_VILLAGE_SALT = 73019284;
+	private static final int DEMON_VILLAGE_SPACING = 24;
+	private static final int DEMON_VILLAGE_SEPARATION = 8;
 
 	public static void bootstrap(BootstapContext<StructureSet> context) {
 		HolderGetter<Structure> structures = context.lookup(Registries.STRUCTURE);
@@ -86,6 +92,20 @@ public class DMZStructureSets {
 				66332211, biomes.getOrThrow(MainTags.Biomes.IS_LAND));
 		unique(context, VEGETA_POD, structures.getOrThrow(DMZStructures.VEGETA_POD),
 				77889900, biomes.getOrThrow(MainTags.Biomes.IS_ROCKYBIOME));
+
+		context.register(DEMON_VILLAGE, new StructureSet(
+				structures.getOrThrow(DMZStructures.DEMON_VILLAGE),
+				new RandomSpreadStructurePlacement(
+						Vec3i.ZERO,
+						StructurePlacement.FrequencyReductionMethod.DEFAULT,
+						1.0f,
+						DEMON_VILLAGE_SALT,
+						Optional.empty(),
+						DEMON_VILLAGE_SPACING,
+						DEMON_VILLAGE_SEPARATION,
+						RandomSpreadType.TRIANGULAR
+				)
+		));
 	}
 
 	private static void unique(BootstapContext<StructureSet> context, ResourceKey<StructureSet> key,
