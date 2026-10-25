@@ -1,6 +1,7 @@
 package com.dragonminez.client.events;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.systems.KiBurstShakeState;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.entities.ki.AbstractKiProjectile;
 import com.dragonminez.common.init.entities.ki.KiBlastEntity;
@@ -12,6 +13,7 @@ import com.dragonminez.common.stats.StatsProvider;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderGuiOverlayEvent;
@@ -25,6 +27,7 @@ import net.minecraftforge.fml.common.Mod;
 public class EffectsEvents {
 	private static boolean isBioAndroidDrainingCache = false;
 	private static boolean isChargingFormCache = false;
+	private static boolean isOverchargingCache = false;
 
 	@SubscribeEvent
 	public static void onClientTick(TickEvent.ClientTickEvent event) {
@@ -41,7 +44,18 @@ public class EffectsEvents {
 
 		isChargingFormCache = StatsProvider.get(StatsCapability.INSTANCE, player)
 				.map(data -> (data.getStatus().isAuraActive() && !data.getStatus().isPermanentAura())).orElse(false);
+		isOverchargingCache = StatsProvider.get(StatsCapability.INSTANCE, player)
+				.map(data -> data.getStatus().isChargingKi() && (data.getStatus().isKiBurstArmed() || data.getStatus().isSurgeActive())).orElse(false);
 	}
+
+	private static final double KI_BURST_SHAKE_RANGE_MULT = 1.5D;
+	private static final float KI_BURST_SHAKE_OPENING = 1.2F;
+	private static final float KI_BURST_SHAKE_FULL = 2.8F;
+
+	private static final float CHARGE_SHAKE = 0.05F;
+	private static final float CHARGE_JITTER = 0.2F;
+	private static final float OVERCHARGE_SHAKE = 0.16F;
+	private static final float OVERCHARGE_JITTER = 1.2F;
 
 	@SubscribeEvent
 	public static void onCameraSetup(ViewportEvent.ComputeCameraAngles event) {
@@ -105,6 +119,29 @@ public class EffectsEvents {
             }
         }
 
+        for (var burstEntry : KiBurstShakeState.active().entrySet()) {
+            Entity source = player.level().getEntity(burstEntry.getKey());
+            if (source == null) continue;
+
+            KiBurstShakeState.Burst burst = burstEntry.getValue();
+            float intensity;
+            if (source == player) {
+                intensity = burst.fade();
+            } else {
+                double distance = player.distanceTo(source);
+                double reach = burst.radius() * KI_BURST_SHAKE_RANGE_MULT;
+                if (distance > reach) continue;
+                intensity = (float) (1.0D - (distance / reach)) * burst.fade();
+            }
+            if (intensity <= 0.0f) continue;
+
+            float strength = burst.isFull() ? KI_BURST_SHAKE_FULL : KI_BURST_SHAKE_OPENING;
+            event.setPitch(event.getPitch() + (player.getRandom().nextFloat() - 0.5F) * strength * intensity);
+            event.setYaw(event.getYaw() + (player.getRandom().nextFloat() - 0.5F) * strength * intensity);
+            event.setRoll(event.getRoll() + (player.getRandom().nextFloat() - 0.5F) * strength * 0.5F * intensity);
+            break;
+        }
+
 		if (player.hasEffect(MainEffects.STAGGER.get())) {
 			int amplifier = player.getEffect(MainEffects.STAGGER.get()).getAmplifier();
 			float baseIntensity = 1.5F + (amplifier * 0.8F);
@@ -118,14 +155,14 @@ public class EffectsEvents {
 			event.setRoll(event.getRoll() + rollShake);
 		}
 
-		if (isChargingFormCache) {
-			float globalshake = 0.05F;
+		if (isChargingFormCache || isOverchargingCache) {
+			float globalshake = isOverchargingCache ? OVERCHARGE_SHAKE : CHARGE_SHAKE;
 
 			float sweepIntensity = 2.5F * globalshake;
 			float sweepYaw = (float) (Math.sin(time * 1.5D) * sweepIntensity);
 			float sweepPitch = (float) (Math.cos(time * 1.2D) * (sweepIntensity * 0.6F));
 
-			float shakeIntensity = 0.2F * globalshake;
+			float shakeIntensity = (isOverchargingCache ? OVERCHARGE_JITTER : CHARGE_JITTER) * globalshake;
 			float shakeYaw = (float) (Math.sin(time * 5.0D) * shakeIntensity);
 			float shakePitch = (float) (Math.cos(time * 6.0D) * shakeIntensity);
 

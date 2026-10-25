@@ -258,6 +258,10 @@ public class Character {
 		return auraColor != null && !auraColor.isEmpty() ? auraColor : "#FFFFFF";
 	}
 
+	public float[] getActiveRgbAuraColor() {
+		return ColorUtils.hexToRgb(getActiveAuraColor());
+	}
+
 	public void updateOozaruCache() {
 		String raceName = this.getRaceName().toLowerCase();
 		String currentForm = this.getActiveForm();

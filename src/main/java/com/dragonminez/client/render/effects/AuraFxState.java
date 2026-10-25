@@ -1,6 +1,8 @@
 package com.dragonminez.client.render.effects;
 
 import com.dragonminez.client.util.ColorUtils;
+import com.dragonminez.common.config.CombatConfig;
+import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
@@ -8,8 +10,8 @@ import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.character.Character;
 import net.minecraft.world.entity.player.Player;
 
-// Ported from v2.2. Ki Surge, the Frost Demon energy reserve and the Namekian assimilation are not in this fork,
-// so their branches always answer "not active" and the multipliers stay at 1.0; the form lightning is untouched.
+// Ported from v2.2. The Frost Demon energy reserve and the Namekian assimilation are not in this fork, so those
+// branches always answer "not active"; the Ki Surge and the form lightning work as in v2.2.
 public final class AuraFxState {
 
 	private AuraFxState() {}
@@ -19,7 +21,8 @@ public final class AuraFxState {
 	}
 
 	public static boolean isSurging(StatsData stats) {
-		return false;
+		if (stats == null) return false;
+		return stats.getStatus().isSurgeActive() || stats.getStatus().isKiBurstArmed();
 	}
 
 	public static boolean isSurging(Player player) {
@@ -27,11 +30,16 @@ public final class AuraFxState {
 	}
 
 	public static double auraScaleMultiplier(StatsData stats) {
-		return 1.0;
+		if (!isSurging(stats)) return 1.0;
+		CombatConfig config = ConfigManager.getCombatConfig();
+		return config == null ? 1.0 : config.getSurgeAuraScaleMultiplier();
 	}
 
 	public static double auraSpeedMultiplier(Player player) {
-		return 1.0;
+		StatsData stats = stats(player);
+		if (!isSurging(stats)) return 1.0;
+		CombatConfig config = ConfigManager.getCombatConfig();
+		return config == null ? 1.0 : config.getSurgeAuraSpeedMultiplier();
 	}
 
 	public static boolean isReserveDischarging(StatsData stats) {
@@ -79,7 +87,9 @@ public final class AuraFxState {
 	}
 
 	public static float lightningSpeedMultiplier(StatsData stats) {
-		return 1.0f;
+		if (!isSurging(stats) && !isReserveDischarging(stats)) return 1.0f;
+		CombatConfig config = ConfigManager.getCombatConfig();
+		return config == null ? 1.0f : config.getSurgeAuraSpeedMultiplier().floatValue();
 	}
 
 	private static FormConfig.FormData formLightning(StatsData stats) {
