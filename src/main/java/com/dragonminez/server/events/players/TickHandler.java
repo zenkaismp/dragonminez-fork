@@ -35,6 +35,7 @@ import com.dragonminez.server.events.players.actionmode.FormModeHandler;
 import com.dragonminez.server.events.players.actionmode.FusionModeHandler;
 import com.dragonminez.server.events.players.actionmode.RacialModeHandler;
 import com.dragonminez.server.events.players.actionmode.StackFormModeHandler;
+import com.dragonminez.server.events.players.combat.KiTechniqueHandler;
 import com.dragonminez.server.events.players.statuseffect.*;
 import com.dragonminez.server.util.FusionLogic;
 import com.dragonminez.server.util.GravityLogic;
@@ -305,7 +306,8 @@ public class TickHandler {
 				}
 			}
 
-			boolean kiAnimShouldBeActive = playerOwnsKiProjectile(serverPlayer) || data.getTechniques().isTechniqueCharging() || data.getTechniques().isTechniqueChargeActive();
+			boolean kiAnimShouldBeActive = playerOwnsKiProjectile(serverPlayer) || data.getTechniques().isTechniqueCharging() || data.getTechniques().isTechniqueChargeActive()
+					|| KiTechniqueHandler.isFireAnimationHeld(serverPlayer);
 			boolean kiAnimWasActive = serverPlayer.getPersistentData().getBoolean("dmz_ki_anim_active");
 			if (kiAnimShouldBeActive) serverPlayer.getPersistentData().putBoolean("dmz_ki_anim_active", true);
 			else if (kiAnimWasActive) {

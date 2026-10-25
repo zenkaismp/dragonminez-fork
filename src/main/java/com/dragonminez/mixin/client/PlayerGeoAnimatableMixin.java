@@ -38,6 +38,7 @@ import software.bernie.geckolib.core.animation.RawAnimation;
 import software.bernie.geckolib.core.object.PlayState;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
+import com.dragonminez.common.util.lists.BioAndroidForms;
 import static com.dragonminez.client.animation.BaseAnimations.*;
 
 @Mixin(AbstractClientPlayer.class)
@@ -58,6 +59,7 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 	@Unique private int dragonminez$landingTicks = 0;
 	@Unique private boolean dragonminez$wasEating = false;
 	@Unique private static final double WALK_SPEED_BASELINE = 0.2158;
+	@Unique private static final double FROZEN_SPEED_EPSILON = 0.01;
 	@Unique private static final double RUN_SPEED_BASELINE = 0.2806;
 	@Unique private static final int LANDING_ANIM_TICKS = 13;
 	@Unique private static final float FALL_TRIGGER_DISTANCE = 4.5F;
@@ -237,6 +239,11 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 	}
 
 	@Unique
+	private static boolean dragonminez$isStunned(StatsData data) {
+		return data.getStatus().isStunEffect() && !data.getStatus().isStrikeLocked() && !data.getStatus().isKnockedDown();
+	}
+
+	@Unique
 	private static boolean dragonminez$isEatingFood(AbstractClientPlayer player) {
 		if (!player.isUsingItem()) return false;
 		UseAnim anim = player.getUseItem().getUseAnimation();
@@ -300,7 +307,7 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 		IPlayerAnimatable animatable = (IPlayerAnimatable) this;
 		if (dragonminez$dashAnimTicks > 0) return PlayState.STOP;
 
-		boolean isMoving = dragonminez$isActuallyMoving(player);
+		boolean movedRecently = dragonminez$isActuallyMoving(player);
 		dragonminez$currentPoseAnim = CombatAnimationResolver.resolvePlayerPose(player);
 
 		StatsData data = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
@@ -329,17 +336,23 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 		var nextStackFormConfig = TransformationsHelper.getNextAvailableStackForm(data);
 		String nextForm = nextFormConfig != null ? nextFormConfig.getName().toLowerCase() : "";
 		boolean isTransforming = data.getStatus().isActionCharging();
+		boolean isMoving = movedRecently && !((isChargingKi || isTransforming) && dragonminez$horizSpeed < FROZEN_SPEED_EPSILON);
 		ActionMode actionMode = data.getStatus().getSelectedAction();
 
 		if (isKnockedDown) return state.setAndContinue(KNOCKBACK_HORIZONTAL);
+		if (dragonminez$isStunned(data)) return state.setAndContinue(STUNNED);
 
-		if (isDraining) return state.setAndContinue(DRAIN);
+		if (isDraining) {
+			boolean semiPerfect = "bioandroid".equalsIgnoreCase(data.getCharacter().getRaceName())
+					&& BioAndroidForms.SEMI_PERFECT.equalsIgnoreCase(data.getCharacter().getActiveForm());
+			return state.setAndContinue(semiPerfect ? DRAIN_SEMIPERFECT : DRAIN);
+		}
 
 		if (player.isPassenger()) return state.setAndContinue(SIT);
 
 		if (isChargingKi && !isMoving && !isBlocking) {
 			boolean surgeCharging = data.getStatus().isKiBurstArmed() || data.getStatus().isSurgeActive();
-			return state.setAndContinue(surgeCharging ? KI_OVERCHARGE : KI_CHARGE);
+			return state.setAndContinue(surgeCharging ? KI_OVERCHARGE : kiChargeFor(data.getCharacter().getRaceName()));
 		}
 
 		if (isTransforming && actionMode.equals(ActionMode.FORM)) {
@@ -463,7 +476,7 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 		if (player.isSwimming() || player.isVisuallyCrawling() || player.isPassenger()) return PlayState.STOP;
 
 		StatsData data = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
-		if (data != null && (data.getStatus().isBlocking() || data.getStatus().isChargingKi())) return PlayState.STOP;
+		if (data != null && (data.getStatus().isBlocking() || data.getStatus().isChargingKi() || dragonminez$isStunned(data))) return PlayState.STOP;
 
 		if (dragonminez$currentPoseAnim == null || dragonminez$currentPoseAnim.isEmpty()) return PlayState.STOP;
 
@@ -884,6 +897,7 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 		this.dragonminez$currentKiAnim = animationName;
 		this.dragonminez$kiAnimHold = hold;
 		this.dragonminez$kiAnimTicks = 0;
+		if (animationName != null && animationName.endsWith("_fire")) this.dragonminez$lastKiCtlAnim = null;
 	}
 
 	@Override

@@ -3,6 +3,7 @@ package com.dragonminez.common.stats.techniques;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.TechniqueConfig;
 import com.dragonminez.common.stats.StatsData;
+import com.dragonminez.server.events.players.combat.KiTechniqueHandler;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.nbt.CompoundTag;
@@ -97,20 +98,22 @@ public class KiAttackData extends TechniqueData {
 	}
 
 	public String getAnimationPrefix() {
-		if (this.animation != null && !this.animation.isEmpty()) return this.animation;
-
 		if (PredefinedTechniques.isPredefinedTechniqueId(this.id)) {
 			KiAttackData predefined = PredefinedTechniques.REGISTRY.get(this.id);
 			if (predefined != null && predefined.getAnimation() != null && !predefined.getAnimation().isEmpty()) return predefined.getAnimation();
 		}
+
+		if (this.animation != null && !this.animation.isEmpty()) return this.animation;
 
 		return switch (kiType != null ? kiType : KiType.SMALL_BALL) {
 			case BARRAGE -> "ki.barrage";
 			case GIANT_BALL -> "ki.large_ball";
 			case WAVE -> "ki.kameha";
 			case DISK -> "ki.kienzan";
-			case EXPLOSION, SHIELD -> "ki.explosion";
-			case BEAM, LASER -> "ki.makkako";
+			case EXPLOSION -> "ki.explosion";
+			case SHIELD -> "ki.barrier";
+			case BEAM -> "ki.makkako";
+			case LASER -> "ki.laser";
 			case SMALL_BALL, MEDIUM_BALL -> "ki.bigbang";
 			default -> "ki.kameha";
 		};
@@ -521,6 +524,10 @@ public class KiAttackData extends TechniqueData {
 		this.tpCost = tag.contains("TpCost") ? tag.getFloat("TpCost") : 0;
 		this.castTime = tag.getInt("CastTime");
 		this.cooldown = tag.getInt("Cooldown");
+		if (KiTechniqueHandler.EmperorDeathBeam.is(this.id)) {
+			KiAttackData template = PredefinedTechniques.REGISTRY.get(this.id);
+			if (template != null && template != this) this.cooldown = template.getCooldown();
+		}
 
 		this.allowedRaces.clear();
 		ListTag racesTag = tag.getList("AllowedRaces", 8);
