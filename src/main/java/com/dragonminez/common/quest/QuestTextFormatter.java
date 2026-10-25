@@ -9,6 +9,7 @@ import com.dragonminez.common.quest.objectives.ItemObjective;
 import com.dragonminez.common.quest.objectives.KillObjective;
 import com.dragonminez.common.quest.objectives.SkillObjective;
 import com.dragonminez.common.quest.objectives.StructureObjective;
+import com.dragonminez.common.quest.objectives.SurviveWavesObjective;
 import com.dragonminez.common.quest.objectives.TalkToObjective;
 import com.dragonminez.common.stats.StatsData;
 import net.minecraft.ChatFormatting;
@@ -41,6 +42,7 @@ public final class QuestTextFormatter {
 	private static final String OBJECTIVE_INTERACT = "dmz.quest.interact.obj";
 	private static final String OBJECTIVE_SUMMON_DRAGON = "dmz.quest.summon_dragon.obj";
 	private static final String OBJECTIVE_SKILL = "dmz.quest.skill.obj";
+	private static final String OBJECTIVE_WAVES = "dmz.quest.waves.obj";
 
 	private static final Pattern NPC_VARIANT_SUFFIX = Pattern.compile("^(.+?)_\\d+$");
 
@@ -94,6 +96,9 @@ public final class QuestTextFormatter {
 
 		if (objective instanceof KillObjective kill) {
 			return Component.translatable(OBJECTIVE_DEFEAT, resolveEntityName(kill.getEntityId()));
+		}
+		if (objective instanceof SurviveWavesObjective waves) {
+			return Component.translatable(OBJECTIVE_WAVES, waves.getWaves(), resolveEntityName(waves.getEntityId()));
 		}
 		if (objective instanceof ItemObjective item) {
 			return Component.translatable(OBJECTIVE_OBTAIN, resolveItemName(item.getItemId()));

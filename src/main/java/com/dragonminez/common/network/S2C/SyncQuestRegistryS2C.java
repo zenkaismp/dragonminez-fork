@@ -18,6 +18,7 @@ import com.dragonminez.common.quest.objectives.ItemObjective;
 import com.dragonminez.common.quest.objectives.KillObjective;
 import com.dragonminez.common.quest.objectives.SkillObjective;
 import com.dragonminez.common.quest.objectives.StructureObjective;
+import com.dragonminez.common.quest.objectives.SurviveWavesObjective;
 import com.dragonminez.common.quest.objectives.TalkToObjective;
 import com.dragonminez.common.quest.rewards.*;
 import com.dragonminez.common.util.adapters.GenericItemTypeAdapter;
@@ -244,6 +245,17 @@ public class SyncQuestRegistryS2C {
 		} else if (objective instanceof InteractObjective interact) {
 			if (interact.getEntityTypeId() != null) obj.addProperty("entity", interact.getEntityTypeId());
 			if (interact.getEntityName() != null) obj.addProperty("entityName", interact.getEntityName());
+		} else if (objective instanceof SurviveWavesObjective waves) {
+			obj.addProperty("entity", waves.getEntityId());
+			obj.addProperty("waves", waves.getWaves());
+			obj.addProperty("mobs_per_wave", waves.getMobsPerWave());
+			obj.addProperty("wave_delay_seconds", waves.getWaveDelaySeconds());
+			obj.addProperty("health", waves.getHealth());
+			obj.addProperty("meleeDamage", waves.getMeleeDamage());
+			obj.addProperty("kiDamage", waves.getKiDamage());
+			if (waves.getTextureVariant() >= 0) obj.addProperty("TextureVariant", waves.getTextureVariant());
+			if (waves.getAiTier() > 0) obj.addProperty("AITier", waves.getAiTier());
+			if (!waves.isCanTransform()) obj.addProperty("CanTransform", false);
 		}
 
 		return obj;

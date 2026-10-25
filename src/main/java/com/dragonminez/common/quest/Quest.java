@@ -3,6 +3,7 @@ package com.dragonminez.common.quest;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.quest.objectives.ItemObjective;
 import com.dragonminez.common.quest.objectives.KillObjective;
+import com.dragonminez.common.quest.objectives.SurviveWavesObjective;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -170,6 +171,28 @@ public class Quest {
 	}
 
 	public double getScaledKillKiDamage(KillObjective objective, int partySize) {
+		return objective.getKiDamage() * enemyPartyMultiplier(partySize,
+				ConfigManager.getServerConfig().getGameplay().getEnemyDamagePerPartyPlayer());
+	}
+
+	/*
+	 * SURVIVE_WAVES (v2.2) com a MESMA escala de grupo do MATAR acima. A v2.2 nasce a onda com os numeros crus; aqui
+	 * o party_scaling da quest vale pro guarda da onda como valia pro guarda que vinha de um MATAR (vida x elenco,
+	 * dano pelo knob), senao a escala de grupo deixaria de valer em silencio pro tipo novo.
+	 */
+	public double getScaledWaveHealth(SurviveWavesObjective objective, int partySize) {
+		if (!partyScaling) {
+			return objective.getHealth();
+		}
+		return objective.getHealth() * Math.max(1, partySize);
+	}
+
+	public double getScaledWaveMeleeDamage(SurviveWavesObjective objective, int partySize) {
+		return objective.getMeleeDamage() * enemyPartyMultiplier(partySize,
+				ConfigManager.getServerConfig().getGameplay().getEnemyDamagePerPartyPlayer());
+	}
+
+	public double getScaledWaveKiDamage(SurviveWavesObjective objective, int partySize) {
 		return objective.getKiDamage() * enemyPartyMultiplier(partySize,
 				ConfigManager.getServerConfig().getGameplay().getEnemyDamagePerPartyPlayer());
 	}

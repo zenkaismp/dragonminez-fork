@@ -1872,6 +1872,13 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         return null;
     }
 
+    // v2.2: true = o QuestService nasce UM alvo deste tipo por vez, e nenhum enquanto houver um vivo do mesmo
+    // objetivo (QuestService.spawnKillObjectives). Quem responde true renasce sozinho enquanto faltar abate
+    // (QuestService.hasPendingKills).
+    public boolean questSpawnsOneAtATime() {
+        return false;
+    }
+
     @Override
     public AnimatableInstanceCache getAnimatableInstanceCache() {
         return geoCache;
