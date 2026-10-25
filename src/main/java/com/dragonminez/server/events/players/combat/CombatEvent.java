@@ -649,7 +649,9 @@ public class CombatEvent {
 		StatsProvider.get(StatsCapability.INSTANCE, victim).ifPresent(data -> {
 			if (!data.getStatus().isHasCreatedCharacter()) return;
 			if (!data.getStatus().isChargingKi() || data.getStatus().isStunned()) return;
-			event.setCanceled(true);
+			// v2.2 (Forge 47) cancels the event, which Forge 47 turns into SKIP_ENTITY; in Forge 48 the event is not
+			// cancelable any more (setCanceled would throw), so the same result is set directly.
+			event.setImpactResult(ProjectileImpactEvent.ImpactResult.SKIP_ENTITY);
 		});
 	}
 
