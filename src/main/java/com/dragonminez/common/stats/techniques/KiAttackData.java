@@ -3,6 +3,7 @@ package com.dragonminez.common.stats.techniques;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.TechniqueConfig;
 import com.dragonminez.common.stats.StatsData;
+import com.dragonminez.server.events.players.combat.KiTechniqueHandler;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.nbt.CompoundTag;
@@ -523,6 +524,10 @@ public class KiAttackData extends TechniqueData {
 		this.tpCost = tag.contains("TpCost") ? tag.getFloat("TpCost") : 0;
 		this.castTime = tag.getInt("CastTime");
 		this.cooldown = tag.getInt("Cooldown");
+		if (KiTechniqueHandler.EmperorDeathBeam.is(this.id)) {
+			KiAttackData template = PredefinedTechniques.REGISTRY.get(this.id);
+			if (template != null && template != this) this.cooldown = template.getCooldown();
+		}
 
 		this.allowedRaces.clear();
 		ListTag racesTag = tag.getList("AllowedRaces", 8);
