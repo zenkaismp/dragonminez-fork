@@ -22,6 +22,9 @@ public class DMZShaders {
 	public static ShaderInstance auraSparking3DShader;
 	public static ShaderInstance auraGod3DShader;
 	public static ShaderInstance auraTrailShader;
+	public static ShaderInstance auraBorderShader;
+	public static ShaderInstance auraBorderFieldShader;
+	public static ShaderInstance bloomBlurShader;
 	public static ShaderInstance lightningShader;
 	public static ShaderInstance lightningBoltShader;
 	public static ShaderInstance outlineShader;
@@ -42,6 +45,10 @@ public class DMZShaders {
 		registerOptional(event, "aura_sparking", DefaultVertexFormat.POSITION_COLOR_NORMAL, shaderInstance -> auraSparking3DShader = shaderInstance);
 		registerOptional(event, "aura_god", DefaultVertexFormat.POSITION_TEX, shaderInstance -> auraGod3DShader = shaderInstance);
 		registerOptional(event, "aura_trail", DefaultVertexFormat.POSITION_COLOR_NORMAL, shaderInstance -> auraTrailShader = shaderInstance);
+		registerOptional(event, "aura_border", DefaultVertexFormat.POSITION, shaderInstance -> auraBorderShader = shaderInstance);
+		registerOptional(event, "aura_border_field", DefaultVertexFormat.POSITION, shaderInstance -> auraBorderFieldShader = shaderInstance);
+		// Only the blur of the v2.2 bloom: the aura border spreads its field with it. The bloom itself is not in this fork.
+		registerOptional(event, "bloom_blur", DefaultVertexFormat.POSITION, shaderInstance -> bloomBlurShader = shaderInstance);
 
 		event.registerShader(new ShaderInstance(event.getResourceProvider(),
 						new ResourceLocation(Reference.MOD_ID, "lightning"),

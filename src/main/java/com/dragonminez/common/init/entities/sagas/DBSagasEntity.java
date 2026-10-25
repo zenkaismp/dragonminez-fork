@@ -205,6 +205,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     private static final EntityDataAccessor<Boolean> IS_LIGHTNING = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Integer> LIGHTNING_COLOR = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> TEXTURE_VARIANT = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Boolean> IS_SUPERVILLAIN = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
 
     private static final EntityDataAccessor<Integer> DBZ_STYLE = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> IS_ZANZOKEN = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
@@ -1229,6 +1230,17 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     public int getAuraColor() {return this.entityData.get(AURA_COLOR);}
     public void setAuraColor(int color) {this.entityData.set(AURA_COLOR, color);}
 
+    // v2.2 supervillain (purple tint and aura border). In v2.2 the raids mark them; this fork does not have those
+    // raids, so only the "Supervillain" NBT tag sets it.
+    public boolean isSupervillain() {return this.entityData.get(IS_SUPERVILLAIN);}
+    public void setSupervillain(boolean supervillain) {this.entityData.set(IS_SUPERVILLAIN, supervillain);}
+
+    public boolean showsSupervillainAura() {return this.isSupervillain();}
+
+    public SupervillainPalette getSupervillainPalette() {return null;}
+
+    public record SupervillainPalette(int tint, float tintAlpha, int flameInner, int flameOuter) {}
+
     public boolean isTransforming() {return this.entityData.get(TRANSFORMING);}
     public void setTransforming(boolean transforming) {this.entityData.set(TRANSFORMING, transforming);}
 
@@ -1365,6 +1377,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         pCompound.putInt("DBZStyle", this.getDBZStyle());
         pCompound.putBoolean("isKid", this.isKid());
         pCompound.putInt("TextureVariant", this.getTextureVariant());
+        pCompound.putBoolean("Supervillain", this.isSupervillain());
         pCompound.putBoolean("TransformationDisabled", this.transformationDisabled);
         pCompound.putBoolean("CanUseZanzoken", this.canUseZanzoken);
         pCompound.putInt("ZanzokenCooldownMax", this.zanzokenCooldownMax);
@@ -1396,6 +1409,9 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         if (pCompound.contains("CanFly") && pCompound.getBoolean("CanFly") && this.getFlySpeed() <= 0.0D) this.setFlySpeed(0.35D);
         if (pCompound.contains("TextureVariant")) {
             this.setTextureVariant(pCompound.getInt("TextureVariant"));
+        }
+        if (pCompound.contains("Supervillain")) {
+            this.setSupervillain(pCompound.getBoolean("Supervillain"));
         }
         if (pCompound.contains("TransformationDisabled")) {
             this.transformationDisabled = pCompound.getBoolean("TransformationDisabled");
@@ -1440,6 +1456,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         this.entityData.define(CURRENT_COMBO_ID, -1);
         this.entityData.define(DBZ_STYLE, 0);
         this.entityData.define(TEXTURE_VARIANT, 0);
+        this.entityData.define(IS_SUPERVILLAIN, false);
         this.entityData.define(IS_ZANZOKEN, false);
         this.entityData.define(IS_KID, false);
         this.entityData.define(SCALE_VAL, 1.0F);

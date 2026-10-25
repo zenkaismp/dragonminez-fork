@@ -327,7 +327,7 @@ public class TickHandler {
 
 			KiSurgeService.tick(serverPlayer, data);
 
-			boolean auraFromActions = isChargingKi || data.getStatus().isSurgeActive() || (data.getStatus().isActionCharging() && (data.getStatus().getSelectedAction() == ActionMode.FORM || data.getStatus().getSelectedAction() == ActionMode.STACK));
+			boolean auraFromActions = isChargingKi || (data.getStatus().isActionCharging() && (data.getStatus().getSelectedAction() == ActionMode.FORM || data.getStatus().getSelectedAction() == ActionMode.STACK));
 			if (data.getSkills().isSkillActive("fly") && serverPlayer.isSprinting() && !serverPlayer.onGround()) {
 				flySprintAuraTicks.put(playerId, FLY_SPRINT_AURA_LINGER_TICKS);
 			} else {

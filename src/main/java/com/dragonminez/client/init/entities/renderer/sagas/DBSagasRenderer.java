@@ -4,10 +4,12 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.init.entities.model.sagas.DBSagaModel;
 import com.dragonminez.client.init.entities.renderer.sagas.layer.DMZSagaItemInHandLayer;
 import com.dragonminez.client.render.effects.Aura3DRenderer;
+import com.dragonminez.client.render.effects.AuraBorderRenderer;
 import com.dragonminez.client.render.effects.AuraModeState;
 import com.dragonminez.client.render.effects.AuraRenderer;
 import com.dragonminez.client.render.effects.LightningBoltRenderer;
 import com.dragonminez.client.init.entities.renderer.sagas.layer.DMZSagaArmorLayer;
+import com.dragonminez.client.init.entities.renderer.sagas.layer.SagaSupervillainLayer;
 import com.dragonminez.client.render.shader.DMZShaders;
 import com.dragonminez.client.render.util.AuraMeshFactory;
 import com.dragonminez.client.render.util.IrisCompat;
@@ -41,6 +43,7 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
 
         this.addRenderLayer(new DMZSagaItemInHandLayer<>(this));
         this.addRenderLayer(new DMZSagaArmorLayer<>(this));
+        this.addRenderLayer(new SagaSupervillainLayer<>(this));
     }
 
     @Override
@@ -58,7 +61,13 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
 
         poseStack.scale(sc,sc,sc);
 
-        super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
+        MultiBufferSource borderSource = AuraBorderRenderer.begin(entity, bufferSource, SagaSupervillainLayer.borderColor(entity),
+                SagaSupervillainLayer.borderInnerColor(entity), partialTick);
+        try {
+            super.render(entity, entityYaw, partialTick, poseStack, borderSource, packedLight);
+        } finally {
+            AuraBorderRenderer.end(borderSource);
+        }
 
 
         boolean showAura = entity.isTransforming() || entity.isCharge();

@@ -1,6 +1,7 @@
 package com.dragonminez.client.events;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.render.effects.AuraBorderRenderer;
 import com.dragonminez.client.render.effects.AuraRenderer;
 import com.dragonminez.client.render.effects.AuraTrailRenderer;
 import com.dragonminez.client.render.effects.KiWeaponRenderer;
@@ -51,6 +52,7 @@ public class PlayerEffectsRenderHandler {
 
 		if (stage == RenderLevelStageEvent.Stage.AFTER_SKY) {
 			AuraRenderer.beginBloomCapture();
+			AuraBorderRenderer.beginCapture();
 		}
 
 		if (shaderPack) {
@@ -146,6 +148,15 @@ public class PlayerEffectsRenderHandler {
 
 			var entityEffects = PlayerEffectQueue.getAndClearEntityEffects();
 			for (var task : entityEffects) task.render();
+
+			// Oculus: a shader of ours that switches render targets in the middle of the world (the frame in which a
+			// shaderpack has just turned on, while the cached flag above still says no pack) can leave its colour lock
+			// stuck. With a pack the border only runs at AFTER_LEVEL; that frame drops the captured borders.
+			if (!IrisCompat.isShaderPackInUse() || event.getStage() == RenderLevelStageEvent.Stage.AFTER_LEVEL) {
+				AuraBorderRenderer.process(mc, poseStack, projectionMatrix);
+			} else {
+				AuraBorderRenderer.discard();
+			}
 		} finally {
 			AuraRenderer.endBloomCapture();
 		}
