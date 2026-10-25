@@ -3,6 +3,8 @@ package com.dragonminez.client.render;
 import com.dragonminez.client.events.FlySkillEvent;
 import com.dragonminez.client.flight.FlightRollHandler;
 import com.dragonminez.client.animation.IPlayerAnimatable;
+import com.dragonminez.client.render.hair.HairRenderCapture;
+import com.dragonminez.client.render.hair.HairRenderContext;
 import com.dragonminez.client.render.layer.*;
 import com.dragonminez.client.render.shader.TransformationPostShaderManager;
 import com.dragonminez.client.render.shader.TransformationMaskBufferSource;
@@ -26,14 +28,17 @@ import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.opengl.GL11;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
+import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.renderer.GeoEntityRenderer;
 import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
+import software.bernie.geckolib.util.RenderUtils;
 
 import java.util.Objects;
 
 public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> extends GeoEntityRenderer<T> {
+	private static final String HEAD_BONE = "head";
 
 	protected GeoRenderLayer<T> caller = null;
 
@@ -78,6 +83,7 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 
 		// ponytail: GeckoLib 4.3.1's GeoModel has no lastRenderedInstance cache (a 4.4+ addition),
 		// so the per-frame reset is unnecessary here; upstream's GeoModelAccessor mixin drops away.
+		HairRenderCapture.beginEntity(entity, poseStack);
 
 		var statsCap = StatsProvider.get(StatsCapability.INSTANCE, entity);
 		var stats = statsCap.orElse(new StatsData(entity));
@@ -176,6 +182,42 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 		for (GeoRenderLayer<T> renderLayer : getRenderLayers()) {
 			renderLayer.render(poseStack, animatable, model, renderType, bufferSource, buffer, partialTick, packedLight, packedOverlay);
 		}
+	}
+
+	@Override
+	public void renderRecursively(PoseStack poseStack, T animatable, GeoBone bone, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, boolean isReRender, float partialTick, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
+		// Hair editor with the body hidden: only the head branch is drawn.
+		if (editorHeadOnly() && !isHeadOrHeadChild(bone)) {
+			if (!containsHead(bone)) return;
+			poseStack.pushPose();
+			RenderUtils.prepMatrixForBone(poseStack, bone);
+			for (GeoBone child : bone.getChildBones()) {
+				renderRecursively(poseStack, animatable, child, renderType, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha);
+			}
+			poseStack.popPose();
+			return;
+		}
+		super.renderRecursively(poseStack, animatable, bone, renderType, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha);
+	}
+
+	private static boolean editorHeadOnly() {
+		if (HairRenderContext.mode() != HairRenderContext.Mode.EDITOR_PREVIEW) return false;
+		HairRenderContext.Preview preview = HairRenderContext.preview();
+		return preview != null && preview.bodyHidden();
+	}
+
+	private static boolean isHeadOrHeadChild(GeoBone bone) {
+		for (GeoBone current = bone; current != null; current = current.getParent()) {
+			if (HEAD_BONE.equals(current.getName())) return true;
+		}
+		return false;
+	}
+
+	private static boolean containsHead(GeoBone bone) {
+		for (GeoBone child : bone.getChildBones()) {
+			if (HEAD_BONE.equals(child.getName()) || containsHead(child)) return true;
+		}
+		return false;
 	}
 
 	@Override

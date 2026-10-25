@@ -7,7 +7,11 @@ import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.client.util.SkinGathererProvider;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
+import com.dragonminez.client.render.hair.HairEditSession;
+import com.dragonminez.client.render.hair.HairStyleResolver;
+import com.dragonminez.common.hair.CustomHair;
 import com.dragonminez.common.hair.HairManager;
+import com.dragonminez.common.hair.HairStyleSlot;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.stats.*;
 import com.dragonminez.common.stats.character.Character;
@@ -173,24 +177,26 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		var character = stats.getCharacter();
 		String raceName = character.getRaceName().toLowerCase();
 		String currentForm = character.getActiveForm();
-		int hairId = character.getHairId();
 
 		if (!HairManager.canUseHair(character)) return;
 		if (raceName.equals("saiyan") && (Objects.equals(currentForm, SaiyanForms.OOZARU) || Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU))) return;
-		if (hairId == 5) return;
-		if (hairId == 0 && character.getHairBase().getVisibleStrandCount() == 0) return;
-		List<String> hairTypes = List.of("base", "ssj", "ssj2", "ssj3");
+		CustomHair editingBase = HairEditSession.resolve(player.getUUID(), HairStyleSlot.BASE);
+		if (editingBase != null) {
+			if (editingBase.getVisibleStrandCount() == 0) return;
+		} else if (!character.hasVisibleHair()) {
+			return;
+		}
 
 		float[] currentTint = character.getRgbHairColor();
 
 		if (character.hasActiveForm() && character.getActiveFormData() != null) {
-			if (character.getActiveFormData().hasDefinedHairType() && !hairTypes.contains(character.getActiveFormData().getHairType().toLowerCase())) return;
+			if (character.getActiveFormData().hasDefinedHairType() && HairStyleSlot.byHairType(character.getActiveFormData().getHairType()) == null) return;
 			if (!character.getActiveFormData().getHairColor().isEmpty()) {
 				currentTint = character.getActiveFormData().getRgbHairColor();
 			}
 		}
 		if (character.hasActiveStackForm() && character.getActiveStackFormData() != null) {
-			if (character.getActiveStackFormData().hasDefinedHairType() && !hairTypes.contains(character.getActiveStackFormData().getHairType().toLowerCase())) return;
+			if (character.getActiveStackFormData().hasDefinedHairType() && HairStyleSlot.byHairType(character.getActiveStackFormData().getHairType()) == null) return;
 			if (!character.getActiveStackFormData().getHairColor().isEmpty()) {
 				currentTint = character.getActiveStackFormData().getRgbHairColor();
 			}
@@ -213,7 +219,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 			}
 		}
 
-		float[] publishedHair = DMZHairLayer.getPublishedHairBaseColor(player.getId(), player.level().getGameTime());
+		float[] publishedHair = HairStyleResolver.getPublishedBaseColor(player.getId(), player.level().getGameTime());
 		final float[] hairTint = publishedHair != null ? publishedHair : applyColorTint(finalTint, stats);
 
 		model.getBone("head").ifPresent(headBone -> {
@@ -230,7 +236,8 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 			List<GeoBone> hiddenBones = hideAllTopLevelAndKeepHead(model, headBone);
 			try {
-				if (character.isRenderHairBase()) {
+				Boolean editingHairBase = HairEditSession.renderHairBaseOverride(player.getUUID());
+				if (editingHairBase != null ? editingHairBase : character.isRenderHairBase()) {
 					renderColoredLayer(model, poseStack, animatable, bufferSource, "textures/entity/races/hair_base.png", hairTint, partialTick, packedLight, packedOverlay, alpha);
 				}
 			} finally {

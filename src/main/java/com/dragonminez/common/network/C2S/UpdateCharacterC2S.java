@@ -3,6 +3,8 @@ package com.dragonminez.common.network.C2S;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.RaceStatsConfig;
 import com.dragonminez.common.hair.CustomHair;
+import com.dragonminez.common.hair.HairSanitizer;
+import com.dragonminez.common.hair.HairStyleSlot;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.AppearanceSyncS2C;
 import com.dragonminez.common.stats.character.Character;
@@ -36,7 +38,7 @@ public class UpdateCharacterC2S {
 	public UpdateCharacterC2S(Character character) {
 		this.className = character.getCharacterClass();
 		this.hairId = character.getHairId();
-		this.customHair = character.getHairBase();
+		this.customHair = character.getOwnHairStyle(HairStyleSlot.BASE);
 		this.bodyType = character.getBodyType();
 		this.eyesType = character.getEyesType();
 		this.noseType = character.getNoseType();
@@ -142,7 +144,10 @@ public class UpdateCharacterC2S {
 					c.setCharacterClass(msg.className);
 				}
 				c.setHairId(msg.hairId);
-				if (msg.customHair != null) c.setHairBase(msg.customHair);
+				if (msg.customHair != null) {
+					HairSanitizer.sanitizeAndLog(msg.customHair, HairStyleSlot.BASE, player.getGameProfile().getName());
+					c.setHairStyle(HairStyleSlot.BASE, msg.customHair);
+				}
 				c.setBodyType(msg.bodyType);
 				c.setEyesType(msg.eyesType);
 				c.setNoseType(msg.noseType);

@@ -114,7 +114,7 @@ public class NPCActionC2S {
 
 	private static final double NPC_INTERACTION_RANGE = 8.0;
 
-	private static boolean isNpcInRange(ServerPlayer player, String npcName) {
+	public static boolean isNpcInRange(ServerPlayer player, String npcName) {
 		return player.serverLevel().getEntitiesOfClass(MastersEntity.class,
 						player.getBoundingBox().inflate(NPC_INTERACTION_RANGE),
 						npc -> npcName.equals(npc.getMasterName()))

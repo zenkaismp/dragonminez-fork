@@ -1094,7 +1094,7 @@ public class StatsData {
 		character.setGender(gender);
 		character.setCharacterClass(characterClass);
 		character.setHairId(hairId);
-		if (customHair != null) character.setHairBase(customHair);
+		if (customHair != null) character.setHairStyle(com.dragonminez.common.hair.HairStyleSlot.BASE, customHair);
 		character.setBodyType(bodyType);
 		character.setEyesType(eyesType);
 		character.setNoseType(noseType);

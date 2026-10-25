@@ -219,6 +219,7 @@ public class ForgeCommonEvents {
 		if (event.getEntity() instanceof ServerPlayer player) {
 			TrainingSessionTracker.end(player.getUUID());
 			PacketRateLimiter.clear(player.getUUID());
+			com.dragonminez.common.wish.wishes.ReCustomizeWish.clear(player.getUUID());
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				if (ConfigManager.getCombatConfig().getKillPlayersOnCombatLogout()) {
 					if (data.getCooldowns().hasCooldown(Cooldowns.COMBAT)) player.kill();

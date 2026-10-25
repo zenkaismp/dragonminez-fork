@@ -134,10 +134,7 @@ public class DebugCommand {
 
 	private static CompoundTag withoutHairData(CompoundTag character) {
 		CompoundTag copy = character.copy();
-		copy.remove("HairBase");
-		copy.remove("HairSSJ");
-		copy.remove("HairSSJ2");
-		copy.remove("HairSSJ3");
+		for (com.dragonminez.common.hair.HairStyleSlot slot : com.dragonminez.common.hair.HairStyleSlot.values()) copy.remove(slot.getNbtKey());
 		return copy;
 	}
 
