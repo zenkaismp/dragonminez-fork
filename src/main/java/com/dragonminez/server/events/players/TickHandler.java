@@ -342,9 +342,9 @@ public class TickHandler {
 				else flySprintAuraTicks.remove(playerId);
 			}
 			boolean auraFromFlySprint = flySprintAuraTicks.containsKey(playerId);
-			// v2.2 (3983434b3): a aura acende na investida do golpe de strike. Zenkai: sem o StrikeClash.isClashing (o choque
-			// de strike nao veio).
-			boolean auraFromStrikeRush = com.dragonminez.server.events.players.combat.StrikeAttackHandler.isRushing(serverPlayer);
+			// v2.2 (3983434b3 e 00605f19a): a aura acende na investida do golpe de strike e no choque de strikes.
+			boolean auraFromStrikeRush = com.dragonminez.server.events.players.combat.StrikeAttackHandler.isRushing(serverPlayer)
+					|| com.dragonminez.common.combat.clash.StrikeClash.isClashing(serverPlayer.getUUID());
 			data.getStatus().setAuraActive(auraFromActions || auraFromFlySprint || auraFromStrikeRush);
 
 			if (tickCounter % 5 == 0) {

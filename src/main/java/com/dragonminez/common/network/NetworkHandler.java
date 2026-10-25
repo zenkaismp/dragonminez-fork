@@ -645,6 +645,12 @@ public class NetworkHandler {
 				.encoder(SagaAnimStopS2C::encode)
 				.consumerMainThread(SagaAnimStopS2C::handle)
 				.add();
+
+		net.messageBuilder(StrikeClashHoldS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(StrikeClashHoldS2C::new)
+				.encoder(StrikeClashHoldS2C::encode)
+				.consumerMainThread(StrikeClashHoldS2C::handle)
+				.add();
 	}
 
 	public static <MSG> void sendToServer(MSG message) {

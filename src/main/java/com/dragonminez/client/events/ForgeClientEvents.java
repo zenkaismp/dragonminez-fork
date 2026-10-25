@@ -278,6 +278,9 @@ public class ForgeClientEvents {
 	public static void onClientDisconnect(ClientPlayerNetworkEvent.LoggingOut event) {
 		ConfigManager.clearServerSync();
 		com.dragonminez.client.render.camera.StrikeCinematicCamera.reset();
+		com.dragonminez.client.render.effects.BeamClashScreenRenderer.reset();
+		com.dragonminez.client.clash.ClientBeamClashState.clear();
+		FlySkillEvent.releaseStrikeClash();
 		DMZRendererCache.clear();
 		TextureCounter.clearCache();
 		pendingCharacterCreationReopen = false;

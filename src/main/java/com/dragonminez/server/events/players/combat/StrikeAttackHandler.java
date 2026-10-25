@@ -21,6 +21,7 @@ import com.dragonminez.common.init.entities.ki.SPBlueHurricaneEntity;
 import com.dragonminez.common.init.entities.ki.SPDragonFistEntity;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
 import com.dragonminez.common.init.item.weapons.BraveSwordItem;
+import com.dragonminez.common.combat.clash.StrikeClash;
 import com.dragonminez.common.combat.logic.player.TargetHelper;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.ClawSlashVfxS2C;
@@ -326,7 +327,7 @@ public class StrikeAttackHandler {
 				return;
 			}
 
-			if (false /* Zenkai: StrikeClash.isRushingAt (o choque de strike nao veio) */ && immediateTarget != null && !TARGETLESS_STRIKES.contains(strike.getId())) {
+			if (immediateTarget != null && !TARGETLESS_STRIKES.contains(strike.getId()) && StrikeClash.isRushingAt(immediateTarget, player)) {
 				startRush(player, stats, pending, immediateTarget);
 			} else if (immediateTarget != null && (METEOR_BURST_ID.equals(strike.getId()) || EYE_BEAM_ID.equals(strike.getId()) || DEATH_CHASER_ID.equals(strike.getId())
 					|| ANDROID_COMBO_ID.equals(strike.getId())
@@ -421,7 +422,7 @@ public class StrikeAttackHandler {
 		for (ActiveStrike active : ACTIVE.values()) {
 			if (id.equals(active.targetId())) return true;
 		}
-		return HeldVictim.isHeld(player); // Zenkai: a v2.2 tambem conta o StrikeClash.isClashing, que nao veio
+		return StrikeClash.isClashing(id) || HeldVictim.isHeld(player);
 	}
 
 	@SubscribeEvent
@@ -510,7 +511,7 @@ public class StrikeAttackHandler {
 			}
 		}
 
-		// Zenkai: aqui a v2.2 tenta o choque de strike (StrikeClash.tryStart), que nao veio.
+		if (StrikeClash.tryStart(player)) return;
 
 		LivingEntity target = resolveTargetForPending(player, pending);
 		if (target != null) {

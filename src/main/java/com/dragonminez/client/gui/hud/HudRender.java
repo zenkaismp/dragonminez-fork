@@ -8,6 +8,8 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexFormat;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.RenderType;
@@ -17,8 +19,8 @@ import org.joml.Matrix4f;
 
 /**
  * Zenkai: so a parte do HudRender da v2.2 que a tela nova de criacao de tecnica usa (blit e retangulo em coordenada
- * fracionada), com o mesmo codigo. O resto da classe (sprites, nine-slice, painel, texto) vem com a HUD nova da v2.2,
- * que nao foi portada.
+ * fracionada) e a que a HUD do choque de feixes usa (texto na fonte do DMZ, argb e mistura de cor), com o mesmo codigo.
+ * O resto da classe (sprites, nine-slice, painel) vem com a HUD nova da v2.2, que nao foi portada.
  */
 public final class HudRender {
 	private static float alphaScale = 1.0f;
@@ -67,6 +69,48 @@ public final class HudRender {
 		if (additive) RenderSystem.defaultBlendFunc();
 	}
 
+	private static final ResourceLocation DMZ_FONT = new ResourceLocation(com.dragonminez.Reference.MOD_ID, "smooth");
+
+	public static net.minecraft.network.chat.MutableComponent dmz(String text) {
+		return net.minecraft.network.chat.Component.literal(text).withStyle(net.minecraft.network.chat.Style.EMPTY.withFont(DMZ_FONT));
+	}
+
+	public static net.minecraft.network.chat.MutableComponent dmz(net.minecraft.network.chat.Component text) {
+		return text.copy().withStyle(net.minecraft.network.chat.Style.EMPTY.withFont(DMZ_FONT));
+	}
+
+	public static void dmzText(GuiGraphics graphics, String text, float x, float y, float scale, float align, int rgb, float alpha) {
+		if (text == null || text.isEmpty()) return;
+		dmzText(graphics, dmz(text), x, y, scale, align, rgb, alpha);
+	}
+
+	private static net.minecraft.util.FormattedCharSequence uncolored(net.minecraft.util.FormattedCharSequence sequence) {
+		return sink -> sequence.accept((index, style, codePoint) ->
+				sink.accept(index, style.withColor((net.minecraft.network.chat.TextColor) null), codePoint));
+	}
+
+	public static void dmzText(GuiGraphics graphics, net.minecraft.network.chat.Component component, float x, float y, float scale, float align, int rgb, float alpha) {
+		int alphaChannel = Math.round(Mth.clamp(alpha, 0.0f, 1.0f) * alphaScale * 255.0f);
+		if (alphaChannel <= 3 || component == null) return;
+
+		Font font = Minecraft.getInstance().font;
+		int color = (alphaChannel << 24) | (rgb & 0xFFFFFF);
+		int border = alphaChannel << 24;
+		float offset = -font.width(component) * align;
+
+		graphics.pose().pushPose();
+		graphics.pose().translate(x, y, 0.0f);
+		graphics.pose().scale(scale, scale, 1.0f);
+		graphics.pose().translate(offset, 0.0f, 0.0f);
+		net.minecraft.util.FormattedCharSequence outline = uncolored(component.getVisualOrderText());
+		graphics.drawString(font, outline, -1, 0, border, false);
+		graphics.drawString(font, outline, 1, 0, border, false);
+		graphics.drawString(font, outline, 0, -1, border, false);
+		graphics.drawString(font, outline, 0, 1, border, false);
+		graphics.drawString(font, component, 0, 0, color, false);
+		graphics.pose().popPose();
+	}
+
 	public static void rect(GuiGraphics graphics, float x, float y, float width, float height, int color) {
 		gradient(graphics, x, y, width, height, color, color, color, color);
 	}
@@ -93,5 +137,21 @@ public final class HudRender {
 	private static void vertex(VertexConsumer buffer, Matrix4f matrix, float x, float y, int argb) {
 		int alpha = Math.round(((argb >>> 24) & 0xFF) * alphaScale);
 		buffer.vertex(matrix, x, y, 0.0f).color((argb >> 16) & 0xFF, (argb >> 8) & 0xFF, argb & 0xFF, alpha).endVertex();
+	}
+
+	public static void text(GuiGraphics graphics, String text, float x, float y, float scale, float align, int rgb, float alpha) {
+		dmzText(graphics, text, x, y, scale, align, rgb, alpha);
+	}
+
+	public static int argb(float alpha, int rgb) {
+		return (Math.round(Mth.clamp(alpha, 0.0f, 1.0f) * 255.0f) << 24) | (rgb & 0xFFFFFF);
+	}
+
+	public static int mix(int rgbFrom, int rgbTo, float amount) {
+		float t = Mth.clamp(amount, 0.0f, 1.0f);
+		int r = Math.round(((rgbFrom >> 16) & 0xFF) + (((rgbTo >> 16) & 0xFF) - ((rgbFrom >> 16) & 0xFF)) * t);
+		int g = Math.round(((rgbFrom >> 8) & 0xFF) + (((rgbTo >> 8) & 0xFF) - ((rgbFrom >> 8) & 0xFF)) * t);
+		int b = Math.round((rgbFrom & 0xFF) + ((rgbTo & 0xFF) - (rgbFrom & 0xFF)) * t);
+		return (r << 16) | (g << 8) | b;
 	}
 }

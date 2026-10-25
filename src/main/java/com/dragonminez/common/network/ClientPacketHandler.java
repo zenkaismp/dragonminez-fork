@@ -83,11 +83,11 @@ public class ClientPacketHandler {
 
 	public static void handleBeamClashState(BeamClashStateS2C msg) {
 		if (msg.isActive()) {
-			ClientBeamClashState.update(true, msg.getMeterPhase(), msg.getSweetLow(),
-					msg.getSweetHigh(), msg.getAdvantage(), msg.getBeamColor(), msg.getOpponentEntityId());
+			ClientBeamClashState.update(msg.getStartGameTime(), msg.getMeterSeed(), msg.getAdvantage(),
+					msg.getSelfColor(), msg.getFoeColor(), msg.getOpponentEntityId(), msg.clashPoint());
 			com.dragonminez.client.clash.BeamClashCinematicCamera.activate();
 		} else {
-			ClientBeamClashState.clear();
+			ClientBeamClashState.clear(msg.getExhaustTicks());
 			com.dragonminez.client.clash.BeamClashCinematicCamera.deactivate();
 		}
 	}
@@ -156,6 +156,11 @@ public class ClientPacketHandler {
 			if (ticks > 0) com.dragonminez.client.events.FlySkillEvent.startStrikeRush(ticks, targetId);
 			else com.dragonminez.client.events.FlySkillEvent.stopStrikeRush(connected);
 		} else com.dragonminez.client.events.FlySkillEvent.setRemoteStrikeRush(playerId, ticks);
+	}
+
+	public static void handleStrikeClashHold(boolean active, double x, double y, double z, float yaw) {
+		if (active) com.dragonminez.client.events.FlySkillEvent.holdStrikeClash(new Vec3(x, y, z), yaw);
+		else com.dragonminez.client.events.FlySkillEvent.releaseStrikeClash();
 	}
 
 	// Zenkai: a parada da animacao disparada do NPC (SagaAnimStopS2C), no lugar do pacote do GeckoLib 4.4 da v2.2.

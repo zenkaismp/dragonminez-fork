@@ -38,6 +38,7 @@ public final class DMZRendererCache {
 		context = ctx;
 		clear();
 		KiWeaponModelLoader.clear();
+		com.dragonminez.client.render.effects.BeamClashScreenRenderer.onResourceReload();
 		LogUtil.info(Env.CLIENT, "DMZRendererCache cleared on resource reload");
 	}
 

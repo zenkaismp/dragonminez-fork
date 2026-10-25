@@ -1,6 +1,7 @@
 package com.dragonminez.client.events;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.clash.ClientBeamClashState;
 import com.dragonminez.client.flight.CombatFlightHandler;
 import com.dragonminez.client.flight.FlightOrientationHandler;
 import com.dragonminez.client.flight.FlightRollHandler;
@@ -82,6 +83,8 @@ public class FlySkillEvent {
 	private static int strikeRushTicks = 0;
 	private static int strikeRushTargetId = -1;
 	private static final java.util.Map<Integer, Long> REMOTE_STRIKE_RUSHES = new java.util.HashMap<>();
+	private static Vec3 strikeClashAnchor = null;
+	private static float strikeClashYaw = 0.0F;
 
 	public static void startStrikeRush(int ticks, int targetId) {
 		LocalPlayer player = Minecraft.getInstance().player;
@@ -117,6 +120,43 @@ public class FlySkillEvent {
 		player.fallDistance = 0F;
 		flightVector = player.getDeltaMovement();
 		CombatFlightHandler.initFromMotion(player);
+	}
+
+	public static void holdStrikeClash(Vec3 anchor, float yaw) {
+		strikeRushTicks = 0;
+		strikeRushTargetId = -1;
+		strikeClashAnchor = anchor;
+		strikeClashYaw = yaw;
+		LocalPlayer player = Minecraft.getInstance().player;
+		if (player != null) applyStrikeClashHold(player);
+	}
+
+	public static void releaseStrikeClash() {
+		if (strikeClashAnchor == null) return;
+		strikeClashAnchor = null;
+		LocalPlayer player = Minecraft.getInstance().player;
+		if (player == null) return;
+		player.setDeltaMovement(Vec3.ZERO);
+		flightVector = Vec3.ZERO;
+		CombatFlightHandler.initFromMotion(player);
+	}
+
+	public static boolean isStrikeClashHeld() {
+		return strikeClashAnchor != null;
+	}
+
+	private static void applyStrikeClashHold(LocalPlayer player) {
+		player.setPos(strikeClashAnchor.x, strikeClashAnchor.y, strikeClashAnchor.z);
+		player.setDeltaMovement(Vec3.ZERO);
+		player.fallDistance = 0F;
+		player.setYRot(strikeClashYaw);
+		player.yRotO = strikeClashYaw;
+		player.setXRot(0.0F);
+		player.xRotO = 0.0F;
+		player.setYHeadRot(strikeClashYaw);
+		player.yBodyRot = strikeClashYaw;
+		player.yBodyRotO = strikeClashYaw;
+		flightVector = Vec3.ZERO;
 	}
 
 	private static double strikeRushSpeed(LocalPlayer player) {
@@ -302,6 +342,11 @@ public class FlySkillEvent {
 			}
 		}
 
+		if (strikeClashAnchor != null) {
+			applyStrikeClashHold(player);
+			return;
+		}
+
 		if (strikeRushTicks > 0) {
 			tickStrikeRush(player);
 			return;
@@ -344,7 +389,7 @@ public class FlySkillEvent {
 			boolean movementRestricted = TechniqueDispatcher.isMovementRestrictedKiAttack(player, data) || data.getStatus().isStunned() || data.getStatus().isActionCharging() || data.getStatus().isChargingKi();
 
 			if (isFlying) {
-				if (TechniqueDispatcher.isMovementRestrictedKiAttack(player, data) || isStationaryStrike(data)) {
+				if (TechniqueDispatcher.isMovementRestrictedKiAttack(player, data) || isStationaryStrike(data) || ClientBeamClashState.isExhausted()) {
 					flightVector = Vec3.ZERO;
 					player.setDeltaMovement(0.0D, 0.0D, 0.0D);
 					player.fallDistance = 0F;

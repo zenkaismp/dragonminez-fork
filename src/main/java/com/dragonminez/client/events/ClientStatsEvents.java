@@ -71,6 +71,7 @@ public class ClientStatsEvents {
 	private static boolean wasITKeyDown = false;
 	private static boolean itMenuOpened = false;
 	private static boolean wasRightClickDown = false;
+	private static boolean wasClashPressDown = false;
 	private static boolean wasInstantTransformKeyDown = false;
 	private static final long TAP_ACTION_COOLDOWN_MS = 500;
 	private static long lastInstantTransformSent = 0;
@@ -260,9 +261,11 @@ public class ClientStatsEvents {
 				blockLockTicks = 20;
 			}
 
-			if (ClientBeamClashState.isActive() && isRightClickDown && !wasRightClickDown) {
-				NetworkHandler.sendToServer(new BeamClashInputC2S());
+			boolean clashPressDown = mc.options.keyUse.isDown() && (!isStunned || FlySkillEvent.isStrikeClashHeld());
+			if (ClientBeamClashState.isActive() && clashPressDown && !wasClashPressDown) {
+				ClientBeamClashState.onLocalPress();
 			}
+			wasClashPressDown = clashPressDown;
 
 			wasRightClickDown = isRightClickDown;
 
@@ -578,6 +581,7 @@ public class ClientStatsEvents {
 	public static void onMovementInput(MovementInputUpdateEvent event) {
 		StatsProvider.get(StatsCapability.INSTANCE, event.getEntity()).ifPresent(data -> {
 			if (TechniqueDispatcher.isMovementRestrictedKiAttack(event.getEntity(), data) || data.getStatus().isStunned()
+					|| FlySkillEvent.isStrikeClashHeld()
 					|| data.getStatus().isActionCharging() || data.getStatus().isChargingKi()
 					|| data.getStatus().getPotaraPoseTimer() > 0
 					|| data.getStatus().getEvasionLockTicks() > 0) {
