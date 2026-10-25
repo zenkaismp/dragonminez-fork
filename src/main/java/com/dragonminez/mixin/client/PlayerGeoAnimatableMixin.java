@@ -38,6 +38,7 @@ import software.bernie.geckolib.core.animation.RawAnimation;
 import software.bernie.geckolib.core.object.PlayState;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
+import com.dragonminez.common.util.lists.BioAndroidForms;
 import static com.dragonminez.client.animation.BaseAnimations.*;
 
 @Mixin(AbstractClientPlayer.class)
@@ -238,6 +239,11 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 	}
 
 	@Unique
+	private static boolean dragonminez$isStunned(StatsData data) {
+		return data.getStatus().isStunEffect() && !data.getStatus().isStrikeLocked() && !data.getStatus().isKnockedDown();
+	}
+
+	@Unique
 	private static boolean dragonminez$isEatingFood(AbstractClientPlayer player) {
 		if (!player.isUsingItem()) return false;
 		UseAnim anim = player.getUseItem().getUseAnimation();
@@ -334,8 +340,13 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 		ActionMode actionMode = data.getStatus().getSelectedAction();
 
 		if (isKnockedDown) return state.setAndContinue(KNOCKBACK_HORIZONTAL);
+		if (dragonminez$isStunned(data)) return state.setAndContinue(STUNNED);
 
-		if (isDraining) return state.setAndContinue(DRAIN);
+		if (isDraining) {
+			boolean semiPerfect = "bioandroid".equalsIgnoreCase(data.getCharacter().getRaceName())
+					&& BioAndroidForms.SEMI_PERFECT.equalsIgnoreCase(data.getCharacter().getActiveForm());
+			return state.setAndContinue(semiPerfect ? DRAIN_SEMIPERFECT : DRAIN);
+		}
 
 		if (player.isPassenger()) return state.setAndContinue(SIT);
 
@@ -464,7 +475,7 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 		if (player.isSwimming() || player.isVisuallyCrawling() || player.isPassenger()) return PlayState.STOP;
 
 		StatsData data = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
-		if (data != null && (data.getStatus().isBlocking() || data.getStatus().isChargingKi())) return PlayState.STOP;
+		if (data != null && (data.getStatus().isBlocking() || data.getStatus().isChargingKi() || dragonminez$isStunned(data))) return PlayState.STOP;
 
 		if (dragonminez$currentPoseAnim == null || dragonminez$currentPoseAnim.isEmpty()) return PlayState.STOP;
 
