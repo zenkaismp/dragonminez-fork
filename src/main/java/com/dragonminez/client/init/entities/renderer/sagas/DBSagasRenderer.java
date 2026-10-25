@@ -152,12 +152,9 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
     }
 
     private static final float STANDARD_PLAYER_HEIGHT = 1.8f;
-    // v2.2 syncs a per-NPC 3D aura type (AURA_TYPE_3D, "smooth" by default). A new synced entity field would shift the
-    // entity data ids of every saga NPC and drop 2.1.3 clients that come near one, so the NPCs keep the v2.2 default.
-    private static final String NPC_AURA_TYPE_3D = Aura3DRenderer.DEFAULT_TYPE;
 
     private void drawAura3D(T animatable, PoseStack poseStack, float partialTick) {
-        Aura3DRenderer.drawEntity(poseStack, RenderSystem.getProjectionMatrix(), NPC_AURA_TYPE_3D,
+        Aura3DRenderer.drawEntity(poseStack, RenderSystem.getProjectionMatrix(), animatable.getAuraType3D(),
                 ColorUtils.rgbIntToFloat(animatable.getAuraColor()), animatable.tickCount + partialTick,
                 animatable.getBbHeight() / STANDARD_PLAYER_HEIGHT);
     }
@@ -178,7 +175,7 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
         float expansion = 1.0f + (3.0f * progress);
         float alphaCurve = (float) Math.sin(progress * Math.PI);
 
-        String type = NPC_AURA_TYPE_3D;
+        String type = animatable.getAuraType3D();
         Aura3DRenderer.drawEntityGroundPulse(poseStack, RenderSystem.getProjectionMatrix(), type,
                 color, alphaCurve * 0.5f, age,
                 height * Aura3DRenderer.widthFactor(type) * expansion * 0.75f, height * 0.22f, spin);

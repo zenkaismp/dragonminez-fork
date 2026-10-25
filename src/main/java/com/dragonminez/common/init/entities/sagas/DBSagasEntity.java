@@ -193,6 +193,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     private static final EntityDataAccessor<Integer> SKILL_TYPE = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> AURA_COLOR = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<String> AURA_TYPE = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.STRING);
+    private static final EntityDataAccessor<String> AURA_TYPE_3D = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.STRING);
 
     private static final EntityDataAccessor<Boolean> IS_EVADING = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> IS_COMBOING = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
@@ -509,6 +510,8 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     public boolean isFlyingFast() { return this.entityData.get(IS_FLYING_FAST); }
     public String getAuraType() {return this.entityData.get(AURA_TYPE);}
     public void setAuraType(String type) {this.entityData.set(AURA_TYPE, type);}
+    public String getAuraType3D() {return this.entityData.get(AURA_TYPE_3D);}
+    public void setAuraType3D(String type) {this.entityData.set(AURA_TYPE_3D, type);}
     public float getScale() {
         if (this.isKid()) {
             return 0.7F;
@@ -1374,6 +1377,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         pCompound.putFloat("KiBlastDamage", this.getKiBlastDamage());
         pCompound.putFloat("KiBlastSpeed", this.getKiBlastSpeed());
         pCompound.putString("AuraType", this.getAuraType());
+        pCompound.putString("AuraType3D", this.getAuraType3D());
         pCompound.putInt("DBZStyle", this.getDBZStyle());
         pCompound.putBoolean("isKid", this.isKid());
         pCompound.putInt("TextureVariant", this.getTextureVariant());
@@ -1404,6 +1408,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         if (pCompound.contains("KiBlastDamage")) this.setKiBlastDamage(pCompound.getFloat("KiBlastDamage"));
         if (pCompound.contains("KiBlastSpeed")) this.setKiBlastSpeed(pCompound.getFloat("KiBlastSpeed"));
         if (pCompound.contains("AuraType")) this.setAuraType(pCompound.getString("AuraType"));
+        if (pCompound.contains("AuraType3D")) this.setAuraType3D(pCompound.getString("AuraType3D"));
         if (pCompound.contains("DBZStyle")) this.setDBZStyle(pCompound.getInt("DBZStyle"));
         if (pCompound.contains("isKid")) this.setisKid(pCompound.getBoolean("isKid"));
         if (pCompound.contains("CanFly") && pCompound.getBoolean("CanFly") && this.getFlySpeed() <= 0.0D) this.setFlySpeed(0.35D);
@@ -1447,6 +1452,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         this.entityData.define(BATTLE_POWER, 20);
         this.entityData.define(AURA_COLOR, 0xFFFFFF);
         this.entityData.define(AURA_TYPE, "kakarot");
+        this.entityData.define(AURA_TYPE_3D, "smooth");
         this.entityData.define(TRANSFORMING, false);
         this.entityData.define(KI_CHARGE, false);
         this.entityData.define(IS_LIGHTNING, false);
