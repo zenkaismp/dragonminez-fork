@@ -82,10 +82,14 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
             if (bodyLayer != null) bodyLayer.setHidden(true);
 
             float bX = 1f, bY = 1f, bZ = 1f;
+            boolean bPos = false, bRot = false, bScale = false;
             if (boobasBone != null) {
                 bX = boobasBone.getScaleX();
                 bY = boobasBone.getScaleY();
                 bZ = boobasBone.getScaleZ();
+                bPos = boobasBone.hasPositionChanged();
+                bRot = boobasBone.hasRotationChanged();
+                bScale = boobasBone.hasScaleChanged();
                 boobasBone.setScaleX(bX * 1.03f);
                 boobasBone.setScaleY(bY * 1.06f);
                 boobasBone.setScaleZ(bZ * 1.15f);
@@ -100,6 +104,7 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
                 boobasBone.setScaleX(bX);
                 boobasBone.setScaleY(bY);
                 boobasBone.setScaleZ(bZ);
+                restoreChangeMarkers(boobasBone, bPos, bRot, bScale);
             }
 
             poseStack.popPose();
@@ -289,6 +294,9 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
         float scaleX = targetBone.getScaleX();
         float scaleY = targetBone.getScaleY();
         float scaleZ = targetBone.getScaleZ();
+        boolean posMarked = targetBone.hasPositionChanged();
+        boolean rotMarked = targetBone.hasRotationChanged();
+        boolean scaleMarked = targetBone.hasScaleChanged();
 
         targetBone.setRotX(0);
         targetBone.setRotY(0);
@@ -327,6 +335,19 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
         targetBone.setScaleX(scaleX);
         targetBone.setScaleY(scaleY);
         targetBone.setScaleZ(scaleZ);
+        restoreChangeMarkers(targetBone, posMarked, rotMarked, scaleMarked);
+    }
+
+    // Zenkai: no GeckoLib 4.3.1 todo set de posicao, rotacao ou escala marca o osso como alterado, e a marca feita aqui, no
+    // desenho, dura ate o tick seguinte. O tick so devolve ao repouso o osso sem marca. A roupa do DBZ desenha o body do
+    // proprio jogador a cada quadro, entao o tronco ficava onde a ultima pose deixou: depois da carga de ki ou da
+    // transformacao da v2.2 (body em -1,6) o tronco descia e a cabeca parecia descolada, nele e em quem usa o mesmo modelo
+    // (os ossos sao do modelo, compartilhados). Mesmo conserto da cabeca na DMZSkinLayer: as marcas voltam a ser as de antes.
+    private static void restoreChangeMarkers(GeoBone bone, boolean position, boolean rotation, boolean scale) {
+        bone.resetStateChanges();
+        if (position) bone.markPositionAsChanged();
+        if (rotation) bone.markRotationAsChanged();
+        if (scale) bone.markScaleAsChanged();
     }
 
     private GeoBone findBoneDeep(GeoBone parent, String name) {
@@ -342,6 +363,9 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
         float scaleX = targetBone.getScaleX();
         float scaleY = targetBone.getScaleY();
         float scaleZ = targetBone.getScaleZ();
+        boolean posMarked = targetBone.hasPositionChanged();
+        boolean rotMarked = targetBone.hasRotationChanged();
+        boolean scaleMarked = targetBone.hasScaleChanged();
 
         targetBone.setScaleX(scaleX * inflation);
         targetBone.setScaleY(scaleY * inflation);
@@ -353,6 +377,7 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
         targetBone.setScaleX(scaleX);
         targetBone.setScaleY(scaleY);
         targetBone.setScaleZ(scaleZ);
+        restoreChangeMarkers(targetBone, posMarked, rotMarked, scaleMarked);
     }
 
     private ResourceLocation getDbzArmorTexture(DbzArmorTextured item, ItemStack stack) {
