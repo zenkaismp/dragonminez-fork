@@ -1,5 +1,7 @@
 package com.dragonminez.common.quest;
 
+import com.dragonminez.Env;
+import com.dragonminez.LogUtil;
 import com.dragonminez.Reference;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.network.NetworkHandler;
@@ -25,12 +27,17 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID)
 public final class PartyManager {
     private static final long INVITE_DURATION_MS = 60_000L;
     private static final String TEAM_PREFIX = "dmzp_";
+
+    /** Quem o syncSelf pulou por estar sem capability; o onPlayerRespawn refaz o espelho dele. */
+    private static final Set<UUID> PENDING_RESYNC = ConcurrentHashMap.newKeySet();
 
     private PartyManager() {}
 
@@ -269,10 +276,14 @@ public final class PartyManager {
     }
 
     public static void sendInvite(ServerPlayer inviter, ServerPlayer invitee) {
+        // Convidado na tela de morte nao tem onde guardar o convite: decide antes de criar a party.
+        PlayerQuestData inviteeQuestData = getQuestData(invitee);
+        if (inviteeQuestData == null) return;
+
         UUID partyId = getOrCreateParty(inviter);
         ServerPlayer leader = getPartyLeader(inviter);
         if (leader == null) leader = inviter;
-        PlayerQuestData inviteeQuestData = getQuestData(invitee);
+        PlayerQuestData leaderQuestData = getQuestData(leader);
         long expiresAt = System.currentTimeMillis() + INVITE_DURATION_MS;
         inviteeQuestData.setPendingPartyInvite(new PlayerQuestData.PartyInviteData(
                 inviter.getUUID(),
@@ -280,7 +291,7 @@ public final class PartyManager {
                 leader.getUUID(),
                 inviter.getGameProfile().getName(),
                 expiresAt,
-                getQuestData(leader).getDifficulty()
+                leaderQuestData != null ? leaderQuestData.getDifficulty() : Difficulty.NORMAL
         ));
         syncSelf(invitee);
         NetworkHandler.sendToPlayer(new PartyInviteToastS2C(inviter.getGameProfile().getName()), invitee);
@@ -292,6 +303,7 @@ public final class PartyManager {
 
     public static InviteAcceptResult acceptInvite(ServerPlayer invitee, boolean confirmedDifficultyChange) {
         PlayerQuestData inviteeQuestData = getQuestData(invitee);
+        if (inviteeQuestData == null) return InviteAcceptResult.INVALID;
         PlayerQuestData.PartyInviteData invite = inviteeQuestData.getPendingPartyInviteData();
 
         if (invite == null) return InviteAcceptResult.INVALID;
@@ -323,7 +335,9 @@ public final class PartyManager {
             return InviteAcceptResult.PARTY_FULL;
         }
 
-        Difficulty partyDifficulty = getQuestData(leader).getDifficulty();
+        // Lider na tela de morte: vale a dificuldade que o convite guardou quando foi enviado.
+        PlayerQuestData leaderQuestData = getQuestData(leader);
+        Difficulty partyDifficulty = leaderQuestData != null ? leaderQuestData.getDifficulty() : invite.getPartyDifficulty();
         Difficulty ownDifficulty = inviteeQuestData.getDifficulty();
         if (partyDifficulty.ordinal() < ownDifficulty.ordinal()) {
             return InviteAcceptResult.DIFFICULTY_TOO_LOW;
@@ -340,12 +354,15 @@ public final class PartyManager {
 
     public static void rejectInvite(ServerPlayer invitee) {
         PlayerQuestData inviteeQuestData = getQuestData(invitee);
+        if (inviteeQuestData == null) return;
         inviteeQuestData.clearPendingPartyInvite();
         syncSelf(invitee);
     }
 
     public static PendingInvite getPendingInvite(ServerPlayer player) {
-        PlayerQuestData.PartyInviteData invite = getQuestData(player).getPendingPartyInviteData();
+        PlayerQuestData questData = getQuestData(player);
+        if (questData == null) return null;
+        PlayerQuestData.PartyInviteData invite = questData.getPendingPartyInviteData();
         if (invite == null) return null;
 
         return new PendingInvite(
@@ -366,7 +383,9 @@ public final class PartyManager {
         boolean isLeader = party.getLeaderId().equals(player.getUUID());
         UUID partyId = party.getPartyId();
 
-        getQuestData(player).clearPartyState();
+        // Na tela de morte a saida vale do mesmo jeito: quem manda e a PartySavedData.
+        PlayerQuestData questData = getQuestData(player);
+        if (questData != null) questData.clearPartyState();
         syncSelf(player);
 
         removeFromMinecraftTeam(player.getServer(), partyId, player);
@@ -514,8 +533,32 @@ public final class PartyManager {
 
         PartySavedData data = PartySavedData.get(player.getServer());
         PartySavedData.PartyInstance party = data.getPartyOf(player.getUUID());
-        if (party == null) return;
-        if (party.getLeaderId().equals(player.getUUID())) transferLeadership(player, party);
+        if (party != null && party.getLeaderId().equals(player.getUUID())) transferLeadership(player, party);
+
+        // Fica por ultimo: quem sai morto ainda esta na PlayerList e o sync acima marca ele de novo.
+        PENDING_RESYNC.remove(player.getUUID());
+    }
+
+    /**
+     * O Clone do respawn copia o espelho do corpo morto, entao quem o syncSelf pulou renasceria
+     * com a party velha (lider antigo, ou uma party da qual ja saiu). A PartySavedData e a
+     * autoridade: o espelho sai dela. So quem foi pulado passa aqui; os demais ja estao certos e
+     * nao levam pacote a mais.
+     */
+    @SubscribeEvent
+    public static void onPlayerRespawn(PlayerEvent.PlayerRespawnEvent event) {
+        if (!(event.getEntity() instanceof ServerPlayer player)) return;
+        if (!PENDING_RESYNC.remove(player.getUUID())) return;
+
+        PlayerQuestData questData = getQuestData(player);
+        if (questData == null) return;
+
+        PartySavedData.PartyInstance party = PartySavedData.get(player.getServer()).getPartyOf(player.getUUID());
+        if (party != null) questData.setPartyState(party.getPartyId(), party.getLeaderId(), party.getMembers(), party.isPvpEnabled());
+        else questData.clearPartyState();
+        syncSelf(player);
+        LogUtil.info(Env.SERVER, "[Party] {} renasceu: espelho da party refeito ({}).",
+                player.getGameProfile().getName(), party != null ? "lider " + party.getLeaderId() : "sem party");
     }
 
     private static void transferLeadership(ServerPlayer oldLeader, PartySavedData.PartyInstance party) {
@@ -553,7 +596,7 @@ public final class PartyManager {
         PartySavedData.PartyInstance party = data.getPartyOf(leader.getUUID());
 
         PlayerQuestData memberData = getQuestData(member);
-        memberData.setDifficultyChosen(true);
+        if (memberData != null) memberData.setDifficultyChosen(true);
         syncQuestProgress(leader, member);
         data.addPlayerToParty(partyId, member.getUUID());
 
@@ -571,7 +614,9 @@ public final class PartyManager {
         for (UUID id : memberIds) {
             ServerPlayer member = server.getPlayerList().getPlayer(id);
             if (member != null) {
-                getQuestData(member).setPartyState(party.getPartyId(), party.getLeaderId(), memberIds, party.isPvpEnabled());
+                // Um membro na tela de morte nao pode impedir a sync dos outros nem derrubar o tick.
+                PlayerQuestData questData = getQuestData(member);
+                if (questData != null) questData.setPartyState(party.getPartyId(), party.getLeaderId(), memberIds, party.isPvpEnabled());
                 syncSelf(member);
             }
         }
@@ -586,13 +631,28 @@ public final class PartyManager {
     }
 
     private static void syncSelf(ServerPlayer player) {
+        // Sem capability o pacote sairia vazio e o StatsData.load do cliente lanca ao nao achar
+        // PlayerQuestData. Fica marcado e o onPlayerRespawn manda o estado certo no corpo novo.
+        if (getStatsData(player) == null) {
+            if (PENDING_RESYNC.add(player.getUUID())) {
+                LogUtil.info(Env.SERVER, "[Party] {} sem capability (tela de morte): sync da party adiado pro respawn.",
+                        player.getGameProfile().getName());
+            }
+            return;
+        }
         NetworkHandler.sendToPlayer(new ProgressionSyncS2C(player), player);
     }
 
+    /**
+     * Null quando o jogador esta sem capability, e todo chamador tem que tratar. Nao e caso raro:
+     * o tickDeath do LivingEntity remove o morto aos 20 ticks e o Entity.remove do Forge invalida
+     * as capabilities, mas ele segue na PlayerList ate renascer ou sair. Esse metodo ja lancou
+     * IllegalStateException aqui: dentro do PlayerLoggedOutEvent ou do tick de uma entidade nao
+     * tem rede, e cada lider que saia com um membro na tela de morte derrubava o servidor inteiro.
+     */
     private static PlayerQuestData getQuestData(Player player) {
         StatsData data = getStatsData(player);
-        if (data == null) throw new IllegalStateException("Missing stats capability for player " + player.getGameProfile().getName());
-        return data.getPlayerQuestData();
+        return data != null ? data.getPlayerQuestData() : null;
     }
 
     private static StatsData getStatsData(Player player) {
