@@ -78,7 +78,7 @@ public class ScouterHUD {
 
 		AABB searchBox = player.getBoundingBox().inflate(SCAN_RANGE);
 		List<LivingEntity> entities = player.level().getEntitiesOfClass(LivingEntity.class, searchBox,
-				e -> e != player && e.isAlive());
+				e -> e != player && e.isAlive() && !com.dragonminez.common.racial.impl.GlindDivinity.isHiddenFrom(e, player));
 
 		LivingEntity newStrongest = null;
 		double maxFoundBP = thresholdBP;

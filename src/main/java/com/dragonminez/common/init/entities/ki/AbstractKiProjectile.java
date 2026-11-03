@@ -1,6 +1,7 @@
 package com.dragonminez.common.init.entities.ki;
 
 import com.dragonminez.client.util.ColorUtils;
+import com.dragonminez.common.combat.HealContext;
 import com.dragonminez.common.combat.util.KiTerrainDestruction;
 import com.dragonminez.common.combat.logic.player.TargetHelper;
 import com.dragonminez.common.config.ConfigManager;
@@ -8,6 +9,7 @@ import com.dragonminez.common.init.MainDamageTypes;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainGameRules;
 import com.dragonminez.common.init.block.custom.DragonBallBlock;
+import com.dragonminez.common.init.entities.MastersEntity;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.TriggerAnimationS2C;
 import com.dragonminez.common.passives.ClassPassives;
@@ -294,7 +296,7 @@ public abstract class AbstractKiProjectile extends Projectile {
      * does not drift ahead from entity push/physics while it is held.
      */
     protected void holdTargetAtCaster(Entity target, Vec3 desiredFeet) {
-        if (target instanceof com.dragonminez.common.init.entities.MastersEntity) return;
+        if (target instanceof MastersEntity) return;
         Vec3 delta = new Vec3(
                 desiredFeet.x - target.getX(),
                 desiredFeet.y - target.getY(),
@@ -389,7 +391,10 @@ public abstract class AbstractKiProjectile extends Projectile {
                 if ((livingTarget.getHealth() < livingTarget.getMaxHealth() && this.getOwner() instanceof Player playerOwner
                         && TargetHelper.getRelation(playerOwner, target) == TargetHelper.Relation.FRIENDLY) ||
                         (livingTarget.getHealth() < livingTarget.getMaxHealth() && target.isAlliedTo(this.getOwner()))) {
-                    livingTarget.heal(amount);
+                    final float healed = resolveMajinKiHealBonus(this.getOwner(), livingTarget, amount);
+                    // Zenkai: sem lambda aqui (a v2.2 passa () -> livingTarget.heal(healed)); um lambda novo renumera os
+                    // lambda$onSuccessfulHit$N que os addons miram.
+                    HealContext.asAllyHeal(this.getOwner(), livingTarget, healed);
                     return true;
                 }
                 return false;
@@ -467,6 +472,15 @@ public abstract class AbstractKiProjectile extends Projectile {
     /** Radius of what actually gets drawn, so the attack clears the body it comes from. */
     protected float castClearanceRadius() {
         return this.getSize() * 0.5F;
+    }
+
+    protected static float resolveMajinKiHealBonus(Entity owner, LivingEntity target, float amount) {
+        if (!(owner instanceof Player casterPlayer)) return amount;
+        var casterData = StatsProvider.get(StatsCapability.INSTANCE, casterPlayer).resolve().orElse(null);
+        var targetData = target instanceof Player targetPlayer
+                ? StatsProvider.get(StatsCapability.INSTANCE, targetPlayer).resolve().orElse(null)
+                : null;
+        return (float) com.dragonminez.common.racial.impl.MajinAbsorption.applyKiHealBonus(casterData, targetData, amount);
     }
 
     protected Entity getKiGriefingSource() {
@@ -562,9 +576,11 @@ public abstract class AbstractKiProjectile extends Projectile {
                     TechniqueData tech = stats.getTechniques().getUnlockedTechniques().get(techId);
                     if (tech instanceof KiAttackData kiAttackData) {
                         if (kiAttackData.getKiType() == KiAttackData.KiType.BARRAGE) {
-                            stats.getTechniques().addFractionalExperienceToTechnique(techId, kiAttackData.getXpGainPerHit() * BARRAGE_XP_HIT_WEIGHT);
+                            float barrageXp = com.dragonminez.common.racial.RacialStatUtil.applyTechniqueXpBonus(stats, kiAttackData.getXpGainPerHit() * BARRAGE_XP_HIT_WEIGHT);
+                            stats.getTechniques().addFractionalExperienceToTechnique(techId, barrageXp);
                         } else {
-                            stats.getTechniques().addExperienceToTechnique(techId, kiAttackData.getXpGainPerHit());
+                            int hitXp = com.dragonminez.common.racial.RacialStatUtil.applyTechniqueXpBonus(stats, kiAttackData.getXpGainPerHit());
+                            stats.getTechniques().addExperienceToTechnique(techId, hitXp);
                         }
                         applySecondaryEffect(target, kiAttackData, stats);
                     } else if (tech != null) {

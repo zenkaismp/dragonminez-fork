@@ -26,6 +26,11 @@ import net.minecraftforge.fml.common.Mod;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
 public class EffectsEvents {
+	private static final double BIO_SHAKE_RANGE_MULT = 1.5D;
+	private static final float BIO_SHAKE_SELF_STRENGTH = 0.6F;
+	private static final float BIO_SHAKE_SELF_ROLL = 0.25F;
+	private static final float BIO_SHAKE_NEARBY_STRENGTH = 1.6F;
+	private static final float BIO_SHAKE_NEARBY_ROLL = 0.8F;
 	private static boolean isBioAndroidDrainingCache = false;
 	private static boolean isChargingFormCache = false;
 	private static boolean isOverchargingCache = false;
@@ -88,6 +93,33 @@ public class EffectsEvents {
                     break;
                 }
             }
+        }
+
+        // v2.2: a tela treme perto do Bio-Androide que carrega a explosao.
+        double bioShakeRadius = com.dragonminez.common.config.ConfigManager.getServerConfig().getRacialSkills().getBioandroid().getExplodeRadius() * BIO_SHAKE_RANGE_MULT;
+        for (Player charging : player.level().players()) {
+            float swell = com.dragonminez.client.systems.BioSwellRenderState.swell(charging);
+            if (swell <= 0.0F) continue;
+
+            float intensity;
+            float strength;
+            float rollStrength;
+            if (charging == player) {
+                intensity = swell;
+                strength = BIO_SHAKE_SELF_STRENGTH;
+                rollStrength = BIO_SHAKE_SELF_ROLL;
+            } else {
+                double distance = player.distanceTo(charging);
+                if (distance > bioShakeRadius) continue;
+                intensity = (float) (1.0D - (distance / bioShakeRadius)) * swell;
+                strength = BIO_SHAKE_NEARBY_STRENGTH;
+                rollStrength = BIO_SHAKE_NEARBY_ROLL;
+            }
+
+            event.setPitch(event.getPitch() + (player.getRandom().nextFloat() - 0.5F) * strength * intensity);
+            event.setYaw(event.getYaw() + (player.getRandom().nextFloat() - 0.5F) * strength * intensity);
+            event.setRoll(event.getRoll() + (player.getRandom().nextFloat() - 0.5F) * rollStrength * intensity);
+            break;
         }
 
         double kiShakeRadius = 50.0D;

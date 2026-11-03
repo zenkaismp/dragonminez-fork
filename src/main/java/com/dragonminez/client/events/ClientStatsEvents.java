@@ -74,6 +74,8 @@ public class ClientStatsEvents {
 	private static boolean wasClashPressDown = false;
 	private static boolean wasInstantTransformKeyDown = false;
 	private static final long TAP_ACTION_COOLDOWN_MS = 500;
+	private static boolean wasRacialSecondaryActionDown = false;
+	private static long lastRacialSecondarySent = 0;
 	private static long lastInstantTransformSent = 0;
 	private static long lastDescendSent = 0;
 
@@ -220,7 +222,11 @@ public class ClientStatsEvents {
 			var nextForm = TransformationsHelper.getNextAvailableForm(data);
 			boolean isOozaruNextForm = !isStackMode && TransformationsHelper.isOozaruForm(nextForm);
 			boolean canAutoChargeOozaru = !isActionRestricted && TransformationsHelper.shouldAutoChargeOozaru(localPlayer, data);
-			boolean shouldChargeAction = isActionKeyPressed || canAutoChargeOozaru;
+			// Alt+G is the racial secondary action, so while RACIAL is selected the modifier must not
+			// also charge the primary one — otherwise the primary fires (and can stun) before the
+			// secondary packet is ever sent.
+			boolean racialSecondaryChord = isDescendKeyPressed && data.getStatus().getSelectedAction() == ActionMode.RACIAL;
+			boolean shouldChargeAction = (isActionKeyPressed && !racialSecondaryChord) || canAutoChargeOozaru;
 
 			boolean kiWeaponActive = PlayerAttackHelper.isKiWeaponActive(localPlayer);
 			boolean handsEmpty = localPlayer.getItemInHand(InteractionHand.MAIN_HAND).isEmpty() && localPlayer.getItemInHand(InteractionHand.OFF_HAND).isEmpty();
@@ -353,6 +359,14 @@ public class ClientStatsEvents {
 				NetworkHandler.sendToServer(new ExecuteActionC2S(ExecuteActionC2S.ActionType.FORCE_DESCEND, false));
 				lastDescendSent = currentTime;
 			}
+			// Alt+G on the DESCEND chord doubles as the racial secondary action (Cell Jr dismiss, BioAndroid self-destruct trigger) while ActionMode.RACIAL is selected.
+			if (isDescendActionDown && !wasRacialSecondaryActionDown
+					&& data.getStatus().getSelectedAction().equals(ActionMode.RACIAL)
+					&& (currentTime - lastRacialSecondarySent) >= TAP_ACTION_COOLDOWN_MS) {
+				NetworkHandler.sendToServer(new com.dragonminez.common.network.C2S.RacialSecondaryActionC2S());
+				lastRacialSecondarySent = currentTime;
+			}
+			wasRacialSecondaryActionDown = isDescendActionDown;
 			wasDescendActionDown = isDescendActionDown;
 
 			boolean isFlying = data.getSkills().isSkillActive("fly") && !localPlayer.onGround() && !localPlayer.isInWater();

@@ -118,6 +118,7 @@ public class StatsCapability {
 					repairedSkills.forEach((oldName, newName) -> LogUtil.info(Env.SERVER, "Repaired skill for {}: '{}' -> '{}'", serverPlayer.getGameProfile().getName(), oldName, newName));
 				}
 				data.getSkills().setSkillActive("kisense", false);
+				com.dragonminez.common.racial.RacialRegistry.forPlayer(data).ifPresent(ability -> ability.onLogin(new com.dragonminez.common.racial.RacialContext(serverPlayer, data)));
 				// Storage externo (MySQL/JSON) responde numa task, nao aqui. Ate ela voltar, este sync
 				// levaria os DEFAULTS pro cliente — que marcaria "dados carregados", veria
 				// hasCreatedCharacter=false e abriria a criacao de personagem por cima de um personagem
@@ -153,6 +154,7 @@ public class StatsCapability {
 				data.getStatus().setStunEffect(false);
 				data.getStatus().setKnockedDown(false);
 				data.getCooldowns().removeCooldown(Cooldowns.KNOCKDOWN_DURATION);
+				com.dragonminez.common.racial.RacialRegistry.forPlayer(data).ifPresent(ability -> ability.onRespawn(new com.dragonminez.common.racial.RacialContext(serverPlayer, data)));
 				NetworkHandler.sendToTrackingEntityAndSelf(new ResourceSyncS2C(serverPlayer), serverPlayer);
 			});
 		}
@@ -169,6 +171,7 @@ public class StatsCapability {
 				data.getStatus().setStunEffect(false);
 				data.getStatus().setKnockedDown(false);
 				data.getCooldowns().removeCooldown(Cooldowns.KNOCKDOWN_DURATION);
+				com.dragonminez.common.racial.RacialRegistry.forPlayer(data).ifPresent(ability -> ability.onDimensionChange(new com.dragonminez.common.racial.RacialContext(serverPlayer, data)));
 
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
 			});

@@ -36,6 +36,7 @@ public class DMZShaders {
 	public static ShaderInstance shockwaveShader;
 	public static ShaderInstance clawSlashShader;
 	public static ShaderInstance impactBurstShader;
+	public static ShaderInstance assimilationSketchShader;
 
 	@SubscribeEvent
 	public static void onRegisterShaders(RegisterShadersEvent event) throws IOException {
@@ -92,6 +93,8 @@ public class DMZShaders {
 		registerOptional(event, "shockwave", DefaultVertexFormat.POSITION_TEX, shaderInstance -> shockwaveShader = shaderInstance);
 		registerOptional(event, "claw_slash", DefaultVertexFormat.POSITION_TEX, shaderInstance -> clawSlashShader = shaderInstance);
 		registerOptional(event, "impact_burst", DefaultVertexFormat.POSITION_TEX, shaderInstance -> impactBurstShader = shaderInstance);
+		// v2.2: o esboco do alvo da assimilacao do Namek (NamekAssimilationEffect).
+		registerOptional(event, "assimilation_sketch", DefaultVertexFormat.NEW_ENTITY, shaderInstance -> assimilationSketchShader = shaderInstance);
 	}
 
 	private static void registerOptional(RegisterShadersEvent event, String name, VertexFormat format, Consumer<ShaderInstance> onLoaded) {

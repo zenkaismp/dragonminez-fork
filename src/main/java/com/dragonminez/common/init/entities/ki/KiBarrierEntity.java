@@ -35,6 +35,7 @@ public class KiBarrierEntity extends AbstractKiProjectile {
     private static final EntityDataAccessor<Integer> SHIELD_HOST = SynchedEntityData.defineId(KiBarrierEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Float> BARRIER_HP = SynchedEntityData.defineId(KiBarrierEntity.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Float> BARRIER_MAX_HP = SynchedEntityData.defineId(KiBarrierEntity.class, EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Boolean> DECORATIVE = SynchedEntityData.defineId(KiBarrierEntity.class, EntityDataSerializers.BOOLEAN);
 
     private static final float CONTACT_DAMAGE_RATIO = 0.1F;
     private static final float HEAL_EXPIRE_RATIO = 0.5F;
@@ -123,6 +124,7 @@ public class KiBarrierEntity extends AbstractKiProjectile {
         this.entityData.define(SHIELD_HOST, -1);
         this.entityData.define(BARRIER_HP, 0.0F);
         this.entityData.define(BARRIER_MAX_HP, 0.0F);
+        this.entityData.define(DECORATIVE, false);
     }
 
     public void setBarrierMaxHp(float hp) { this.entityData.set(BARRIER_MAX_HP, Math.max(0.0F, hp)); }
@@ -134,7 +136,17 @@ public class KiBarrierEntity extends AbstractKiProjectile {
         return this.isFiring() && this.getBarrierHp() > 0.0F;
     }
 
+    // v2.2: a barreira do androide (AndroidBarrier) e so o desenho; quem absorve o dano e a passiva racial.
+    public void setDecorative(boolean decorative) {
+        this.entityData.set(DECORATIVE, decorative);
+    }
+
+    public boolean isDecorative() {
+        return this.entityData.get(DECORATIVE);
+    }
+
     public boolean protects(Entity entity) {
+        if (this.isDecorative()) return false;
         LivingEntity anchor = this.getAnchor();
         return anchor != null && anchor.is(entity);
     }

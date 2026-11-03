@@ -14,6 +14,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.eventbus.api.Cancelable;
@@ -619,6 +620,26 @@ public abstract class DMZEvent extends Event {
 
 		public boolean isTransform() { return oldForm.isEmpty() && !newForm.isEmpty(); }
 		public boolean isUntransform() { return !oldForm.isEmpty() && newForm.isEmpty(); }
+	}
+
+	/**
+	 * Notification fired on the server when a barrier (ki barrier technique, Android barrier) absorbs a hit
+	 * before it reaches the protected entity. {@code owner} is who created the barrier and gets the credit;
+	 * {@code protectedEntity} is who would have been hit. Not cancelable.
+	 */
+	@Getter
+	public static class BarrierAbsorbEvent extends Event {
+		private final Entity owner;
+		private final LivingEntity protectedEntity;
+		private final Entity attacker;
+		private final float amount;
+
+		public BarrierAbsorbEvent(Entity owner, LivingEntity protectedEntity, Entity attacker, float amount) {
+			this.owner = owner;
+			this.protectedEntity = protectedEntity;
+			this.attacker = attacker;
+			this.amount = amount;
+		}
 	}
 }
 

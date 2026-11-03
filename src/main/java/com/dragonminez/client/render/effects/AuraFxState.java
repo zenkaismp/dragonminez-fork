@@ -10,9 +10,8 @@ import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.character.Character;
 import net.minecraft.world.entity.player.Player;
 
-// Ported from v2.2. The Frost Demon energy reserve and the Namekian assimilation are not in this fork, so those
-// branches always answer "not active"; the Ki Surge and the form lightning work as in v2.2.
 public final class AuraFxState {
+	private static final String FROST_DEMON_RACE = "frostdemon";
 
 	private AuraFxState() {}
 
@@ -43,7 +42,9 @@ public final class AuraFxState {
 	}
 
 	public static boolean isReserveDischarging(StatsData stats) {
-		return false;
+		if (stats == null) return false;
+		if (!FROST_DEMON_RACE.equalsIgnoreCase(stats.getCharacter().getRaceName())) return false;
+		return stats.getRacialData().isReserveActive() && stats.getRacialData().getEnergyReserve() > 0.0f;
 	}
 
 	public static boolean isReserveDischarging(Player player) {
@@ -52,7 +53,8 @@ public final class AuraFxState {
 
 	public static boolean hasLightning(StatsData stats) {
 		if (stats == null) return false;
-		return formLightning(stats) != null || isSurging(stats) || isReserveDischarging(stats);
+		return formLightning(stats) != null || isSurging(stats) || isReserveDischarging(stats)
+				|| NamekAssimilationEffect.hasLightning(stats.getPlayer());
 	}
 
 	public static boolean hasLightning(Player player) {

@@ -73,6 +73,7 @@ public class ModCommonEvents {
 
         // Quest NPC — single entity type for all data-driven quest NPCs | Usa un solo tipo de entidad para todos los NPCs de misiones basados en datos
         event.put(MainEntities.QUEST_NPC.get(), MastersEntity.createAttributes().build());
+        event.put(MainEntities.BIO_CELL_JR.get(), com.dragonminez.common.init.entities.sagas.DBSagasEntity.createAttributes().build());
 
 		for (var entity : MainEntities.getDragonWishEntities().values()) {
 			event.put(entity.get(), DragonWishEntity.createAttributes().build());

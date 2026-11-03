@@ -56,6 +56,7 @@ import net.minecraftforge.event.entity.living.LivingEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.entity.living.LivingAttackEvent;
 import net.minecraftforge.event.entity.living.LivingDamageEvent;
+import net.minecraftforge.event.entity.living.LivingHealEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.living.LivingKnockBackEvent;
 import net.minecraftforge.event.entity.living.MobEffectEvent;
@@ -71,6 +72,7 @@ import java.util.UUID;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class CombatEvent {
+	private static final String CAPTURE_KNOCKDOWN_UNTIL_TAG = "dmz_capture_knockdown_until";
 	private static final Map<String, Long> LAST_PLAYER_HIT_GUARD_MS = new HashMap<>();
 	public static final String DMZ_LAST_ATTACKER_ID_TAG = "dmz_last_attacker_id";
 	private static final String HIT_KNOCKBACK_MULT_TAG = "dmz_hit_knockback_mult";
@@ -328,6 +330,10 @@ public class CombatEvent {
 
 		if (canceledByBlocking[0]) return;
 
+		if (source.getEntity() instanceof Player glindAttacker && !isExcludedSource(source)) {
+			currentDamage[0] *= com.dragonminez.common.racial.impl.GlindDivinity.alignmentDamageMultiplier(glindAttacker, event.getEntity());
+		}
+
 		if (event.getEntity() instanceof Player victim) {
 			if (isExcludedSource(source)) return;
 
@@ -340,15 +346,16 @@ public class CombatEvent {
 				double enchHealReduction = Math.max(healMainHandLvl, healOffHandLvl) * 0.05;
 
 				double skillHealReduction = 0.0;
+				StatsData attackerStats = null;
 				if (sourceLiving instanceof Player sourcePlayer) {
-					var attackerStats = StatsProvider.get(StatsCapability.INSTANCE, sourcePlayer).orElse(null);
+					attackerStats = StatsProvider.get(StatsCapability.INSTANCE, sourcePlayer).orElse(null);
 					if (attackerStats != null) {
 						skillHealReduction = attackerStats.getSkills().getSkillLevel("healing_reduction") * 0.02;
 					}
 				}
 
 				finalDefensePenetration = computeDefensePenetration(sourceLiving, source, passiveDefensePen[0]);
-				healingReduction = Math.min(HEALING_REDUCTION_CAP, enchHealReduction + skillHealReduction);
+				healingReduction = Math.min(HEALING_REDUCTION_CAP, com.dragonminez.common.racial.impl.GlindDivinity.applyHealingReduction(attackerStats, enchHealReduction + skillHealReduction));
 			} else finalDefensePenetration = 0.0;
 
 			final double finalHealingReduction = healingReduction;
@@ -758,13 +765,19 @@ public class CombatEvent {
 		if (!(event.getRayTraceResult() instanceof EntityHitResult hit)) return;
 		if (!(hit.getEntity() instanceof Player victim) || victim.level().isClientSide) return;
 		if (event.getProjectile() instanceof AbstractKiProjectile) return;
-		if (!ConfigManager.getCombatConfig().getKiChargeDeflectsProjectiles()) return;
 
 		Entity shooter = event.getProjectile().getOwner();
 		if (shooter != null && shooter.is(victim)) return;
 
 		StatsProvider.get(StatsCapability.INSTANCE, victim).ifPresent(data -> {
 			if (!data.getStatus().isHasCreatedCharacter()) return;
+
+			if (com.dragonminez.common.racial.impl.AndroidBarrier.isActive(data)) {
+				event.setImpactResult(ProjectileImpactEvent.ImpactResult.SKIP_ENTITY);
+				return;
+			}
+
+			if (!ConfigManager.getCombatConfig().getKiChargeDeflectsProjectiles()) return;
 			if (!data.getStatus().isChargingKi() || data.getStatus().isStunned()) return;
 			// v2.2 (Forge 47) cancels the event, which Forge 47 turns into SKIP_ENTITY; in Forge 48 the event is not
 			// cancelable any more (setCanceled would throw), so the same result is set directly.
@@ -784,6 +797,33 @@ public class CombatEvent {
 			return;
 		}
 		if (event.getAmount() > headroom) event.setAmount(headroom);
+	}
+
+	@SubscribeEvent(priority = EventPriority.HIGHEST)
+	public static void blockSelfHealingDuringExplosionRecovery(LivingHealEvent event) {
+		if (!(event.getEntity() instanceof Player victim) || victim.level().isClientSide) return;
+		if (com.dragonminez.common.combat.HealContext.isAllyTechniqueHeal()) return;
+
+		StatsProvider.get(StatsCapability.INSTANCE, victim).ifPresent(data -> {
+			if (com.dragonminez.common.racial.impl.BioAndroidEvolution.isExplosionRecovering(data)) event.setCanceled(true);
+		});
+	}
+
+	@SubscribeEvent(priority = EventPriority.LOWEST)
+	public static void captureKnockdownForNonPlayers(LivingDamageEvent event) {
+		LivingEntity victim = event.getEntity();
+		if (victim.level().isClientSide || victim instanceof Player) return;
+		if (victim.getHealth() - event.getAmount() > 0) return;
+		if (!(event.getSource().getEntity() instanceof ServerPlayer attacker)) return;
+		if (!com.dragonminez.common.racial.capture.RacialCapture.forcesKnockdown(attacker)) return;
+
+		long now = victim.level().getGameTime();
+		if (victim.getPersistentData().getLong(CAPTURE_KNOCKDOWN_UNTIL_TAG) > now) return;
+
+		int stunTicks = ConfigManager.getCombatConfig().getKnockdownDurationSeconds() * 20;
+		event.setAmount(Math.max(0.0F, victim.getHealth() - 1.0F));
+		victim.addEffect(new net.minecraft.world.effect.MobEffectInstance(com.dragonminez.common.init.MainEffects.STUN.get(), stunTicks, 0, false, false, true));
+		victim.getPersistentData().putLong(CAPTURE_KNOCKDOWN_UNTIL_TAG, now + stunTicks);
 	}
 
 	@SubscribeEvent(priority = EventPriority.LOWEST)
@@ -824,39 +864,67 @@ public class CombatEvent {
 						}
 					}
 
+					if (victim instanceof ServerPlayer serverVictim) {
+						var racialAbility = com.dragonminez.common.racial.RacialRegistry.forPlayer(stats);
+						if (racialAbility.isPresent()) {
+							postMitigation = racialAbility.get().modifyDamageTaken(new com.dragonminez.common.racial.RacialContext(serverVictim, stats), postMitigation, rawDamage, event.getSource());
+						}
+					}
+
 					float finalDamage = (float) postMitigation;
 					if (!Float.isFinite(finalDamage) || finalDamage < 0.0f) finalDamage = 0.0f;
 					float mitigatedFinal = finalDamage;
 
+					if (victim instanceof ServerPlayer serverVictim) {
+						float damageTaken = finalDamage;
+						com.dragonminez.common.racial.RacialRegistry.forPlayer(stats).ifPresent(ability ->
+								ability.onDamageTakenPost(new com.dragonminez.common.racial.RacialContext(serverVictim, stats), damageTaken));
+					}
+
 					if (victim.getHealth() - finalDamage <= 0) {
 						Entity damageSource = event.getSource().getEntity();
-						boolean shadowKnockdown = damageSource instanceof ShadowDummyEntity dummy
-								&& dummy.getPersistentData().getBoolean(SummonPlayerShadowDummyC2S.TAG_PLAYER_SHADOW);
-						boolean friendlyKnockdown = false;
-						if (damageSource instanceof Player attacker) {
-							boolean isSamePartyPvp = PartyManager.areInSameParty(attacker, victim) && PartyManager.isPartyPvpEnabled(attacker);
-							boolean isFriendlyFist = StatsProvider.get(StatsCapability.INSTANCE, attacker)
-									.map(data -> data.getStatus().isFriendlyFistEnabled())
+
+						boolean racialCancelled = false;
+						if (victim instanceof ServerPlayer serverVictim) {
+							com.dragonminez.common.racial.LethalContext lc = new com.dragonminez.common.racial.LethalContext((float) rawDamage, finalDamage, event.getSource(), damageSource);
+							racialCancelled = com.dragonminez.common.racial.RacialRegistry.forPlayer(stats)
+									.map(ability -> ability.onLethalDamage(new com.dragonminez.common.racial.RacialContext(serverVictim, stats), lc))
 									.orElse(false);
-							friendlyKnockdown = isSamePartyPvp || isFriendlyFist;
 						}
 
-						if (shadowKnockdown || friendlyKnockdown) {
+						if (racialCancelled) {
 							finalDamage = Math.max(0.0F, victim.getHealth() - 1.0F);
-
-							int knockdownTicks = ConfigManager.getCombatConfig().getKnockdownDurationSeconds() * 20;
-							stats.getStatus().setKnockedDown(true);
-							stats.getCooldowns().setCooldown(Cooldowns.KNOCKDOWN_DURATION, knockdownTicks);
-							stats.getCooldowns().setCooldown(Cooldowns.KNOCKDOWN_INVULN, knockdownTicks);
-							stats.getCharacter().clearActiveForm();
-							stats.getCharacter().clearActiveStackForm();
-
-							if (victim instanceof ServerPlayer serverPlayer) {
-								NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
+						} else {
+							boolean shadowKnockdown = damageSource instanceof ShadowDummyEntity dummy
+									&& dummy.getPersistentData().getBoolean(SummonPlayerShadowDummyC2S.TAG_PLAYER_SHADOW);
+							boolean friendlyKnockdown = false;
+							boolean captureKnockdown = false;
+							if (damageSource instanceof Player attacker) {
+								boolean isSamePartyPvp = PartyManager.areInSameParty(attacker, victim) && PartyManager.isPartyPvpEnabled(attacker);
+								boolean isFriendlyFist = StatsProvider.get(StatsCapability.INSTANCE, attacker)
+										.map(data -> data.getStatus().isFriendlyFistEnabled())
+										.orElse(false);
+								captureKnockdown = com.dragonminez.common.racial.capture.RacialCapture.forcesKnockdown(attacker) && !stats.getStatus().isKnockedDown();
+								friendlyKnockdown = isSamePartyPvp || isFriendlyFist || captureKnockdown;
 							}
 
-							if (shadowKnockdown) {
-								SummonPlayerShadowDummyC2S.dismissByDummy((ShadowDummyEntity) damageSource);
+							if (shadowKnockdown || friendlyKnockdown) {
+								finalDamage = Math.max(0.0F, victim.getHealth() - 1.0F);
+
+								int knockdownTicks = ConfigManager.getCombatConfig().getKnockdownDurationSeconds() * 20;
+								stats.getStatus().setKnockedDown(true);
+								stats.getCooldowns().setCooldown(Cooldowns.KNOCKDOWN_DURATION, knockdownTicks);
+								if (!captureKnockdown) stats.getCooldowns().setCooldown(Cooldowns.KNOCKDOWN_INVULN, knockdownTicks);
+								stats.getCharacter().clearActiveForm();
+								stats.getCharacter().clearActiveStackForm();
+
+								if (victim instanceof ServerPlayer serverPlayer) {
+									NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
+								}
+
+								if (shadowKnockdown) {
+									SummonPlayerShadowDummyC2S.dismissByDummy((ShadowDummyEntity) damageSource);
+								}
 							}
 						}
 					}

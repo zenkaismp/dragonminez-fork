@@ -414,6 +414,52 @@ public class ModRenderTypes extends RenderType {
         return polygonOffset ? AFTERIMAGE_OFFSET.apply(texture) : AFTERIMAGE.apply(texture);
     }
 
+    // v2.2: o alvo da assimilacao do Namek desenhado em esboco (shader assimilation_sketch). Zenkai: o fork nao tem a camada
+    // SKIN_OVERLAY_LAYERING da pele nova nem os acessores do RenderType; o brilho de encantamento sai pelo nome.
+    private static final RenderStateShard.ShaderStateShard ASSIMILATION_SKETCH_SHADER = new RenderStateShard.ShaderStateShard(() -> com.dragonminez.client.render.shader.DMZShaders.assimilationSketchShader);
+    private static final Map<ResourceLocation, RenderType> ASSIMILATION_SKETCH_CACHE = new HashMap<>();
+    private static final Map<ResourceLocation, RenderType> ASSIMILATION_SKETCH_VIEW_OFFSET_CACHE = new HashMap<>();
+
+    public static boolean hasAssimilationSketchShader() {
+        return com.dragonminez.client.render.shader.DMZShaders.assimilationSketchShader != null;
+    }
+
+    @Nullable
+    public static RenderType assimilationSketch(@Nullable RenderType sourceRenderType) {
+        if (sourceRenderType == null || sourceRenderType.format() != DefaultVertexFormat.NEW_ENTITY) return null;
+        if (sourceRenderType.mode() != VertexFormat.Mode.QUADS) return null;
+        String sourceName = sourceRenderType.toString();
+        if (sourceName.contains("shadow") || sourceName.contains("glint")) return null;
+        ResourceLocation texture = resolveSourceTexture(sourceRenderType);
+        if (texture == null) return null;
+        boolean viewOffset = sourceName.contains(VIEW_OFFSET_LAYERING_TOKEN);
+        Map<ResourceLocation, RenderType> cache = viewOffset ? ASSIMILATION_SKETCH_VIEW_OFFSET_CACHE : ASSIMILATION_SKETCH_CACHE;
+        return cache.computeIfAbsent(texture, t -> buildAssimilationSketch(t, viewOffset));
+    }
+
+    private static RenderType buildAssimilationSketch(ResourceLocation texture, boolean viewOffset) {
+        CompositeState.CompositeStateBuilder builder = CompositeState.builder()
+                .setShaderState(ASSIMILATION_SKETCH_SHADER)
+                .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
+                .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                .setCullState(NO_CULL)
+                .setDepthTestState(LEQUAL_DEPTH_TEST)
+                .setLightmapState(LIGHTMAP)
+                .setOverlayState(NO_OVERLAY)
+                .setWriteMaskState(COLOR_DEPTH_WRITE);
+        if (viewOffset) builder.setLayeringState(VIEW_OFFSET_Z_LAYERING);
+
+        return create(
+                "dmz_assimilation_sketch",
+                DefaultVertexFormat.NEW_ENTITY,
+                VertexFormat.Mode.QUADS,
+                1536,
+                true,
+                true,
+                builder.createCompositeState(true)
+        );
+    }
+
     public static RenderType transformationMask() {
         return TRANSFORMATION_MASK;
     }

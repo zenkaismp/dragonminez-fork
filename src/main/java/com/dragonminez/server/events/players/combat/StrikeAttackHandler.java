@@ -3018,7 +3018,7 @@ public class StrikeAttackHandler {
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
 			TechniqueData tech = stats.getTechniques().getUnlockedTechniques().get(techniqueId);
 			if (tech instanceof StrikeAttackData strike) {
-				int xpGain = strike.getXpGainPerHit(); // Zenkai: a v2.2 passa pelo bonus racial, que o fork nao tem
+				int xpGain = com.dragonminez.common.racial.RacialStatUtil.applyTechniqueXpBonus(stats, strike.getXpGainPerHit());
 				if (xpGain > 0) stats.getTechniques().addExperienceToTechnique(techniqueId, xpGain);
 			}
 			DynamicGrowthService.markCombat(stats);
@@ -3064,7 +3064,7 @@ public class StrikeAttackHandler {
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
 			TechniqueData tech = stats.getTechniques().getUnlockedTechniques().get(techniqueId);
 			if (tech instanceof StrikeAttackData strike) {
-				int xpGain = strike.getXpGainPerKill(); // Zenkai: a v2.2 passa pelo bonus racial, que o fork nao tem
+				int xpGain = com.dragonminez.common.racial.RacialStatUtil.applyTechniqueXpBonus(stats, strike.getXpGainPerKill());
 				if (xpGain > 0) stats.getTechniques().addExperienceToTechnique(techniqueId, xpGain);
 			}
 		});

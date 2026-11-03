@@ -363,13 +363,9 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		skillNames.sort((a, b) -> getDisplayNameForEntry(a).compareToIgnoreCase(getDisplayNameForEntry(b)));
 		if (skillNames.remove(NEW_SKILL_ENTRY)) skillNames.add(0, NEW_SKILL_ENTRY);
 		if (currentCategory == SkillCategory.SKILLS) {
-			int classPassiveIndex = 0;
-			String raceLower = race.toLowerCase();
-			if (!raceLower.isEmpty() && !ConfigManager.getRaceCharacter(raceLower).getRacialSkill().isEmpty()) {
-				skillNames.add(0, "racial_" + ConfigManager.getRaceCharacter(raceLower).getRacialSkill());
-				classPassiveIndex = 1;
-			}
-			skillNames.add(classPassiveIndex, CLASS_PASSIVE_ENTRY);
+			List<com.dragonminez.client.gui.character.util.RacialSkillParts.Part> racialParts = racialParts();
+			for (int i = 0; i < racialParts.size(); i++) skillNames.add(i, racialParts.get(i).id());
+			skillNames.add(racialParts.size(), CLASS_PASSIVE_ENTRY);
 		}
 		return skillNames;
 	}
@@ -1293,48 +1289,16 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		Skill skill = statsData.getSkills().getSkill(selectedSkill);
 		boolean isClassPassive = selectedSkill.equals(CLASS_PASSIVE_ENTRY);
 		if (skill == null && !selectedSkill.startsWith("racial_") && !isClassPassive) return;
-		GeneralServerConfig.RacialSkillsConfig config = ConfigManager.getServerConfig().getRacialSkills();
 		String displayName = isClassPassive ? getClassPassiveTitle() : tr("skill.dragonminez." + selectedSkill).getString();
 
 		String description = "";
 		if (isClassPassive) {
 			description = tr("class.dragonminez." + statsData.getCharacter().getCharacterClass() + ".passive.desc").getString();
-		} else if (selectedSkill.startsWith("racial_")) {
-			switch (selectedSkill) {
-				case "racial_human" -> {
-					int regen = (int) Math.round((config.getHumanKiRegenBoost() - 1.0) * 100);
-					description = tr("skill.dragonminez.racial_human.desc", regen).getString();
-				}
-				case "racial_saiyan" -> {
-					int zenkaiHealth = (int) Math.round((config.getSaiyanZenkaiHealthRegen() * 100));
-					int zenkaiStat = (int) Math.round((config.getSaiyanZenkaiStatBoost() * 100));
-					int cooldown = config.getSaiyanZenkaiCooldownSeconds();
-					int maxUses = config.getSaiyanZenkaiAmount();
-					int minLevel = config.getSaiyanZenkaiMinLevel();
-					description = tr("skill.dragonminez.racial_saiyan.desc", zenkaiHealth, zenkaiStat, cooldown, maxUses, minLevel).getString();
-				}
-				case "racial_namekian" -> {
-					int assimHealth = (int) Math.round(config.getNamekianAssimilationHealthRegen() * 100);
-					int assimStat = (int) Math.round(config.getNamekianAssimilationStatBoost() * 100);
-					int maxUses = config.getNamekianAssimilationAmount();
-					description = tr("skill.dragonminez.racial_namekian.desc", assimHealth, assimStat, maxUses).getString();
-				}
-				case "racial_frostdemon" -> {
-					int tpBoost = (int) Math.round((config.getFrostDemonTPBoost() - 1.0) * 100);
-					description = tr("skill.dragonminez.racial_frostdemon.desc", tpBoost).getString();
-				}
-				case "racial_bioandroid" -> {
-					int drainRatio = (int) Math.round(config.getBioAndroidDrainRatio() * 100);
-					int cooldown = config.getBioAndroidCooldownSeconds();
-					description = tr("skill.dragonminez.racial_bioandroid.desc", drainRatio, cooldown).getString();
-				}
-				case "racial_majin" -> {
-					int absHealth = (int) Math.round(config.getMajinAbsorptionHealthRegen() * 100);
-					int absStat = (int) Math.round(config.getMajinAbsorptionStatCopy() * 100);
-					int maxUses = config.getMajinAbsorptionAmount();
-					description = tr("skill.dragonminez.racial_majin.desc", absHealth, absStat, maxUses).getString();
-				}
-			}
+		} else if (selectedSkill.startsWith(com.dragonminez.client.gui.character.util.RacialSkillParts.ENTRY_PREFIX)) {
+			com.dragonminez.client.gui.character.util.RacialSkillParts.Part part = com.dragonminez.client.gui.character.util.RacialSkillParts.find(racialParts(), selectedSkill);
+			if (part == null) return;
+			displayName = part.name().getString();
+			description = part.description().getString();
 		} else description = tr("skill.dragonminez." + selectedSkill + ".desc").getString();
 
 		int startY = panelY + 40;
@@ -1582,6 +1546,14 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 			return true;
 		}
 		return super.mouseReleased(mouseX, mouseY, button);
+	}
+
+	// v2.2: a passiva racial aparece em partes (RacialSkillParts), cada uma com a descricao e os numeros da config.
+	private List<com.dragonminez.client.gui.character.util.RacialSkillParts.Part> racialParts() {
+		if (statsData == null) return List.of();
+		String race = statsData.getCharacter().getRaceName();
+		if (race == null || race.isEmpty() || ConfigManager.getRaceCharacter(race.toLowerCase()) == null) return List.of();
+		return com.dragonminez.client.gui.character.util.RacialSkillParts.forPlayer(ConfigManager.getRaceCharacter(race.toLowerCase()).getRacialSkill(), statsData.getStatus().isAndroidUpgraded());
 	}
 
 	private String getDisplayNameForEntry(String entryId) {

@@ -547,6 +547,7 @@ public class ConfigManager {
 
 	private static void loadGeneralConfigs() {
 		userConfig = loadAndValidate(CONFIG_DIR.resolve("general-user.json"), GeneralUserConfig.class, GeneralUserConfig::new, GeneralUserConfig::getConfigVersion, GeneralUserConfig::setConfigVersion, GeneralUserConfig.CURRENT_VERSION, null);
+		migrateLegacyRacialSkills(CONFIG_DIR.resolve("general-server.json"));
 		serverConfig = loadAndValidate(CONFIG_DIR.resolve("general-server.json"), GeneralServerConfig.class, GeneralServerConfig::new, GeneralServerConfig::getConfigVersion, GeneralServerConfig::setConfigVersion, GeneralServerConfig.CURRENT_VERSION, "general-server.json");
 		combatConfig = loadAndValidate(CONFIG_DIR.resolve("combat.json"), CombatConfig.class, CombatConfig::new, CombatConfig::getConfigVersion, CombatConfig::setConfigVersion, CombatConfig.CURRENT_VERSION, null);
 		trainingConfig = loadAndValidate(CONFIG_DIR.resolve("training.json"), TrainingConfig.class, TrainingConfig::new, TrainingConfig::getConfigVersion, TrainingConfig::setConfigVersion, TrainingConfig.CURRENT_VERSION, null);
@@ -574,6 +575,7 @@ public class ConfigManager {
 		Path statsPath = racePath.resolve("stats.json");
 		String previousStatsVersion = peekConfigVersion(statsPath);
 		RaceStatsConfig statsConfig = loadAndValidate(statsPath, RaceStatsConfig.class, ConfigManager::createDefaultStatsConfig, RaceStatsConfig::getConfigVersion, RaceStatsConfig::setConfigVersion, RaceStatsConfig.CURRENT_VERSION, null);
+		addMissingUnversedClass(statsPath, statsConfig, raceName);
 		if (isLegacyPreFoldVersion(previousStatsVersion)) {
 			RaceStatsConfig newDefaults = createDefaultStatsConfig();
 			boolean folded = false;
@@ -949,6 +951,11 @@ public class ConfigManager {
 		setupScalingStats(config.getClassStats("cleric"), 0.5, 0.5, 0.168, 2.6, 1.2, 0.8, 3.0);
 		config.getClassStats("cleric").setTpGainMultiplier(1.25);
 		config.getClassStats("cleric").setTpCostMultiplier(0.9);
+
+		// v2.2: classe Unversed. Zenkai: o fork guarda um sp5 so (sp5StmScaling); nas sete classes ele vale o dobro do
+		// sp5ResScaling da v2.2, entao o 0.05 da Unversed vira 0.10 aqui.
+		setupInitialStats(config.getClassStats("unversed"), 4, 3, 3, 4, 3, 3, 1.4, 0.048, 5.0, 0.10, 10.0, 0.10);
+		setupScalingStats(config.getClassStats("unversed"), 0.9, 0.9, 0.22, 1.35, 1.9, 0.85, 1.75);
 		setupDefaultPassives(config);
 		return config;
 	}
@@ -1001,6 +1008,16 @@ public class ConfigManager {
 		cleric.put("cdSecondary", 0.15);
 		cleric.put("durationBonus", 0.25);
 		setupPassive(config.getClassStats("cleric"), cleric);
+
+		Map<String, Double> unversed = new HashMap<>();
+		unversed.put("physicalBonus", 0.15);
+		unversed.put("kiBonus", 0.15);
+		unversed.put("physicalCharges", 3.0);
+		unversed.put("meleeHitsToPrime", 3.0);
+		unversed.put("chargeDurationTicks", 160.0);
+		unversed.put("comboResetTicks", 100.0);
+		unversed.put("strikeWindowTicks", 60.0);
+		setupPassive(config.getClassStats("unversed"), unversed);
 	}
 
 	private static void setupPassive(RaceStatsConfig.ClassStats classStats, Map<String, Double> values) {
@@ -1245,9 +1262,43 @@ public class ConfigManager {
 		}
 	}
 
+	// Zenkai: a v2.2 so roda o RacialConfigMigrator quando regenera o general-server (versao nova do config), e o fork nao
+	// sobe a versao (regeneraria tudo). Aqui o arquivo da 2.1, com as chaves raciais planas, vira as secoes por raca da
+	// v2.2 com os mesmos valores; o original fica no oldBackup.
+	private static void migrateLegacyRacialSkills(Path path) {
+		if (!Files.exists(path)) return;
+		try {
+			JsonElement raw = JsonParser.parseString(Files.readString(path));
+			if (raw == null || !raw.isJsonObject()) return;
+			JsonObject root = raw.getAsJsonObject();
+			if (!root.has("racialSkills") || !root.get("racialSkills").isJsonObject()) return;
+			if (root.getAsJsonObject("racialSkills").has("saiyan")) return;
+			com.dragonminez.common.config.migration.RacialConfigMigrator.migrate(root);
+			backupOldConfig(path);
+			Files.writeString(path, GSON.toJson(root), StandardCharsets.UTF_8);
+			LogUtil.warn(Env.COMMON, "Migrated the 2.1 racial skill keys of {} to the v2.2 sections", path.getFileName());
+		} catch (Exception e) {
+			LogUtil.error(Env.COMMON, "Could not migrate the racial skill keys of {}: {}", path.getFileName(), e.getMessage());
+		}
+	}
+
+	// Zenkai: a classe Unversed da v2.2 so nasce nos stats.json novos. No stats.json que ja existe (de raca nativa ou
+	// custom) ela entra com os valores padrao, sem mexer nas outras classes.
+	private static void addMissingUnversedClass(Path statsPath, RaceStatsConfig statsConfig, String raceName) {
+		if (statsConfig == null || statsConfig.getClasses().isEmpty() || statsConfig.getClasses().containsKey("unversed")) return;
+		statsConfig.getClasses().put("unversed", createDefaultStatsConfig().getClassStats("unversed"));
+		try {
+			LOADER.saveConfig(statsPath, statsConfig);
+			LogUtil.warn(Env.COMMON, "Added the v2.2 'unversed' class to stats.json of race '{}'", raceName);
+		} catch (Exception e) {
+			LogUtil.error(Env.COMMON, "Could not add the 'unversed' class to stats.json of race '{}': {}", raceName, e.getMessage());
+		}
+	}
+
 	public static void reloadSpecificConfig(String configFilePath) throws IOException {
 		Path path = CONFIG_DIR.resolve(configFilePath + ".json");
 		if (configFilePath.equals("general-server")) {
+			migrateLegacyRacialSkills(path);
 			serverConfig = LOADER.loadConfig(path, GeneralServerConfig.class);
 		} else if (configFilePath.equals("combat")) {
 			combatConfig = LOADER.loadConfig(path, CombatConfig.class);

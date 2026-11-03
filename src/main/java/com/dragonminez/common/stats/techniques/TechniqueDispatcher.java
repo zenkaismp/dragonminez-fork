@@ -27,7 +27,8 @@ public class TechniqueDispatcher {
 		float clampedCharge = Mth.clamp(chargeMultiplier, 0.5f, 2.0f);
 		float damageCharge = (isInitialSpawn && data.isInstantCast()) ? 1.0f : clampedCharge;
 
-		float realDamage = (float) (statsData.getKiDamage() * data.getDamageMultiplier() * data.getConfiguredDamageMultiplier() * damageCharge * data.getOutputMultiplier());
+		float realDamage = (float) (statsData.getKiDamage() * data.getDamageMultiplier() * data.getConfiguredDamageMultiplier() * damageCharge * data.getOutputMultiplier()
+				* com.dragonminez.common.passives.ClassPassives.get(statsData).kiDamageMultiplier(statsData, data));
 		final float kiSpeed = (float) (data.getSpeed() * statsData.getKiAttackSpeedModifier());
 		int maxLife = resolvePlayerMaxLifeTicks(data, clampedCharge);
 		final float castSize = data.resolveCastSize(statsData);

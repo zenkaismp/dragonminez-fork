@@ -307,6 +307,8 @@ public class RaceSelectionScreen extends ScaledScreen {
 		graphics.pose().popPose();
 	}
 
+	// v2.2: o painel lista as partes da passiva racial (RacialSkillParts) com os numeros da config do servidor. Zenkai: a
+	// v2.2 desenha num painel com rolagem (TextUtil.wrapScrollable), que o fork nao tem; aqui o texto encolhe para caber.
 	private void renderRacialInfo(GuiGraphics graphics) {
 		List<String> races = getAvailableRaces();
 		if (races.isEmpty()) return;
@@ -314,73 +316,42 @@ public class RaceSelectionScreen extends ScaledScreen {
 		String currentRace = races.get(selectedRaceIndex);
 
 		if (ConfigManager.getRaceCharacter(currentRace) == null) return;
-		GeneralServerConfig.RacialSkillsConfig config = ConfigManager.getServerConfig().getRacialSkills();
 		String racialSkill = ConfigManager.getRaceCharacter(currentRace).getRacialSkill();
 		if (racialSkill == null || racialSkill.isEmpty()) return;
 
-		String titleKey = "skill.dragonminez.racial_" + racialSkill;
-		String descKey = "skill.dragonminez.racial_" + racialSkill + ".desc";
-
-		Component titleComp = tr(titleKey);
-		String description = "";
-
-		switch (racialSkill) {
-			case "human" -> {
-				int regen = (int) Math.round((config.getHumanKiRegenBoost() - 1.0) * 100);
-				description = tr(descKey, regen).getString();
-			}
-			case "saiyan" -> {
-				int zenkaiHealth = (int) Math.round(config.getSaiyanZenkaiHealthRegen() * 100);
-				int zenkaiStat = (int) Math.round(config.getSaiyanZenkaiStatBoost() * 100);
-				int cooldown = config.getSaiyanZenkaiCooldownSeconds();
-				int maxUses = config.getSaiyanZenkaiAmount();
-				description = tr(descKey, zenkaiHealth, zenkaiStat, cooldown, maxUses).getString();
-			}
-			case "namekian" -> {
-				int assimHealth = (int) Math.round(config.getNamekianAssimilationHealthRegen() * 100);
-				int assimStat = (int) Math.round(config.getNamekianAssimilationStatBoost() * 100);
-				int maxUses = config.getNamekianAssimilationAmount();
-				description = tr(descKey, assimHealth, assimStat, maxUses).getString();
-			}
-			case "frostdemon" -> {
-				int tpBoost = (int) Math.round((config.getFrostDemonTPBoost() - 1.0) * 100);
-				description = tr(descKey, tpBoost).getString();
-			}
-			case "bioandroid" -> {
-				int drainRatio = (int) Math.round(config.getBioAndroidDrainRatio() * 100);
-				int cooldown = config.getBioAndroidCooldownSeconds();
-				description = tr(descKey, drainRatio, cooldown).getString();
-			}
-			case "majin" -> {
-				int absHealth = (int) Math.round(config.getMajinAbsorptionHealthRegen() * 100);
-				int absStat = (int) Math.round(config.getMajinAbsorptionStatCopy() * 100);
-				int maxUses = config.getMajinAbsorptionAmount();
-				description = tr(descKey, absHealth, absStat, maxUses).getString();
-			}
-			default -> description = tr(descKey).getString();
-		}
-
+		int panelWidth = 130;
 		int uiWidth = getUiWidth();
 		int uiHeight = getUiHeight();
-
-		int panelWidth = 130;
-		int marginFromEdge = 68;
-		int boxStartX = uiWidth - marginFromEdge - panelWidth;
-		int centerX = boxStartX + (panelWidth / 2);
+		int panelRight = uiWidth - 8;
+		int panelLeft = panelRight - panelWidth;
 		int startY = (uiHeight / 2) - 50;
+		int viewHeight = Math.max(24, uiHeight - 30 - startY);
+
+		List<net.minecraft.util.FormattedCharSequence> lines = new ArrayList<>();
+		for (com.dragonminez.client.gui.character.util.RacialSkillParts.Part part : com.dragonminez.client.gui.character.util.RacialSkillParts.forRace(racialSkill)) {
+			Component paragraph = Component.empty()
+					.append(part.name().withStyle(ChatFormatting.GOLD))
+					.append(Component.literal(": "))
+					.append(part.description());
+			lines.addAll(this.font.split(paragraph, panelWidth));
+		}
+		if (lines.isEmpty()) return;
+
+		float scale = Math.max(0.6f, Math.min(1.0f, viewHeight / (float) (lines.size() * 12)));
 
 		graphics.pose().pushPose();
 		graphics.pose().translate(0.0D, 0.0D, 400.0D);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.race_selection.racial_skills").withStyle(ChatFormatting.BOLD), panelLeft + panelWidth / 2, startY - 12, 0xFF55FF55);
 
-		TextUtil.drawCenteredStringWithBorder(graphics, this.font, titleComp.copy().withStyle(ChatFormatting.BOLD), centerX + 60, startY - 12, 0xFF55FF55);
-		List<String> wrappedDesc = wrapText(description, panelWidth);
-		int textY = startY;
-
-		for (String line : wrappedDesc) {
-			TextUtil.drawCenteredStringWithBorder(graphics, this.font, txt(line), centerX + 60, textY, 0xFFCCCCCC);
+		graphics.pose().pushPose();
+		graphics.pose().translate(panelLeft, startY, 0.0D);
+		graphics.pose().scale(scale, scale, 1.0f);
+		int textY = 0;
+		for (net.minecraft.util.FormattedCharSequence line : lines) {
+			TextUtil.drawStringWithBorder(graphics, this.font, line, 0, textY, 0xFFCCCCCC);
 			textY += 12;
 		}
-
+		graphics.pose().popPose();
 		graphics.pose().popPose();
 	}
 

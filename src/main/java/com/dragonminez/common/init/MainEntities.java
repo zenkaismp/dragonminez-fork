@@ -360,6 +360,12 @@ public static Map<String, RegistryObject<EntityType<DragonWishEntity>>> getDrago
                     () -> EntityType.Builder.of(MajinSkillEntity::new, MobCategory.CREATURE)
                             .sized(0.5f, 0.5f)
                             .build(new ResourceLocation(Reference.MOD_ID, "majin_skill").toString()));
+    // v2.2: o Cell Jr do Bio-Androide (BioAndroidEvolution).
+    public static final RegistryObject<EntityType<com.dragonminez.common.init.entities.bioandroid.CellJrEntity>> BIO_CELL_JR =
+            ENTITY_TYPES.register("bio_cell_jr",
+                    () -> EntityType.Builder.of(com.dragonminez.common.init.entities.bioandroid.CellJrEntity::new, MobCategory.MONSTER)
+                            .sized(0.8f, 1.6f)
+                            .build(new ResourceLocation(Reference.MOD_ID, "bio_cell_jr").toString()));
 
     // SAGAS ENTITY
     public static final RegistryObject<EntityType<SagaGokuEntity.SagaGokuEarlyEntity>> SAGA_GOKU_EARLY =

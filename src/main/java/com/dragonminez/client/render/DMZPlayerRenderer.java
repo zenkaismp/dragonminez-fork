@@ -228,7 +228,9 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 			poseStack.translate(0, -pivotY, 0);
 		}
 
-		poseStack.scale(scalingX, scalingY, scalingZ);
+		// v2.2: o Bio-Androide incha enquanto carrega a explosao (BioSwellRenderState).
+		float swellScale = com.dragonminez.client.systems.BioSwellRenderState.bodyScale(entity);
+		poseStack.scale(scalingX * swellScale, scalingY * swellScale, scalingZ * swellScale);
 
 		boolean isAuraActive = stats.getStatus().isAuraActive() || stats.getStatus().isPermanentAura();
 
@@ -360,6 +362,14 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 	 * {@code Event.Result.ALLOW} no RenderNameTagEvent: o ALLOW pula TODAS as regras de visibilidade
 	 * de uma vez, e nome de invisivel atravessando parede e pior que nome sumido.</p>
 	 */
+	@Override
+	public int getPackedOverlay(T animatable, float u) {
+		if (com.dragonminez.client.systems.BioSwellRenderState.isFlashingWhite(animatable)) {
+			return net.minecraft.client.renderer.texture.OverlayTexture.pack(net.minecraft.client.renderer.texture.OverlayTexture.u(1.0F), 10);
+		}
+		return super.getPackedOverlay(animatable, u);
+	}
+
 	@Override
 	public boolean shouldShowName(T animatable) {
 		if (animatable instanceof DMZRendererCache.NpcPuppet) return false;

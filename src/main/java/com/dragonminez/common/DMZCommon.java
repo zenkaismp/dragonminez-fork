@@ -56,6 +56,18 @@ public class DMZCommon {
 
 		MainGameRules.register();
 		MainDamageTypes.register();
+		registerRacialAbilities();
 
     }
+
+	// v2.2: as passivas raciais (o racialSkill do character.json escolhe qual vale para a raca).
+	private static void registerRacialAbilities() {
+		com.dragonminez.common.racial.RacialRegistry.register(new com.dragonminez.common.racial.impl.SaiyanZenkai());
+		com.dragonminez.common.racial.RacialRegistry.register(new com.dragonminez.common.racial.impl.NamekAssimilation());
+		com.dragonminez.common.racial.RacialRegistry.register(new com.dragonminez.common.racial.impl.MajinAbsorption());
+		com.dragonminez.common.racial.RacialRegistry.register(new com.dragonminez.common.racial.impl.HumanAdaptation());
+		com.dragonminez.common.racial.RacialRegistry.register(new com.dragonminez.common.racial.impl.FrostDemonReserve());
+		com.dragonminez.common.racial.RacialRegistry.register(new com.dragonminez.common.racial.impl.BioAndroidEvolution());
+		com.dragonminez.common.racial.RacialRegistry.register(new com.dragonminez.common.racial.impl.GlindDivinity());
+	}
 }

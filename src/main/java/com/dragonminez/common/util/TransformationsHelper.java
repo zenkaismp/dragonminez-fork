@@ -721,6 +721,13 @@ public class TransformationsHelper {
 		} else return 0;
 	}
 
+	// v2.2: ki divino (forma de deus, a skill godforms ou a passiva da Glind) e o que deixa sentir a Glind.
+	public static boolean hasGodKi(StatsData statsData) {
+		if (statsData == null) return false;
+		if (statsData.getSkills().getSkillLevel("godforms") >= 1) return true;
+		return hasGodFormActive(statsData) || com.dragonminez.common.racial.impl.GlindDivinity.hasDivineKi(statsData);
+	}
+
 	public static boolean hasGodFormActive(StatsData statsData) {
 		var character = statsData.getCharacter();
 		if (!character.hasActiveForm()) return false;
@@ -730,7 +737,8 @@ public class TransformationsHelper {
 
 	public static boolean isInstantTransmissionBlocked(StatsData requester, StatsData target) {
 		if (target.getStatus().isAndroidUpgraded()) return true;
-		return hasGodFormActive(target) && requester.getSkills().getSkillLevel("godforms") < 1;
+		if (com.dragonminez.common.racial.impl.GlindDivinity.isHiddenFrom(target, requester)) return true;
+		return hasGodFormActive(target) && !hasGodKi(requester);
 	}
 
 	public static boolean hasAntiKiCloak(Player target) {

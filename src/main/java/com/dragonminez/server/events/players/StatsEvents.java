@@ -375,6 +375,9 @@ public class StatsEvents {
 					victimData.getSkills().setSkillActive("kisense", false);
 					FOOD_REGEN_QUEUE.remove(victim.getUUID());
 				}
+				if (victim instanceof ServerPlayer serverVictim) {
+					com.dragonminez.common.racial.RacialRegistry.forPlayer(victimData).ifPresent(ability -> ability.onDeath(new com.dragonminez.common.racial.RacialContext(serverVictim, victimData)));
+				}
 			});
 		}
 
@@ -425,7 +428,7 @@ public class StatsEvents {
 		TechniqueData techniqueData = data.getTechniques().getUnlockedTechniques().get(techniqueId);
 		if (!(techniqueData instanceof KiAttackData kiAttackData)) return;
 
-		int xpGain = kiAttackData.getXpGainPerKill();
+		int xpGain = com.dragonminez.common.racial.RacialStatUtil.applyTechniqueXpBonus(data, kiAttackData.getXpGainPerKill());
 		if (xpGain > 0) data.getTechniques().addExperienceToTechnique(techniqueId, xpGain);
 	}
 
@@ -552,7 +555,7 @@ public class StatsEvents {
 				if (healStamina > maxStamina) healStamina = maxStamina;
 
 				if (hasCreatedChar) {
-					serverPlayer.setHealth(player.getHealth() + healHp);
+					if (!com.dragonminez.common.racial.impl.BioAndroidEvolution.isExplosionRecovering(data)) serverPlayer.setHealth(player.getHealth() + healHp);
 					data.getResources().addEnergy(healKi);
 					data.getResources().addStamina(healStamina);
 				}
@@ -601,6 +604,13 @@ public class StatsEvents {
 		String itemId = itemKey.toString();
 		String namespace = itemKey.getNamespace();
 
+		if (stack.getItem() instanceof net.minecraft.world.item.PotionItem) {
+			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+				if ("namekian".equals(data.getCharacter().getRaceName()))
+					com.dragonminez.common.racial.impl.NamekAssimilation.refreshWaterRegenBuff(data, ConfigManager.getServerConfig().getRacialSkills().getNamekian());
+			});
+		}
+
 		FoodConfig foodConfig = ConfigManager.getServerConfig().getGameplay().getFood();
 
 		boolean isModBlacklisted = !foodConfig.getBlacklistedNamespaces().isEmpty() && foodConfig.getBlacklistedNamespaces().contains(namespace);
@@ -647,7 +657,7 @@ public class StatsEvents {
 				float maxEnergy = data.getMaxEnergy();
 				float maxStamina = data.getMaxStamina();
 
-				float healAmount = (maxHealth * healthTotalRecoveryPercentage);
+				float healAmount = com.dragonminez.common.racial.impl.MajinAbsorption.applyFoodHealBonus(data, maxHealth * healthTotalRecoveryPercentage);
 				float energyAmount = (maxEnergy * kiTotalRecoveryPercentage);
 				float staminaAmount = (maxStamina * staminaTotalRecoveryPercentage);
 

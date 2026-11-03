@@ -3,6 +3,7 @@ package com.dragonminez.common.passives;
 import com.dragonminez.Reference;
 import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.quest.PartyManager;
+import com.dragonminez.common.racial.impl.MajinAbsorption;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
@@ -68,6 +69,9 @@ public class PassiveEventHandler {
 		IClassPassive p = ClassPassives.get(data);
 
 		double mult = event.getSourceType() == DMZEvent.DamageSourceType.STRIKE ? p.strikeDamageMultiplier(data, event.getVictim()) : 1.0;
+		if (event.getAttacker() instanceof ServerPlayer serverAttacker) {
+			mult *= p.outgoingDamageMultiplier(serverAttacker, data, event.getVictim(), event.getSourceType());
+		}
 		event.setAmount(event.getAmount() * mult);
 		event.setDefensePenetration(event.getDefensePenetration() + p.armorPenBonus(data));
 	}
@@ -87,8 +91,18 @@ public class PassiveEventHandler {
 	@SubscribeEvent
 	public static void onKiAttackFire(DMZEvent.KiAttackFireEvent event) {
 		StatsData data = event.getStatsData();
-		double mult = ClassPassives.get(data).kiCooldownMultiplier(data, event.getKiAttack());
+		IClassPassive passive = ClassPassives.get(data);
+		double mult = passive.kiCooldownMultiplier(data, event.getKiAttack());
+		mult *= MajinAbsorption.healTechniqueCooldownMultiplier(data, event.getKiAttack());
 		event.setCooldownTicks((int) Math.max(1, Math.round(event.getCooldownTicks() * mult)));
+		if (event.getPlayer() instanceof ServerPlayer player) passive.onKiAttackFired(player, data, event.getKiAttack());
+	}
+
+	@SubscribeEvent
+	public static void onStrikeCast(DMZEvent.StrikeAttackCastEvent event) {
+		StatsData data = event.getStatsData();
+		if (data == null) return;
+		ClassPassives.get(data).onStrikeCast(event.getPlayer(), data);
 	}
 
 	@SubscribeEvent(priority = EventPriority.LOWEST)

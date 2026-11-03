@@ -181,9 +181,7 @@ public class EvasionAttackHandler {
 			if (!player.isCreative() && cost > 0) stats.getResources().removeEnergy((int) Math.ceil(cost));
 			stats.getCooldowns().setCooldown(cooldownKey, technique.getActualCooldown());
 
-			// Zenkai: a v2.2 passa a XP pelo bonus da raca (sistema racial da v2.2, que o fork nao tem); sem ele vale a XP
-			// da tecnica, o mesmo numero que a v2.2 da para raca sem bonus.
-			int xpGain = technique.getXpGainPerHit();
+			int xpGain = com.dragonminez.common.racial.RacialStatUtil.applyTechniqueXpBonus(stats, technique.getXpGainPerHit());
 			if (xpGain > 0) stats.getTechniques().addExperienceToTechnique(techniqueId, xpGain);
 
 			int durationTicks = technique.getActualDurationTicks();

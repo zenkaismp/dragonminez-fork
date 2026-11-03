@@ -12,6 +12,8 @@ import com.dragonminez.common.config.TpBoost;
 import com.dragonminez.common.config.TpSource;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.quest.PlayerQuestData;
+import com.dragonminez.common.racial.RacialData;
+import com.dragonminez.common.racial.impl.GlindDivinity;
 import com.dragonminez.common.stats.character.*;
 import com.dragonminez.common.stats.character.Character;
 import com.dragonminez.common.stats.extras.DynamicGrowthData;
@@ -58,6 +60,7 @@ public class StatsData {
 	private final BonusStats bonusStats;
 	private final Techniques techniques;
 	private final DynamicGrowthData dynamicGrowth;
+	private final RacialData racialData;
 
 	private boolean hasInitializedHealth = false;
 	private boolean isDataLoaded = false;
@@ -69,6 +72,7 @@ public class StatsData {
 		this.status = new Status();
 		this.cooldowns = new Cooldowns();
 		this.character = new Character();
+		this.character.setStatsData(this);
 		this.resources = new Resources();
 		this.resources.setPlayer(player);
 		this.resources.setStatsData(this);
@@ -79,6 +83,24 @@ public class StatsData {
 		this.bonusStats = new BonusStats();
 		this.techniques = new Techniques();
 		this.dynamicGrowth = new DynamicGrowthData();
+		this.racialData = new RacialData();
+	}
+
+	public int getMaxPowerRelease() {
+		int potentialUnlockLevel = getSkills().hasSkill("potentialunlock") ? getSkills().getSkillLevel("potentialunlock") : 0;
+		int base = 50 + (potentialUnlockLevel * 5);
+
+		double racialMultiplier = com.dragonminez.common.racial.RacialRegistry.forPlayer(this)
+				.map(ability -> ability.maxReleaseMultiplier(this))
+				.orElse(1.0);
+		return (int) Math.floor(base * racialMultiplier);
+	}
+
+	private void migrateRacialDataFromLegacy() {
+		if (character.getRace() == null || character.getRace().isEmpty()) return;
+		RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(character.getRace());
+		String racialSkill = raceConfig == null ? null : raceConfig.getRacialSkill();
+		racialData.migrateFromLegacy(racialSkill, resources.getRacialSkillCount(), bonusStats);
 	}
 
 	public boolean hasInitializedHealth() {
@@ -278,7 +300,7 @@ public class StatsData {
 		double actionMod = (player != null && player.getPersistentData().contains("dmz_stamina_regen_mod"))
 				? player.getPersistentData().getDouble("dmz_stamina_regen_mod") : 1.0;
 
-		double regenPerSecond = (sp5 / 5.0) * meditationBonus * enchMult * regenMultiplier * actionMod * secondaryStatEffects.getMultiplier(SecondaryStatEffects.STM_REGEN);
+		double regenPerSecond = (sp5 / 5.0) * meditationBonus * enchMult * regenMultiplier * actionMod * GlindDivinity.regenMultiplier(this) * secondaryStatEffects.getMultiplier(SecondaryStatEffects.STM_REGEN);
 		return PotionEffectHelper.applyStaminaRegenMultiplier(player, regenPerSecond);
 	}
 
@@ -301,7 +323,7 @@ public class StatsData {
 		if (adjustedHealthDrain > 0.0) regenMultiplier = Math.max(0.0, 1.0 - (adjustedHealthDrain / 10.0));
 		else if (adjustedHealthDrain < 0.0) regenMultiplier = 1.0 + Math.abs(adjustedHealthDrain);
 
-		return (hp5 / 5.0) * enchMult * regenMultiplier * secondaryStatEffects.getMultiplier(SecondaryStatEffects.HP_REGEN);
+		return (hp5 / 5.0) * enchMult * regenMultiplier * GlindDivinity.regenMultiplier(this) * secondaryStatEffects.getMultiplier(SecondaryStatEffects.HP_REGEN);
 	}
 
 	public double getEnergyRegenPerSecond(boolean activeCharging) {
@@ -331,7 +353,7 @@ public class StatsData {
 
 		double kiConductivityMult = TickHandler.getRecoveryMultiplier(TickHandler.getTotalArmorEnchantmentLevel(MainEnchants.KI_CONDUCTIVITY.get(), player));
 		double baseRegenPerSecond = (ep5 / 5.0) * meditationBonus * enchMult * kiConductivityMult;
-		double androidRegenMult = isAndroidRacialActive() ? 2.0 : 1.0;
+		double androidRegenMult = isAndroidRacialActive() ? ConfigManager.getServerConfig().getRacialSkills().getHuman().getAndroidKiRegenMultiplier() : 1.0;
 
 		double energyChange = 0;
 
@@ -355,7 +377,7 @@ public class StatsData {
 			energyChange += regenAmount * regenMultiplier;
 		}
 
-		return energyChange * secondaryStatEffects.getMultiplier(SecondaryStatEffects.ENE_REGEN);
+		return energyChange * GlindDivinity.regenMultiplier(this) * secondaryStatEffects.getMultiplier(SecondaryStatEffects.ENE_REGEN);
 	}
 
 	public float getMaxPoise() {
@@ -731,7 +753,15 @@ public class StatsData {
 
 		double mastery = character.getFormMasteries().getMastery(currentFormGroup, currentForm);
 		double result = applyMasteryStatBonus(formData, baseMult, mastery);
-		return applyMutantFormPowerModifier(currentFormGroup, result);
+		result = applyMutantFormPowerModifier(currentFormGroup, result);
+		return applyRacialFormPowerModifier(currentFormGroup, result);
+	}
+
+	private double applyRacialFormPowerModifier(String groupName, double multiplier) {
+		if (multiplier <= 1.0) return multiplier;
+		return com.dragonminez.common.racial.RacialRegistry.forPlayer(this)
+				.map(ability -> ability.modifyFormStatMultiplier(this, groupName, multiplier))
+				.orElse(multiplier);
 	}
 
 	private double applyMutantFormPowerModifier(String groupName, double multiplier) {
@@ -1587,6 +1617,10 @@ public class StatsData {
 			getTechniques().clearAllTechniques();
 		}
 
+		// Zenkai: a v2.2 nao limpa a parte racial no reset; sem isto o Dende e a troca de raca deixavam as absorcoes, as
+		// assimilacoes, o Zenkai (e o teto de liberacao dele) e os Cell Jr. vivos de um personagem que recomecou.
+		com.dragonminez.common.racial.RacialReset.reset(player, this);
+		racialData.copyFrom(new RacialData());
 		getCooldowns().clearCooldowns();
 		getBonusStats().clearAllStats();
 		if (forceSaiyanTail) getCharacter().setHasSaiyanTail(true);
@@ -1659,6 +1693,7 @@ public class StatsData {
 		nbt.put("BonusStats", bonusStats.save());
 		nbt.put("Techniques",  techniques.save());
 		nbt.put("DynamicGrowth", dynamicGrowth.save());
+		nbt.put("RacialData", racialData.save());
 		nbt.putBoolean("HasInitializedHealth", hasInitializedHealth);
 		return nbt;
 	}
@@ -1679,6 +1714,13 @@ public class StatsData {
 		if (nbt.contains("BonusStats")) bonusStats.load(nbt.getCompound("BonusStats"));
 		if (nbt.contains("Techniques")) techniques.load(nbt.getCompound("Techniques"));
 		if (nbt.contains("DynamicGrowth")) dynamicGrowth.load(nbt.getCompound("DynamicGrowth"));
+		if (nbt.contains("RacialData")) racialData.load(nbt.getCompound("RacialData"));
+		else if (nbt.contains("Character") && nbt.contains("Stats")) {
+			// Zenkai: ficha inteira de antes da v2.2 (slot de personagem guardado, banco) carregada por cima de uma ficha viva:
+			// comeca do zero, senao herdaria as absorcoes, o Zenkai e os Cell Jr da ficha que estava carregada.
+			racialData.copyFrom(new RacialData());
+			migrateRacialDataFromLegacy();
+		}
 		if (nbt.contains("HasInitializedHealth")) hasInitializedHealth = nbt.getBoolean("HasInitializedHealth");
 		if (character.getRaceName() != null && !character.getRaceName().isEmpty()) updateTransformationSkillLimits(character.getRaceName());
 		// SO um NBT completo pode declarar os dados carregados. Este mesmo load atende syncs PARCIAIS
@@ -1701,6 +1743,7 @@ public class StatsData {
 		this.bonusStats.copyFrom(other.bonusStats);
 		this.techniques.copyFrom(other.techniques);
 		this.dynamicGrowth.copyFrom(other.dynamicGrowth);
+		this.racialData.copyFrom(other.racialData);
 		this.hasInitializedHealth = other.hasInitializedHealth;
 		if (character.getRaceName() != null && !character.getRaceName().isEmpty())
 			updateTransformationSkillLimits(character.getRaceName());

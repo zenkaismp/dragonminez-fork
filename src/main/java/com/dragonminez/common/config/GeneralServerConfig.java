@@ -478,105 +478,272 @@ public class GeneralServerConfig {
 
 	@Getter
 	@NoArgsConstructor
+	public static class SaiyanRacialConfig {
+		private Boolean enabled = true;
+		private Integer minLevel = 100;
+		private Integer cooldownSeconds = 900;
+		private Integer knockoutSeconds = 10;
+		private Double knockoutHealthRegen = 0.40;
+		private Double knockoutStaminaRegen = 0.80;
+		private Double knockoutEnergyRegen = 0.80;
+		private Double overkillThreshold = 1.0;
+		private Integer peakWindowSeconds = 10;
+		private Double maxBuffHitRatio = 0.25;
+		private Double minBuffPct = 0.01;
+		private Double maxBuffPct = 0.10;
+		private Integer permanentMaxBuffs = 3;
+		private Integer tempBuffMinSeconds = 120;
+		private Integer tempBuffMaxSeconds = 240;
+		private Double releaseBonusPerZenkai = 0.05;
+		private Double releaseBonusCap = 0.15;
+		private String[] buffStats = {"STR", "SKP", "PWR"};
+
+		public Integer getMinLevel() {
+			return Math.max(0, Math.min(minLevel != null ? minLevel : 100, Integer.MAX_VALUE));
+		}
+
+		public Integer getCooldownSeconds() {
+			return Math.max(0, Math.min(cooldownSeconds, Integer.MAX_VALUE));
+		}
+
+		public Integer getPermanentMaxBuffs() {
+			return Math.max(0, Math.min(permanentMaxBuffs, Integer.MAX_VALUE));
+		}
+	}
+
+	@Getter
+	@NoArgsConstructor
+	public static class NamekianRacialConfig {
+		private Boolean enabled = true;
+		private Integer assimilationAmount = 4;
+		private Integer assimilationCooldownSeconds = 600;
+		private Double assimilationHealthRegen = 0.35;
+		private Double assimilationStatBoost = 0.075;
+		private String[] assimilationBoosts = {"STR", "SKP", "PWR"};
+		private Boolean assimilationOnNamekNpcs = true;
+		private Integer assimilationRequestTimeoutSeconds = 30;
+		private Integer regenChannelSeconds = 3;
+		private Double regenHealthRatio = 0.25;
+		private Double regenEnergyCost = 0.30;
+		private Double regenStaminaCost = 0.20;
+		private Integer regenCooldownSeconds = 45;
+		private Double waterRegenBonus = 0.25;
+		private Integer waterRegenSeconds = 5;
+
+		public Integer getAssimilationAmount() {
+			return Math.max(0, Math.min(assimilationAmount, Integer.MAX_VALUE));
+		}
+
+		public Double getAssimilationHealthRegen() {
+			return Math.max(0, Math.min(assimilationHealthRegen, Double.MAX_VALUE));
+		}
+
+		public Double getAssimilationStatBoost() {
+			return Math.max(0, Math.min(assimilationStatBoost, Double.MAX_VALUE));
+		}
+	}
+
+	@Getter
+	@NoArgsConstructor
+	public static class MajinRacialConfig {
+		private Boolean enabled = true;
+		private Integer absorptionAmount = 3;
+		private Integer absorptionCooldownSeconds = 600;
+		private Double absorptionHealthRegen = 0.30;
+		private Double absorptionStatCopy = 0.04;
+		private String[] absorptionBoosts = {"STR", "SKP", "PWR"};
+		private Boolean absorptionOnMobs = true;
+		private Integer slotEjectCooldownSeconds = 300;
+		private Double foodHealBonus = 0.25;
+		private Double kiHealReceivedBonus = 0.25;
+		private Double kiHealDealtBonus = 0.25;
+		private Double healTechniqueCooldownReduction = 0.10;
+		private Double healTechniqueCostReduction = 0.10;
+
+		public Integer getAbsorptionAmount() {
+			return Math.max(0, Math.min(absorptionAmount, Integer.MAX_VALUE));
+		}
+
+		public Double getAbsorptionHealthRegen() {
+			return Math.max(0, Math.min(absorptionHealthRegen, Double.MAX_VALUE));
+		}
+
+		public Double getAbsorptionStatCopy() {
+			return Math.max(0, Math.min(absorptionStatCopy, Double.MAX_VALUE));
+		}
+	}
+
+	@Getter
+	@NoArgsConstructor
+	public static class HumanRacialConfig {
+		private Boolean enabled = true;
+		private Double techniqueXpBonus = 0.35;
+		private Double adrenalineThreshold = 0.25;
+		private Integer adrenalineSeconds = 15;
+		private Double adrenalineDamageReduction = 0.30;
+		private Double adrenalineAttackSpeed = 0.25;
+		private Double adrenalineMoveSpeed = 0.25;
+		private Integer adrenalineCooldownSeconds = 180;
+
+		private Boolean androidBarrierEnabled = true;
+		private Integer androidBarrierMaxSeconds = 10;
+		private Integer androidBarrierCooldownSeconds = 30;
+		private Integer androidBarrierBrokenCooldownSeconds = 180;
+		private Double androidBarrierKiConversion = 0.50;
+		private Double androidBarrierSurgeOverflow = 0.50;
+		private Double androidBarrierBreakOverflow = 0.75;
+		private Double androidBarrierSize = 2.6;
+		private Double androidKiRegenMultiplier = 2.0;
+
+		public double getAndroidKiRegenMultiplier() {
+			return androidKiRegenMultiplier == null ? 2.0 : Math.max(0.0, androidKiRegenMultiplier);
+		}
+	}
+
+	@Getter
+	@NoArgsConstructor
+	public static class FrostDemonRacialConfig {
+		private Boolean enabled = true;
+		private Double tpBoost = 1.25;
+		private Double masteryGainBonus = 0.25;
+		private Double kiTechniqueResistance = 0.125;
+		private Double strikeTechniqueResistance = 0.05;
+		private Integer reserveChargeReleaseThreshold = 25;
+		private Double reserveMaxRatio = 0.50;
+		private Integer reserveFullChargeSeconds = 30;
+		private Integer reserveDurationSeconds = 10;
+		private Double reserveFormBonus = 0.15;
+		private String[] reserveChargeForms = {"second", "third", "final"};
+
+		public Double getTpBoost() {
+			return Math.max(1, Math.min(tpBoost, Double.MAX_VALUE));
+		}
+
+		public Integer getReserveFullChargeSeconds() {
+			return Math.max(1, reserveFullChargeSeconds);
+		}
+
+		public Integer getReserveDurationSeconds() {
+			return Math.max(1, reserveDurationSeconds);
+		}
+	}
+
+	@Getter
+	@NoArgsConstructor
+	public static class GlindRacialConfig {
+		private Boolean enabled = true;
+		private Boolean divineKi = true;
+		private Double meditationDodgeMultiplier = 1.5;
+		private Double regenMultiplier = 1.25;
+		private Double healingReductionBase = 0.20;
+		private Double healingReductionStackEfficiency = 0.5;
+		private Integer evilAttackerMaxAlignment = 25;
+		private Integer goodTargetMinAlignment = 60;
+		private Integer goodAttackerMinAlignment = 75;
+		private Integer evilTargetMaxAlignment = 40;
+		private Double playerDamageBonus = 0.10;
+		private Double frostDemonDamageBonus = 0.15;
+		private Double majinDamageBonus = 0.05;
+		private Double npcDamageBonus = 0.075;
+
+		public Double getMeditationDodgeMultiplier() {
+			return Math.max(0, Math.min(meditationDodgeMultiplier, Double.MAX_VALUE));
+		}
+
+		public Double getRegenMultiplier() {
+			return Math.max(0, Math.min(regenMultiplier, Double.MAX_VALUE));
+		}
+
+		public Double getHealingReductionBase() {
+			return Math.max(0, Math.min(healingReductionBase, 1.0));
+		}
+
+		public Double getHealingReductionStackEfficiency() {
+			return Math.max(0, Math.min(healingReductionStackEfficiency, Double.MAX_VALUE));
+		}
+
+		public Double getPlayerDamageBonus() {
+			return Math.max(0, Math.min(playerDamageBonus, Double.MAX_VALUE));
+		}
+
+		public Double getFrostDemonDamageBonus() {
+			return Math.max(0, Math.min(frostDemonDamageBonus, Double.MAX_VALUE));
+		}
+
+		public Double getMajinDamageBonus() {
+			return Math.max(0, Math.min(majinDamageBonus, Double.MAX_VALUE));
+		}
+
+		public Double getNpcDamageBonus() {
+			return Math.max(0, Math.min(npcDamageBonus, Double.MAX_VALUE));
+		}
+	}
+
+	@Getter
+	@NoArgsConstructor
+	public static class BioAndroidRacialConfig {
+		private Boolean enabled = true;
+		private Integer cooldownSeconds = 180;
+		private Double drainRatio = 0.25;
+		private Double drainTpRatio = 0.50;
+		private Integer explodeChargeSeconds = 5;
+		private Integer explodeRevertSeconds = 4;
+		private Double explodeDamageRatio = 5.0;
+		private Integer explodeRadius = 36;
+		private Boolean explodeKillsUser = false;
+		private Integer explodeKnockdownSeconds = 30;
+		private Integer explodeCooldownSeconds = 600;
+		private Integer cellJrMax = 3;
+		private Double cellJrStatRatio = 0.20;
+		private Double cellJrOwnerPenalty = 0.10;
+		private Integer cellJrChargeCooldownSeconds = 240;
+		private Integer cellJrLeashRange = 64;
+		private Integer cellJrGlobalCap = 30;
+
+		public Integer getCooldownSeconds() {
+			return Math.max(0, Math.min(cooldownSeconds, Integer.MAX_VALUE));
+		}
+
+		public Double getDrainRatio() {
+			return Math.max(0, Math.min(drainRatio, Double.MAX_VALUE));
+		}
+	}
+
+	@Getter
+	@NoArgsConstructor
 	public static class RacialSkillsConfig {
 		private Boolean enableRacialSkills = true;
-		private Boolean humanRacialSkill = true;
-		private Double humanKiRegenBoost = 1.40;
-		private Boolean saiyanRacialSkill = true;
-		private Integer saiyanZenkaiMinLevel = 100;
-		private Integer saiyanZenkaiAmount = 3;
-		private Double saiyanZenkaiHealthRegen = 0.20;
-		private Double saiyanZenkaiStatBoost = 0.075;
-		private String[] saiyanZenkaiBoosts = {"STR", "SKP", "PWR"};
-		private Integer saiyanZenkaiCooldownSeconds = 900;
-		private Boolean namekianRacialSkill = true;
-		private Integer namekianAssimilationAmount = 4;
-		private Double namekianAssimilationHealthRegen = 0.35;
-		private Double namekianAssimilationStatBoost = 0.075;
-		private String[] namekianAssimilationBoosts = {"STR", "SKP", "PWR"};
-		private Boolean namekianAssimilationOnNamekNpcs = true;
-		private Boolean frostDemonRacialSkill = true;
-		private Double frostDemonTPBoost = 1.25;
-		private Boolean bioAndroidRacialSkill = true;
-		private Integer bioAndroidCooldownSeconds = 180;
-		private Double bioAndroidDrainRatio = 0.25;
-		private Boolean majinAbsoprtionSkill = true;
-		private Boolean majinReviveSkill = true;
-		private Integer majinAbsorptionAmount = 3;
-		private Double majinAbsorptionHealthRegen = 0.30;
-		private Double majinAbsorptionStatsCopy = 0.04;
-		private String[] majinAbsorptionBoosts = {"STR", "SKP", "PWR"};
-		private Boolean majinAbsorptionOnMobs = true;
-		private Integer majinReviveCooldownSeconds = 3600;
-		private Double majinReviveHealthRatioPerBlop = 0.25;
+		private SaiyanRacialConfig saiyan = new SaiyanRacialConfig();
+		private NamekianRacialConfig namekian = new NamekianRacialConfig();
+		private MajinRacialConfig majin = new MajinRacialConfig();
+		private HumanRacialConfig human = new HumanRacialConfig();
+		private FrostDemonRacialConfig frostdemon = new FrostDemonRacialConfig();
+		private BioAndroidRacialConfig bioandroid = new BioAndroidRacialConfig();
+		private GlindRacialConfig glind = new GlindRacialConfig();
 
-		public Double getHumanKiRegenBoost() {
-			return Math.max(0, Math.min(humanKiRegenBoost, Double.MAX_VALUE));
-		}
-
-		public Integer getSaiyanZenkaiMinLevel() {
-			return Math.max(0, Math.min(saiyanZenkaiMinLevel != null ? saiyanZenkaiMinLevel : 100, Integer.MAX_VALUE));
-		}
-
-		public Integer getSaiyanZenkaiAmount() {
-			return Math.max(0, Math.min(saiyanZenkaiAmount, Integer.MAX_VALUE));
-		}
-
-		public Double getSaiyanZenkaiHealthRegen() {
-			return Math.max(0, Math.min(saiyanZenkaiHealthRegen, Double.MAX_VALUE));
-		}
-
-		public Double getSaiyanZenkaiStatBoost() {
-			return Math.max(0, Math.min(saiyanZenkaiStatBoost, Double.MAX_VALUE));
-		}
-
-		public Integer getSaiyanZenkaiCooldownSeconds() {
-			return Math.max(0, Math.min(saiyanZenkaiCooldownSeconds, Integer.MAX_VALUE));
-		}
-
-		public Integer getNamekianAssimilationAmount() {
-			return Math.max(0, Math.min(namekianAssimilationAmount, Integer.MAX_VALUE));
-		}
-
-		public Double getNamekianAssimilationHealthRegen() {
-			return Math.max(0, Math.min(namekianAssimilationHealthRegen, Double.MAX_VALUE));
-		}
-
-		public Double getNamekianAssimilationStatBoost() {
-			return Math.max(0, Math.min(namekianAssimilationStatBoost, Double.MAX_VALUE));
-		}
-
-		public Double getFrostDemonTPBoost() {
-			return Math.max(1, Math.min(frostDemonTPBoost, Double.MAX_VALUE));
-		}
-
-		public Integer getBioAndroidCooldownSeconds() {
-			return Math.max(0, Math.min(bioAndroidCooldownSeconds, Integer.MAX_VALUE));
-		}
-
-		public Double getBioAndroidDrainRatio() {
-			return Math.max(0, Math.min(bioAndroidDrainRatio, Double.MAX_VALUE));
-		}
-
-		public Integer getMajinAbsorptionAmount() {
-			return Math.max(0, Math.min(majinAbsorptionAmount, Integer.MAX_VALUE));
-		}
-
-		public Double getMajinAbsorptionHealthRegen() {
-			return Math.max(0, Math.min(majinAbsorptionHealthRegen, Double.MAX_VALUE));
-		}
-
-		public Double getMajinAbsorptionStatCopy() {
-			return Math.max(0, Math.min(majinAbsorptionStatsCopy, Double.MAX_VALUE));
-		}
-
-		public Integer getMajinReviveCooldownSeconds() {
-			return Math.max(0, Math.min(majinReviveCooldownSeconds, Integer.MAX_VALUE));
-		}
-
-		public Double getMajinReviveHealthRatioPerBlop() {
-			return Math.max(0, Math.min(majinReviveHealthRatioPerBlop, Double.MAX_VALUE));
-		}
+		public Boolean getHumanRacialSkill() { return human.getEnabled(); }
+		public Boolean getSaiyanRacialSkill() { return saiyan.getEnabled(); }
+		public Integer getSaiyanZenkaiMinLevel() { return saiyan.getMinLevel(); }
+		public Integer getSaiyanZenkaiAmount() { return saiyan.getPermanentMaxBuffs(); }
+		public String[] getSaiyanZenkaiBoosts() { return saiyan.getBuffStats(); }
+		public Integer getSaiyanZenkaiCooldownSeconds() { return saiyan.getCooldownSeconds(); }
+		public Boolean getNamekianRacialSkill() { return namekian.getEnabled(); }
+		public Integer getNamekianAssimilationAmount() { return namekian.getAssimilationAmount(); }
+		public Double getNamekianAssimilationHealthRegen() { return namekian.getAssimilationHealthRegen(); }
+		public Double getNamekianAssimilationStatBoost() { return namekian.getAssimilationStatBoost(); }
+		public String[] getNamekianAssimilationBoosts() { return namekian.getAssimilationBoosts(); }
+		public Boolean getNamekianAssimilationOnNamekNpcs() { return namekian.getAssimilationOnNamekNpcs(); }
+		public Boolean getFrostDemonRacialSkill() { return frostdemon.getEnabled(); }
+		public Double getFrostDemonTPBoost() { return frostdemon.getTpBoost(); }
+		public Boolean getBioAndroidRacialSkill() { return bioandroid.getEnabled(); }
+		public Integer getBioAndroidCooldownSeconds() { return bioandroid.getCooldownSeconds(); }
+		public Double getBioAndroidDrainRatio() { return bioandroid.getDrainRatio(); }
+		public Boolean getMajinAbsoprtionSkill() { return majin.getEnabled(); }
+		public Integer getMajinAbsorptionAmount() { return majin.getAbsorptionAmount(); }
+		public Double getMajinAbsorptionHealthRegen() { return majin.getAbsorptionHealthRegen(); }
+		public Double getMajinAbsorptionStatCopy() { return majin.getAbsorptionStatCopy(); }
+		public String[] getMajinAbsorptionBoosts() { return majin.getAbsorptionBoosts(); }
+		public Boolean getMajinAbsorptionOnMobs() { return majin.getAbsorptionOnMobs(); }
 	}
 
 	@Getter

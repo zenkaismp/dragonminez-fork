@@ -33,6 +33,10 @@ import java.util.Set;
 @Setter
 @Getter
 public class Character {
+	// v2.2: o StatsData dono deste personagem (o bonus racial de maestria precisa do jogador). Nao vai para o NBT.
+	@Getter(lombok.AccessLevel.NONE)
+	@Setter
+	private transient com.dragonminez.common.stats.StatsData statsData;
 	private String race;
 	private String gender;
 	private String characterClass;
@@ -659,6 +663,7 @@ public class Character {
 	}
 
 	public void gainMastery(String group, String form, double amount) {
+		amount = applyRacialMasteryMultiplier(amount);
 		addMasteryResolved(group, form, amount);
 
 		FormConfig.FormData formData = resolveFormData(group, form);
@@ -673,6 +678,13 @@ public class Character {
 			if (dot <= 0 || dot >= entry.length() - 1) continue;
 			addMasteryResolved(entry.substring(0, dot), entry.substring(dot + 1), shared);
 		}
+	}
+
+	private double applyRacialMasteryMultiplier(double amount) {
+		if (statsData == null || !(statsData.getPlayer() instanceof net.minecraft.server.level.ServerPlayer serverPlayer)) return amount;
+		return com.dragonminez.common.racial.RacialRegistry.forPlayer(statsData)
+				.map(ability -> ability.modifyMasteryGain(new com.dragonminez.common.racial.RacialContext(serverPlayer, statsData), amount))
+				.orElse(amount);
 	}
 
 	private void addMasteryResolved(String group, String form, double amount) {

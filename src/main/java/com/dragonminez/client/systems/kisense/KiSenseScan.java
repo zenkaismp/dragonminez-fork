@@ -64,7 +64,7 @@ public final class KiSenseScan {
 		if (targetData == null) return true;
 		if (isCloaked(targetPlayer)) return false;
 		if (targetData.getStatus().isAndroidUpgraded()) return false;
-		if (TransformationsHelper.hasGodFormActive(targetData) && myData.getSkills().getSkillLevel("godforms") <= 0) return false;
+		if (TransformationsHelper.hasGodFormActive(targetData) && !TransformationsHelper.hasGodKi(myData)) return false;
 		return true;
 	}
 
@@ -131,6 +131,7 @@ public final class KiSenseScan {
 			boolean visible = !entity.isInvisible() || !entity.isInvisibleTo(player);
 			if (!visible) continue;
 			if (!canTarget(entity, data)) continue;
+			if (com.dragonminez.common.racial.impl.GlindDivinity.isHiddenFrom(entity, player)) continue;
 
 			double dist = player.distanceTo(entity);
 			float bp = getEntityBP(entity);

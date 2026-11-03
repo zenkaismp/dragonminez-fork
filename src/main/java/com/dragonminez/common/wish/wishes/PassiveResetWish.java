@@ -1,7 +1,6 @@
 package com.dragonminez.common.wish.wishes;
 
-import com.dragonminez.common.config.ConfigManager;
-import com.dragonminez.common.stats.character.Cooldowns;
+import com.dragonminez.common.racial.RacialReset;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.wish.Wish;
@@ -16,26 +15,7 @@ public class PassiveResetWish extends Wish {
 
 	@Override
 	public void grant(ServerPlayer player) {
-		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-			String[] statBoosts = new String[0];
-			statBoosts = switch (data.getCharacter().getRace()) {
-				case "namekian" -> ConfigManager.getServerConfig().getRacialSkills().getNamekianAssimilationBoosts();
-				case "majin" -> ConfigManager.getServerConfig().getRacialSkills().getMajinAbsorptionBoosts();
-				case "saiyan" -> ConfigManager.getServerConfig().getRacialSkills().getSaiyanZenkaiBoosts();
-				default -> statBoosts;
-			};
-
-			for (String stat : statBoosts) {
-				for (int i = data.getResources().getRacialSkillCount(); i >= 0; i--) {
-					data.getBonusStats().clearBonusSplit(stat, "Absorption_");
-					data.getBonusStats().clearBonusSplit(stat, "Assimilation_");
-					data.getBonusStats().clearBonusSplit(stat, "Zenkai_");
-				}
-			}
-
-			data.getCooldowns().removeCooldown(Cooldowns.ZENKAI);
-			data.getResources().setRacialSkillCount(0);
-		});
+		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> RacialReset.reset(player, data));
 	}
 
 	@Override
