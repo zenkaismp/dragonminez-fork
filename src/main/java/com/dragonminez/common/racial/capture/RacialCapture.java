@@ -55,8 +55,20 @@ public final class RacialCapture {
 	}
 
 	public static int cappedAbsorptionBonus(double sourceValue, double ratio, int cap) {
+		return cappedAbsorptionBonus(sourceValue, ratio, cap, 0.0, 0.0);
+	}
+
+	/**
+	 * Zenkai (P1 do pacote de passivas): o ganho da absorcao tambem nao passa de {@code maxOwnBaseGain} x a base propria
+	 * do Majin naquele stat: {@code min(ratio x fonte, maxOwnBaseGain x ownBase)}. Com {@code maxOwnBaseGain} 0 ou menos
+	 * vale so a conta antiga.
+	 */
+	public static int cappedAbsorptionBonus(double sourceValue, double ratio, int cap, double ownBase, double maxOwnBaseGain) {
 		if (!Double.isFinite(sourceValue) || sourceValue <= 0) return 1;
 		double bonus = Math.min(sourceValue, cap) * ratio;
+		if (maxOwnBaseGain > 0 && Double.isFinite(maxOwnBaseGain) && Double.isFinite(ownBase)) {
+			bonus = Math.min(bonus, Math.max(0.0, ownBase) * maxOwnBaseGain);
+		}
 		if (!Double.isFinite(bonus) || bonus < 1) return 1;
 		return (int) Math.min(bonus, cap);
 	}

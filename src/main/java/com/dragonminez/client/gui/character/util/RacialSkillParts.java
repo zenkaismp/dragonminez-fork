@@ -80,8 +80,12 @@ public final class RacialSkillParts {
 		MutableComponent npcs = Boolean.TRUE.equals(c.getAssimilationOnNamekNpcs())
 				? Component.translatable("skill.dragonminez.racial_namekian.assimilation.npcs")
 				: Component.empty();
+		// Zenkai (P3): a VIT tem a porcentagem propria, no fim da lista de argumentos (as traducoes antigas seguem certas)
+		MutableComponent vitality = c.getAssimilationVitBoost() > 0.0
+				? Component.translatable("skill.dragonminez.racial_namekian.assimilation.vitality", pct(c.getAssimilationVitBoost()))
+				: Component.empty();
 		add(parts, "namekian", "assimilation", npcs, pct(c.getAssimilationHealthRegen()), pct(c.getAssimilationStatBoost()),
-				stats(c.getAssimilationBoosts()), c.getAssimilationAmount(), c.getAssimilationCooldownSeconds());
+				stats(c.getAssimilationBoosts()), c.getAssimilationAmount(), c.getAssimilationCooldownSeconds(), vitality);
 		add(parts, "namekian", "regeneration", pct(c.getRegenHealthRatio()), c.getRegenChannelSeconds(), pct(c.getRegenEnergyCost()),
 				pct(c.getRegenStaminaCost()), c.getRegenCooldownSeconds());
 		add(parts, "namekian", "water_affinity", pct(c.getWaterRegenBonus()), c.getWaterRegenSeconds());
@@ -97,14 +101,23 @@ public final class RacialSkillParts {
 
 	private static void bioAndroid(List<Part> parts, GeneralServerConfig.BioAndroidRacialConfig c) {
 		add(parts, "bioandroid", "evolution");
+		// Zenkai (P9): TP so se a config ainda paga, a recarga contra jogador/boss marcado e a imunidade do alvo
+		MutableComponent drainTp = c.getDrainTpRatio() != null && c.getDrainTpRatio() > 0.0
+				? Component.translatable("skill.dragonminez.racial_bioandroid.vital_drain.tp")
+				: Component.empty();
+		MutableComponent drainImmunity = c.getDrainTargetImmunitySeconds() > 0
+				? Component.translatable("skill.dragonminez.racial_bioandroid.vital_drain.immunity", c.getDrainTargetImmunitySeconds())
+				: Component.empty();
 		add(parts, "bioandroid", "vital_drain", BioAndroidEvolution.STUN_DURATION_TICKS / 20, pct(c.getDrainRatio() / BioAndroidEvolution.CHANNEL_SECONDS),
-				c.getCooldownSeconds());
+				c.getCooldownSeconds(), drainTp, c.getDrainPlayerCooldownSeconds(), drainImmunity);
 		MutableComponent outcome = Boolean.TRUE.equals(c.getExplodeKillsUser())
 				? Component.translatable("skill.dragonminez.racial_bioandroid.self_destruct.dies")
 				: Component.translatable("skill.dragonminez.racial_bioandroid.self_destruct.survives",
 						pct(BioAndroidEvolution.EXPLODE_SURVIVAL_HEALTH_RATIO), c.getExplodeKnockdownSeconds());
-		add(parts, "bioandroid", "self_destruct", c.getExplodeChargeSeconds(), c.getExplodeRadius(), pct(c.getExplodeDamageRatio()),
-				outcome, c.getExplodeCooldownSeconds());
+		// Zenkai (P5): o dano sai do golpe do Bio (explodeNpcPunchRatio e explodePlayerKiRatio), nao da vida dele
+		add(parts, "bioandroid", "self_destruct", c.getExplodeChargeSeconds(), c.getExplodeRadius(),
+				NumberFormattingUtil.formatUpToOneDecimal(c.getExplodeNpcPunchRatio()), outcome, c.getExplodeCooldownSeconds(),
+				NumberFormattingUtil.formatUpToOneDecimal(c.getExplodePlayerKiRatio()));
 		add(parts, "bioandroid", "cell_jr", BioAndroidEvolution.CELL_JR_CHARGE_SECONDS, pct(c.getCellJrStatRatio()), c.getCellJrMax(), pct(c.getCellJrOwnerPenalty()),
 				c.getCellJrChargeCooldownSeconds());
 	}
@@ -113,8 +126,12 @@ public final class RacialSkillParts {
 		MutableComponent targets = Component.translatable(Boolean.TRUE.equals(c.getAbsorptionOnMobs())
 				? "skill.dragonminez.racial_majin.absorption.mobs"
 				: "skill.dragonminez.racial_majin.absorption.players");
+		// Zenkai (P1): o teto pela base propria, no fim da lista de argumentos
+		MutableComponent ownCap = c.getAbsorptionMaxOwnBaseGain() > 0.0
+				? Component.translatable("skill.dragonminez.racial_majin.absorption.own_cap", pct(c.getAbsorptionMaxOwnBaseGain()))
+				: Component.empty();
 		add(parts, "majin", "absorption", targets, pct(c.getAbsorptionHealthRegen()), pct(c.getAbsorptionStatCopy()),
-				stats(c.getAbsorptionBoosts()), c.getAbsorptionAmount(), c.getAbsorptionCooldownSeconds(), c.getSlotEjectCooldownSeconds());
+				stats(c.getAbsorptionBoosts()), c.getAbsorptionAmount(), c.getAbsorptionCooldownSeconds(), c.getSlotEjectCooldownSeconds(), ownCap);
 		add(parts, "majin", "sweet_tooth", pct(c.getFoodHealBonus()));
 		add(parts, "majin", "healing_magic", pct(c.getKiHealDealtBonus()), pct(c.getKiHealReceivedBonus()),
 				pct(c.getHealTechniqueCostReduction()), pct(c.getHealTechniqueCooldownReduction()));

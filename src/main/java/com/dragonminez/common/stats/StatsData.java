@@ -35,6 +35,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.enchantment.Enchantments;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -717,8 +718,11 @@ public class StatsData {
 	}
 
 	public double getTotalMultiplier(String statName) {
-		double form = getFormMultiplier(statName);
-		double stack = getStackFormMultiplier(statName);
+		return totalMultiplierWith(statName, getFormMultiplier(statName), getStackFormMultiplier(statName));
+	}
+
+	// O getTotalMultiplier com a forma e a forma de stack dadas (os efeitos e os secundarios sao os de agora).
+	private double totalMultiplierWith(String statName, double form, double stack) {
 		double effect = getEffectsMultiplier(statName);
 		double secondary = statName.equalsIgnoreCase("DEF") ? 1.0 : secondaryStatEffects.getMultiplier(statName);
 
@@ -739,22 +743,18 @@ public class StatsData {
 		var formData = formConfig.getForm(currentForm);
 		if (formData == null) return 1.0;
 
-		double baseMult = switch (statName.toUpperCase()) {
-			case "STR" -> formData.getStrMultiplier();
-			case "SKP" -> formData.getSkpMultiplier();
-			case "STM" -> formData.getStmMultiplier();
-			case "DEF" -> formData.getDefMultiplier();
-			case "RES" -> (formData.getDefMultiplier() + formData.getStmMultiplier()) / 2.0;
-			case "VIT" -> formData.getVitMultiplier();
-			case "PWR" -> formData.getPwrMultiplier();
-			case "ENE" -> formData.getEneMultiplier();
-			default -> 1.0;
-		};
+		return formMultiplierOf(currentFormGroup, currentForm, formData, statName);
+	}
 
-		double mastery = character.getFormMasteries().getMastery(currentFormGroup, currentForm);
+	// O multiplicador de uma transformacao do jogador como se ela estivesse ativa (a mesma conta do getFormMultiplier:
+	// maestria dela, mutante e racial). Nao passa pelo getFormMultiplier, entao formas que um addon troca la (o ritual do
+	// ZenkaiExtra) entram aqui pelo json cru.
+	private double formMultiplierOf(String groupName, String formName, FormConfig.FormData formData, String statName) {
+		double baseMult = getBaseFormMultiplier(formData, statName);
+		double mastery = character.getFormMasteries().getMastery(groupName, formName);
 		double result = applyMasteryStatBonus(formData, baseMult, mastery);
-		result = applyMutantFormPowerModifier(currentFormGroup, result);
-		return applyRacialFormPowerModifier(currentFormGroup, result);
+		result = applyMutantFormPowerModifier(groupName, result);
+		return applyRacialFormPowerModifier(groupName, result);
 	}
 
 	private double applyRacialFormPowerModifier(String groupName, double multiplier) {
@@ -905,12 +905,20 @@ public class StatsData {
 		if (currentForm == null || currentForm.isEmpty()) return 1.0;
 		if (currentFormGroup == null || currentFormGroup.isEmpty()) return 1.0;
 
-		var formConfig = ConfigManager.getStackFormGroup(currentFormGroup);
+		return stackFormMultiplierOf(currentFormGroup, currentForm, statName, hasTransformationFormActive());
+	}
+
+	// A forma de stack dada como se estivesse ativa (a mesma conta do getStackFormMultiplier). withTransformation diz se
+	// ha uma transformacao junto com ela.
+	private double stackFormMultiplierOf(String groupName, String formName, String statName, boolean withTransformation) {
+		var formConfig = ConfigManager.getStackFormGroup(groupName);
 		if (formConfig == null) return 1.0;
 
-		var formData = formConfig.getForm(currentForm);
+		var formData = formConfig.getForm(formName);
 		if (formData == null) return 1.0;
-		if (StackForms.GROUP_ULTIMATE.equalsIgnoreCase(currentFormGroup) && !ConfigManager.getServerConfig().getGameplay().getUltimateFormFixedValue()) {
+
+		double result;
+		if (StackForms.GROUP_ULTIMATE.equalsIgnoreCase(groupName) && !ConfigManager.getServerConfig().getGameplay().getUltimateFormFixedValue()) {
 			Object[] bestResult = getBestUltimateBaseFormWithGroup();
 			String bestGroup = (String) bestResult[0];
 			FormConfig.FormData bestForm = (FormConfig.FormData) bestResult[1];
@@ -922,11 +930,107 @@ public class StatsData {
 			} else bestMult = 1.0;
 
 			double ultimateMult = getBaseFormMultiplier(formData, statName);
-			return bestMult + ultimateMult - 1.0;
+			result = bestMult + ultimateMult - 1.0;
+		} else {
+			double mastery = character.getStackFormMasteries().getMastery(groupName, formName);
+			result = getMasteryAdjustedMultiplier(formData, statName, mastery);
 		}
 
-		double mastery = character.getStackFormMasteries().getMastery(currentFormGroup, currentForm);
-		return getMasteryAdjustedMultiplier(formData, statName, mastery);
+		// Zenkai (P2 do pacote de passivas): o bonus racial de forma (a Reserva do Arcosiano) tambem vale na forma de
+		// stack do tipo Ultimate, que no ZENKAI e usada sozinha: antes a Reserva gastava ali e nao dava nada. Kaioken e as
+		// outras formas de stack ficam fora. Com uma transformacao junto, o bonus ja entra nela (getFormMultiplier) e nao
+		// conta duas vezes.
+		if (!withTransformation && isUltimateTypeStackGroup(groupName)) result = applyRacialFormPowerModifier(groupName, result);
+		return result;
+	}
+
+	// Forma de stack do tipo Ultimate: o grupo "ultimate" do DMZ ou qualquer grupo de stack com formType "ultimate".
+	public static boolean isUltimateTypeStackGroup(String groupName) {
+		if (groupName == null || groupName.isEmpty()) return false;
+		if (StackForms.GROUP_ULTIMATE.equalsIgnoreCase(groupName)) return true;
+		FormConfig group = ConfigManager.getStackFormGroup(groupName);
+		return group != null && StackForms.GROUP_ULTIMATE.equalsIgnoreCase(group.getFormType());
+	}
+
+	private boolean hasTransformationFormActive() {
+		String form = character.getActiveForm();
+		String group = character.getActiveFormGroup();
+		return form != null && !form.isEmpty() && !form.equals("base") && group != null && !group.isEmpty();
+	}
+
+	/**
+	 * Zenkai (P5 do pacote de passivas): o maior dano bruto, soco (STR) ou ki (PWR), que o jogador consegue tirar na forma
+	 * mais forte que ele consegue usar agora. Candidatas: a forma base, cada transformacao destravada (com a maestria dela),
+	 * cada forma de stack do tipo Ultimate destravada e as duas juntas quando o DMZ deixaria empilhar (as mesmas regras do
+	 * StackFormModeHandler). Kaioken e as outras formas de stack ficam fora. Usa a liberacao maxima que ele alcanca, os
+	 * bonus, efeitos e secundarios de agora; nao conta espada, arma de ki nem infusao. Base da Autodestruicao em NPC.
+	 */
+	public double getStrongestFormPeakDamage() {
+		double release = Math.max(0.0, getMaxPowerRelease() / 100.0);
+		double best = peakDamageWith(1.0, 1.0, 1.0, 1.0, release);
+
+		String race = character.getRaceName();
+		if (race == null || race.isEmpty()) return best;
+
+		List<String> ultimateGroups = new ArrayList<>();
+		List<FormConfig.FormData> ultimateForms = new ArrayList<>();
+		for (String stackGroup : ConfigManager.getAllStackForms().keySet()) {
+			if (!isUltimateTypeStackGroup(stackGroup)) continue;
+			for (FormConfig.FormData stackForm : TransformationsHelper.getUnlockedStackForms(this, stackGroup)) {
+				if (stackForm == null) continue;
+				ultimateGroups.add(stackGroup);
+				ultimateForms.add(stackForm);
+				best = Math.max(best, peakDamageWith(1.0, 1.0,
+						stackFormMultiplierOf(stackGroup, stackForm.getName(), "STR", false),
+						stackFormMultiplierOf(stackGroup, stackForm.getName(), "PWR", false), release));
+			}
+		}
+
+		for (String group : ConfigManager.getAllFormsForRace(race).keySet()) {
+			for (FormConfig.FormData form : TransformationsHelper.getUnlockedForms(this, race, group)) {
+				if (form == null) continue;
+				double formStr = formMultiplierOf(group, form.getName(), form, "STR");
+				double formPwr = formMultiplierOf(group, form.getName(), form, "PWR");
+				best = Math.max(best, peakDamageWith(formStr, formPwr, 1.0, 1.0, release));
+
+				for (int i = 0; i < ultimateForms.size(); i++) {
+					String stackGroup = ultimateGroups.get(i);
+					FormConfig.FormData stackForm = ultimateForms.get(i);
+					if (!canStackWith(group, form, stackGroup, stackForm)) continue;
+					best = Math.max(best, peakDamageWith(formStr, formPwr,
+							stackFormMultiplierOf(stackGroup, stackForm.getName(), "STR", true),
+							stackFormMultiplierOf(stackGroup, stackForm.getName(), "PWR", true), release));
+				}
+			}
+		}
+		return Double.isFinite(best) ? Math.max(0.0, best) : 0.0;
+	}
+
+	private boolean canStackWith(String formGroup, FormConfig.FormData form, String stackGroup, FormConfig.FormData stackForm) {
+		if (!Boolean.TRUE.equals(form.getFormStackable()) || !Boolean.TRUE.equals(stackForm.getFormStackable())) return false;
+		if (!TransformationsHelper.areFormsCompatible(form, formGroup, stackForm, stackGroup)) return false;
+		double formMastery = character.getFormMasteries().getMastery(formGroup, form.getName());
+		double stackMastery = character.getStackFormMasteries().getMastery(stackGroup, stackForm.getName());
+		return formMastery >= form.getStackOnMastery() && stackMastery >= stackForm.getStackOnMastery();
+	}
+
+	// O getMaxMeleeDamage e o getMaxKiDamage com a forma e a forma de stack dadas e a liberacao dada; devolve o maior.
+	private double peakDamageWith(double formStr, double formPwr, double stackStr, double stackPwr, double release) {
+		double strength = stats.getStrength();
+		double flatBonusStr = bonusStats.calculateBonus("STR", (int) Math.round(strength), false);
+		double multBonusStr = bonusStats.calculateBonus("STR", (int) Math.round(strength), true);
+		double strScaling = getStatScaling("STR");
+		double melee = getSecondaryAttributeValue(MainAttributes.MELEE_DAMAGE.get(), 1.0)
+				+ (((strength + multBonusStr) * strScaling * totalMultiplierWith("STR", formStr, stackStr)) + (flatBonusStr * strScaling)) * release;
+
+		double kiPower = stats.getKiPower();
+		double flatBonusPwr = bonusStats.calculateBonus("PWR", (int) Math.round(kiPower), false);
+		double multBonusPwr = bonusStats.calculateBonus("PWR", (int) Math.round(kiPower), true);
+		double pwrScaling = getStatScaling("PWR");
+		double ki = getSecondaryAttributeValue(MainAttributes.KI_DAMAGE.get(), 0.0)
+				+ (((kiPower + multBonusPwr) * pwrScaling * totalMultiplierWith("PWR", formPwr, stackPwr)) + (flatBonusPwr * pwrScaling)) * release;
+
+		return Math.max(melee, ki);
 	}
 
 	public double getEffectsMultiplier(String statName) {
@@ -1676,7 +1780,16 @@ public class StatsData {
 	}
 
 	public void tick() {
+		// Zenkai (P5 do pacote de passivas): este e o SEGUNDO desconto das recargas no tick (o primeiro e o do
+		// TickHandler). Enquanto o Bio se recupera da Autodestruicao, a queda (KNOCKDOWN_*) conta so uma vez por tick,
+		// como o BIO_EXPLODE_RECOVERY, que o ZenkaiExtra ja tira deste desconto: senao o Bio levanta na metade do tempo
+		// e fica o resto sem cura e de pe. A chamada ao cooldowns.tick() fica unica aqui (o ZenkaiExtra a redireciona).
+		boolean bioRecovering = cooldowns.hasCooldown(Cooldowns.BIO_EXPLODE_RECOVERY);
+		int knockdownTicks = bioRecovering ? cooldowns.getCooldown(Cooldowns.KNOCKDOWN_DURATION) : 0;
+		int knockdownInvulnTicks = bioRecovering ? cooldowns.getCooldown(Cooldowns.KNOCKDOWN_INVULN) : 0;
 		cooldowns.tick();
+		if (knockdownTicks > 0) cooldowns.setCooldown(Cooldowns.KNOCKDOWN_DURATION, knockdownTicks);
+		if (knockdownInvulnTicks > 0) cooldowns.setCooldown(Cooldowns.KNOCKDOWN_INVULN, knockdownInvulnTicks);
 	}
 
 	public CompoundTag save() {

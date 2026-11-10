@@ -25,6 +25,9 @@ public class RacialData {
 	private double zenkaiReleaseBonus;
 	private float peakRawHitWindow;
 	private int peakRawHitTicksLeft;
+	// Zenkai (P10 do pacote de passivas): ultima versao do reset unico dos Zenkais que este jogador ja levou
+	// (saiyan.zenkaiResetVersion). Vai junto com a ficha pro banco: relogar ou trocar de backend nao repete o reset.
+	private int zenkaiResetVersion;
 
 	private String tempZenkaiBuffName = "";
 
@@ -85,6 +88,7 @@ public class RacialData {
 		tag.putDouble("ZenkaiReleaseBonus", zenkaiReleaseBonus);
 		tag.putFloat("PeakRawHitWindow", peakRawHitWindow);
 		tag.putInt("PeakRawHitTicksLeft", peakRawHitTicksLeft);
+		if (zenkaiResetVersion > 0) tag.putInt("ZenkaiResetVersion", zenkaiResetVersion);
 		tag.putString("TempZenkaiBuffName", tempZenkaiBuffName);
 		tag.put("Assimilations", saveSlots(assimilations));
 		tag.put("Absorptions", saveSlots(absorptions));
@@ -111,6 +115,7 @@ public class RacialData {
 		zenkaiReleaseBonus = tag.getDouble("ZenkaiReleaseBonus");
 		peakRawHitWindow = tag.getFloat("PeakRawHitWindow");
 		peakRawHitTicksLeft = tag.getInt("PeakRawHitTicksLeft");
+		zenkaiResetVersion = tag.getInt("ZenkaiResetVersion");
 		tempZenkaiBuffName = tag.getString("TempZenkaiBuffName");
 		assimilations.clear();
 		assimilations.addAll(loadSlots(tag.getList("Assimilations", Tag.TAG_COMPOUND), AssimilationSlot::fromNbt));
@@ -224,6 +229,7 @@ public class RacialData {
 		this.zenkaiReleaseBonus = other.zenkaiReleaseBonus;
 		this.peakRawHitWindow = other.peakRawHitWindow;
 		this.peakRawHitTicksLeft = other.peakRawHitTicksLeft;
+		this.zenkaiResetVersion = other.zenkaiResetVersion;
 		this.tempZenkaiBuffName = other.tempZenkaiBuffName;
 		this.assimilations.clear();
 		this.assimilations.addAll(other.assimilations);

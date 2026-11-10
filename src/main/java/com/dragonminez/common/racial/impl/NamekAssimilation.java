@@ -33,6 +33,7 @@ import java.util.Map;
 import java.util.UUID;
 
 public class NamekAssimilation implements RacialAbility {
+	private static final String ASSIMILATION_BONUS_PREFIX = "Assimilation_";
 
 	@Override
 	public String id() {
@@ -200,16 +201,23 @@ public class NamekAssimilation implements RacialAbility {
 
 	private static void grantAssimilation(ServerPlayer player, StatsData data, UUID sourceId, String sourceName, double boostMult) {
 		GeneralServerConfig.NamekianRacialConfig config = ConfigManager.getServerConfig().getRacialSkills().getNamekian();
-		int maxBonus = ConfigManager.getServerConfig().getGameplay().getMaxValue();
 		int slotIndex = data.getRacialData().getAssimilations().size() + 1;
-		String bonusName = "Assimilation_" + slotIndex;
+		String bonusName = ASSIMILATION_BONUS_PREFIX + slotIndex;
+
+		// Zenkai (P4 do pacote de passivas): bonus em %, recalculado pela base atual (RacialStatUtil.addPercentBonus), no
+		// lugar dos pontos fixos da hora do ganho. As assimilacoes antigas, em pontos, ficam como estao.
+		// Zenkai (P3): a VIT tem a porcentagem propria (assimilationVitBoost); o assimilationBoosts segue com os outros
+		// stats. Numa assimilacao virtual com outro multiplicador, a VIT acompanha a mesma proporcao.
+		double statBoost = config.getAssimilationStatBoost();
+		double vitBoost = config.getAssimilationVitBoost() * (statBoost > 0.0 ? boostMult / statBoost : 1.0);
 
 		Map<String, Integer> grantedStats = new HashMap<>();
 		for (String statKey : config.getAssimilationBoosts()) {
-			int currentStat = RacialStatUtil.getStat(data, statKey);
-			int bonus = (int) Math.max(1, Math.min(maxBonus, currentStat * boostMult));
-			data.getBonusStats().addBonusSplit(statKey, bonusName, "+", bonus, true);
-			grantedStats.put(statKey, bonus);
+			if ("VIT".equalsIgnoreCase(statKey) || boostMult <= 0.0) continue;
+			grantedStats.put(statKey, RacialStatUtil.addPercentBonus(data, statKey, bonusName, ASSIMILATION_BONUS_PREFIX, boostMult));
+		}
+		if (vitBoost > 0.0) {
+			grantedStats.put("VIT", RacialStatUtil.addPercentBonus(data, "VIT", bonusName, ASSIMILATION_BONUS_PREFIX, vitBoost));
 		}
 		data.getRacialData().addOwnedBonusName(bonusName);
 		data.getRacialData().addAssimilation(new RacialData.AssimilationSlot(

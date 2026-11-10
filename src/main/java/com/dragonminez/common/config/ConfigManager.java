@@ -1264,7 +1264,8 @@ public class ConfigManager {
 
 	// Zenkai: a v2.2 so roda o RacialConfigMigrator quando regenera o general-server (versao nova do config), e o fork nao
 	// sobe a versao (regeneraria tudo). Aqui o arquivo da 2.1, com as chaves raciais planas, vira as secoes por raca da
-	// v2.2 com os mesmos valores; o original fica no oldBackup.
+	// v2.2 com os mesmos valores; o original fica no oldBackup. Zenkai (pacote de passivas): o gatilho e ter alguma chave
+	// plana, e nao faltar a secao saiyan; uma secao escrita a mao num arquivo da 2.1 nao derruba mais a migracao das outras.
 	private static void migrateLegacyRacialSkills(Path path) {
 		if (!Files.exists(path)) return;
 		try {
@@ -1272,7 +1273,7 @@ public class ConfigManager {
 			if (raw == null || !raw.isJsonObject()) return;
 			JsonObject root = raw.getAsJsonObject();
 			if (!root.has("racialSkills") || !root.get("racialSkills").isJsonObject()) return;
-			if (root.getAsJsonObject("racialSkills").has("saiyan")) return;
+			if (!com.dragonminez.common.config.migration.RacialConfigMigrator.hasLegacyKeys(root.getAsJsonObject("racialSkills"))) return;
 			com.dragonminez.common.config.migration.RacialConfigMigrator.migrate(root);
 			backupOldConfig(path);
 			Files.writeString(path, GSON.toJson(root), StandardCharsets.UTF_8);

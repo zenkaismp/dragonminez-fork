@@ -497,9 +497,16 @@ public class GeneralServerConfig {
 		private Double releaseBonusPerZenkai = 0.05;
 		private Double releaseBonusCap = 0.15;
 		private String[] buffStats = {"STR", "SKP", "PWR"};
+		// Zenkai (P10 do pacote de passivas): reset unico dos Zenkais antigos. 0 = desligado (ninguem e resetado e
+		// nenhuma marca e gravada). Subir pra 1 reseta cada Saiyajin uma vez, no proximo login ou carga dos dados.
+		private Integer zenkaiResetVersion = 0;
 
 		public Integer getMinLevel() {
 			return Math.max(0, Math.min(minLevel != null ? minLevel : 100, Integer.MAX_VALUE));
+		}
+
+		public Integer getZenkaiResetVersion() {
+			return zenkaiResetVersion != null ? Math.max(0, zenkaiResetVersion) : 0;
 		}
 
 		public Integer getCooldownSeconds() {
@@ -520,6 +527,9 @@ public class GeneralServerConfig {
 		private Double assimilationHealthRegen = 0.35;
 		private Double assimilationStatBoost = 0.075;
 		private String[] assimilationBoosts = {"STR", "SKP", "PWR"};
+		// Zenkai (P3 do pacote de passivas): porcentagem propria da VIT por assimilacao (0 = sem VIT). A VIT sai desta
+		// chave mesmo que alguem a ponha no assimilationBoosts.
+		private Double assimilationVitBoost = 0.03;
 		private Boolean assimilationOnNamekNpcs = true;
 		private Integer assimilationRequestTimeoutSeconds = 30;
 		private Integer regenChannelSeconds = 3;
@@ -541,6 +551,11 @@ public class GeneralServerConfig {
 		public Double getAssimilationStatBoost() {
 			return Math.max(0, Math.min(assimilationStatBoost, Double.MAX_VALUE));
 		}
+
+		public Double getAssimilationVitBoost() {
+			double value = assimilationVitBoost != null && Double.isFinite(assimilationVitBoost) ? assimilationVitBoost : 0.03;
+			return Math.max(0.0, value);
+		}
 	}
 
 	@Getter
@@ -551,6 +566,9 @@ public class GeneralServerConfig {
 		private Integer absorptionCooldownSeconds = 600;
 		private Double absorptionHealthRegen = 0.30;
 		private Double absorptionStatCopy = 0.04;
+		// Zenkai (P1 do pacote de passivas): teto do ganho por absorcao em fracao da base PROPRIA do Majin, por stat.
+		// ganho = min(absorptionStatCopy x fonte, absorptionMaxOwnBaseGain x base propria). 0 ou menos = sem esse teto.
+		private Double absorptionMaxOwnBaseGain = 0.04;
 		private String[] absorptionBoosts = {"STR", "SKP", "PWR"};
 		private Boolean absorptionOnMobs = true;
 		private Integer slotEjectCooldownSeconds = 300;
@@ -570,6 +588,10 @@ public class GeneralServerConfig {
 
 		public Double getAbsorptionStatCopy() {
 			return Math.max(0, Math.min(absorptionStatCopy, Double.MAX_VALUE));
+		}
+
+		public Double getAbsorptionMaxOwnBaseGain() {
+			return absorptionMaxOwnBaseGain != null && Double.isFinite(absorptionMaxOwnBaseGain) ? absorptionMaxOwnBaseGain : 0.04;
 		}
 	}
 
@@ -684,11 +706,23 @@ public class GeneralServerConfig {
 	public static class BioAndroidRacialConfig {
 		private Boolean enabled = true;
 		private Integer cooldownSeconds = 180;
+		// Zenkai (P9 do pacote de passivas): recarga do Dreno quando o alvo e jogador ou NPC com a marca de recarga longa
+		// (BioAndroidEvolution.LONG_DRAIN_COOLDOWN_TAG, ou o boss do /bosses do ZenkaiExtra); o resto usa o cooldownSeconds.
+		private Integer drainPlayerCooldownSeconds = 180;
+		// Zenkai (P9): depois de um Dreno, o MESMO alvo (jogador ou NPC) nao pode ser drenado de novo, por nenhum Bio,
+		// por este tempo, contado do inicio do Dreno. 0 = sem imunidade.
+		private Integer drainTargetImmunitySeconds = 30;
 		private Double drainRatio = 0.25;
 		private Double drainTpRatio = 0.50;
 		private Integer explodeChargeSeconds = 5;
 		private Integer explodeRevertSeconds = 4;
+		// Zenkai (P5): sem uso desde o P5. No jar antigo multiplicava a vida maxima do Bio; NAO reaproveitar.
 		private Double explodeDamageRatio = 5.0;
+		// Zenkai (P5): dano da Autodestruicao em NPC = isto x o maior dano (soco ou ki) do Bio na forma mais forte
+		// que ele consegue usar, x a queda pela distancia.
+		private Double explodeNpcPunchRatio = 30.0;
+		// Zenkai (P5): dano em jogador = isto x o dano de ki atual (getKiDamage, forma atual), x a queda pela distancia.
+		private Double explodePlayerKiRatio = 6.0;
 		private Integer explodeRadius = 36;
 		private Boolean explodeKillsUser = false;
 		private Integer explodeKnockdownSeconds = 30;
@@ -706,6 +740,24 @@ public class GeneralServerConfig {
 
 		public Double getDrainRatio() {
 			return Math.max(0, Math.min(drainRatio, Double.MAX_VALUE));
+		}
+
+		public Integer getDrainPlayerCooldownSeconds() {
+			return drainPlayerCooldownSeconds != null ? Math.max(0, drainPlayerCooldownSeconds) : 180;
+		}
+
+		public Integer getDrainTargetImmunitySeconds() {
+			return drainTargetImmunitySeconds != null ? Math.max(0, drainTargetImmunitySeconds) : 30;
+		}
+
+		public Double getExplodeNpcPunchRatio() {
+			double value = explodeNpcPunchRatio != null && Double.isFinite(explodeNpcPunchRatio) ? explodeNpcPunchRatio : 30.0;
+			return Math.max(0.0, value);
+		}
+
+		public Double getExplodePlayerKiRatio() {
+			double value = explodePlayerKiRatio != null && Double.isFinite(explodePlayerKiRatio) ? explodePlayerKiRatio : 6.0;
+			return Math.max(0.0, value);
 		}
 	}
 

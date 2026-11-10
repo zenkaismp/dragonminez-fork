@@ -119,6 +119,11 @@ public class StatsCapability {
 				}
 				data.getSkills().setSkillActive("kisense", false);
 				com.dragonminez.common.racial.RacialRegistry.forPlayer(data).ifPresent(ability -> ability.onLogin(new com.dragonminez.common.racial.RacialContext(serverPlayer, data)));
+				// Zenkai (P10 do pacote de passivas): reset unico dos Zenkais. Com storage externo o dado daqui ainda e o do
+				// .dat; o reset roda quando o load pousar (ZenkaiResetHook, PlayerDataAppliedEvent), uma vez so.
+				if (!StorageManager.isLoadPending(serverPlayer.getUUID())) {
+					com.dragonminez.common.racial.RacialReset.applyZenkaiResetIfDue(serverPlayer, data);
+				}
 				// Storage externo (MySQL/JSON) responde numa task, nao aqui. Ate ela voltar, este sync
 				// levaria os DEFAULTS pro cliente — que marcaria "dados carregados", veria
 				// hasCreatedCharacter=false e abriria a criacao de personagem por cima de um personagem

@@ -11,6 +11,7 @@ import com.dragonminez.common.racial.LethalContext;
 import com.dragonminez.common.racial.RacialAbility;
 import com.dragonminez.common.racial.RacialContext;
 import com.dragonminez.common.racial.RacialData;
+import com.dragonminez.common.racial.RacialReset;
 import com.dragonminez.common.racial.RacialStatUtil;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.character.Cooldowns;
@@ -127,10 +128,10 @@ public class SaiyanZenkai implements RacialAbility {
 				? "Zenkai_" + (racialData.getZenkaiPermanentUses() + 1)
 				: "Zenkai_Temp_" + gameTime;
 
+		// Zenkai (P4 do pacote de passivas): o bonus e guardado em % e recalculado pela base atual (RacialStatUtil.addPercentBonus),
+		// em vez dos pontos fixos da hora do ganho. Os Zenkais antigos, em pontos, ficam como estao ate o reset do P10.
 		for (String stat : config.getBuffStats()) {
-			int currentStat = RacialStatUtil.getStat(data, stat);
-			int bonus = (int) Math.max(1, currentStat * buffPct);
-			data.getBonusStats().addBonusSplit(stat, bonusName, "+", bonus, true);
+			RacialStatUtil.addPercentBonus(data, stat, bonusName, RacialReset.ZENKAI_BONUS_PREFIX, buffPct);
 		}
 		racialData.addOwnedBonusName(bonusName);
 

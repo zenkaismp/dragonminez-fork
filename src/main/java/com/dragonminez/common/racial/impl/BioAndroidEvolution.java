@@ -17,6 +17,8 @@ import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.network.S2C.TriggerAnimationS2C;
 import com.dragonminez.common.quest.PartyManager;
+import com.dragonminez.common.quest.QuestMobGuard;
+import com.dragonminez.common.quest.QuestService;
 import com.dragonminez.common.racial.RacialAbility;
 import com.dragonminez.common.racial.RacialContext;
 import com.dragonminez.common.racial.RacialData;
@@ -29,6 +31,7 @@ import com.dragonminez.common.stats.character.Cooldowns;
 import com.dragonminez.common.stats.extras.ActionMode;
 import com.dragonminez.server.dynamicgrowth.DynamicGrowthService;
 import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -45,7 +48,9 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public class BioAndroidEvolution implements RacialAbility {
@@ -61,6 +66,14 @@ public class BioAndroidEvolution implements RacialAbility {
 	private static final int BLAST_COLOR_OUTLINE = 0xFFFFFF;
 	public static final float CHANNEL_SECONDS = 5.0f;
 	private static final float DRAIN_RANGE = 6.0f;
+	// Zenkai (P9): marca de NPC com a recarga longa do Dreno (tag de scoreboard, ou boolean no persistentData).
+	public static final String LONG_DRAIN_COOLDOWN_TAG = "dmz_long_drain_cooldown";
+	// Zenkai (P9): a String que o BossManager do ZenkaiExtra grava no persistentData do boss do /bosses (TAG_BOSS).
+	public static final String ZENKAI_BOSS_TAG = "zenkai_boss";
+	// Zenkai (P9): ate que tick do servidor cada alvo esta imune ao Dreno. Em memoria (o reinicio limpa, e 30 s nao
+	// precisam sobreviver a ele) e so na thread do servidor.
+	private static final Map<UUID, Long> DRAIN_IMMUNE_UNTIL_TICK = new HashMap<>();
+	private static final int DRAIN_IMMUNE_PURGE_SIZE = 256;
 
 	@Override
 	public String id() {
@@ -127,16 +140,59 @@ public class BioAndroidEvolution implements RacialAbility {
 			return true;
 		}
 
+		// Zenkai (P9 do pacote de passivas): o alvo drenado ha pouco, por qualquer Bio, ainda esta imune.
+		GeneralServerConfig.BioAndroidRacialConfig bioConfig = config.getBioandroid();
+		int immuneSecondsLeft = drainImmunitySecondsLeft(player, target, bioConfig.getDrainTargetImmunitySeconds());
+		if (immuneSecondsLeft > 0) {
+			player.displayClientMessage(Component.translatable("message.dragonminez.racial.bioandroid.drain_immune", immuneSecondsLeft), true);
+			return true;
+		}
+
+		// Zenkai (P9): recarga longa contra jogador e NPC marcado (o boss do /bosses); o resto usa o cooldownSeconds.
+		int cooldownSeconds = usesLongDrainCooldown(target) ? bioConfig.getDrainPlayerCooldownSeconds() : config.getBioAndroidCooldownSeconds();
+
 		teleportBehindTarget(player, target);
 		target.addEffect(new MobEffectInstance(MainEffects.STUN.get(), STUN_DURATION_TICKS, 0, false, false, true));
 		player.addEffect(new MobEffectInstance(MainEffects.STUN.get(), STUN_DURATION_TICKS, 0, false, false, true));
 		data.getStatus().setDrainingTargetId(target.getId());
 		data.getCooldowns().addCooldown(Cooldowns.DRAIN_ACTIVE, STUN_DURATION_TICKS);
-		data.getCooldowns().addCooldown(Cooldowns.DRAIN, config.getBioAndroidCooldownSeconds() * 20);
-		player.addEffect(new MobEffectInstance(MainEffects.BIOANDROID_PASSIVE.get(), config.getBioAndroidCooldownSeconds() * 20, 0, false, false, true));
+		data.getCooldowns().addCooldown(Cooldowns.DRAIN, cooldownSeconds * 20);
+		player.addEffect(new MobEffectInstance(MainEffects.BIOANDROID_PASSIVE.get(), cooldownSeconds * 20, 0, false, false, true));
+		markDrainImmune(player, target, bioConfig.getDrainTargetImmunitySeconds());
 		player.playSound(MainSounds.TP_SHORT.get());
 		target.playSound(MainSounds.TP_SHORT.get());
 		return true;
+	}
+
+	/**
+	 * Zenkai (P9): o Dreno usa a recarga longa (drainPlayerCooldownSeconds) quando o alvo e jogador ou NPC com a marca
+	 * {@link #LONG_DRAIN_COOLDOWN_TAG} (tag de scoreboard, ou boolean no persistentData). O boss do /bosses do ZenkaiExtra
+	 * ja sai marcado pelo BossManager com a String {@link #ZENKAI_BOSS_TAG} no persistentData, e ela tambem conta.
+	 */
+	public static boolean usesLongDrainCooldown(LivingEntity target) {
+		if (target instanceof Player) return true;
+		if (target.getTags().contains(LONG_DRAIN_COOLDOWN_TAG)) return true;
+		CompoundTag persistent = target.getPersistentData();
+		return persistent.getBoolean(LONG_DRAIN_COOLDOWN_TAG) || persistent.contains(ZENKAI_BOSS_TAG);
+	}
+
+	private static int drainImmunitySecondsLeft(ServerPlayer player, LivingEntity target, int immunitySeconds) {
+		Long until = DRAIN_IMMUNE_UNTIL_TICK.get(target.getUUID());
+		if (until == null) return 0;
+		long ticksLeft = until - player.getServer().getTickCount();
+		// Mais que a imunidade inteira = marca de outro relogio (mundo recarregado no single player, chave baixada): some.
+		if (ticksLeft <= 0 || ticksLeft > immunitySeconds * 20L) {
+			DRAIN_IMMUNE_UNTIL_TICK.remove(target.getUUID());
+			return 0;
+		}
+		return (int) ((ticksLeft + 19) / 20);
+	}
+
+	private static void markDrainImmune(ServerPlayer player, LivingEntity target, int seconds) {
+		if (seconds <= 0) return;
+		long now = player.getServer().getTickCount();
+		if (DRAIN_IMMUNE_UNTIL_TICK.size() > DRAIN_IMMUNE_PURGE_SIZE) DRAIN_IMMUNE_UNTIL_TICK.values().removeIf(until -> until <= now);
+		DRAIN_IMMUNE_UNTIL_TICK.put(target.getUUID(), now + seconds * 20L);
 	}
 
 	@Override
@@ -400,6 +456,13 @@ public class BioAndroidEvolution implements RacialAbility {
 		level.playSound(null, center.x, center.y, center.z, MainSounds.KI_EXPLOSION_IMPACT.get(),
 				SoundSource.PLAYERS, 5.0F, 0.6F);
 
+		// Zenkai (P5 do pacote de passivas): o dano sai do golpe do Bio, nao da vida dele (a forma multiplica o dano e nao a
+		// vida, e a explosao enfraquecia conforme o jogo avancava). Em NPC: explodeNpcPunchRatio x o maior dano (soco ou ki)
+		// na forma mais forte que ele consegue usar. Em jogador: explodePlayerKiRatio x o getKiDamage da forma atual, que deixa
+		// o peso da razao de poder do PvP exato. Os dois caem com a distancia. O explodeDamageRatio ficou sem uso.
+		double npcDamage = config.getExplodeNpcPunchRatio() * data.getStrongestFormPeakDamage();
+		double playerDamage = config.getExplodePlayerKiRatio() * data.getKiDamage();
+
 		boolean partyPvpEnabled = PartyManager.isPartyPvpEnabled(player);
 		List<LivingEntity> victims = level.getEntitiesOfClass(LivingEntity.class,
 				player.getBoundingBox().inflate(radius),
@@ -408,13 +471,17 @@ public class BioAndroidEvolution implements RacialAbility {
 		for (LivingEntity victim : new ArrayList<>(victims)) {
 			if (victim == player) continue;
 			if (victim instanceof Player victimPlayer && PartyManager.areInSameParty(player, victimPlayer) && !partyPvpEnabled) continue; // Zenkai: a v2.2 tambem deixa passar o rival do torneio do DMZ, que o fork nao tem
+			// Zenkai (P5): NPC de missao de outro jogador fica fora, salvo quem pode bater nele (o dono e o elenco da party
+			// dele, pela mesma regra do QuestMobGuard). Sem isto um Bio de fim de jogo limpava a saga dos outros em 36 blocos.
+			if (!(victim instanceof Player) && victim.getPersistentData().contains(QuestService.QUEST_KEY_TAG)
+					&& QuestMobGuard.isBlocked(victim, player)) continue;
 
 			double distance = victim.distanceTo(player);
 			double falloff = Math.max(0.0, 1.0 - (distance / radius));
-			double damage = player.getMaxHealth() * config.getExplodeDamageRatio() * falloff;
-			if (damage <= 0) continue;
+			double damage = (victim instanceof Player ? playerDamage : npcDamage) * falloff;
+			if (!(damage > 0) || !Double.isFinite(damage)) continue;
 
-			victim.hurt(MainDamageTypes.kiblast(level, player, player), (float) damage);
+			victim.hurt(MainDamageTypes.kiblast(level, player, player), (float) Math.min(damage, Float.MAX_VALUE));
 		}
 
 		data.getRacialData().setBioBlastCenter(center);

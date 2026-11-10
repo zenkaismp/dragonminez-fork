@@ -79,8 +79,11 @@ public class FrostDemonReserve implements RacialAbility {
 		return racialData.isReserveActive() && racialData.getEnergyReserve() > 0;
 	}
 
+	// Zenkai (P2 do pacote de passivas): gasta na liberacao MAXIMA que o jogador alcanca, e nao em 100% cravado (no BR o
+	// maximo e 95% e a Reserva nunca gastava). O bonus da forma tambem vale na forma de stack do tipo Ultimate
+	// (StatsData.getStackFormMultiplier); Kaioken fora.
 	private static boolean isConsumptionState(StatsData data, GeneralServerConfig.FrostDemonRacialConfig config) {
-		return hasActiveForm(data) && data.getResources().getPowerRelease() >= 100;
+		return hasActiveForm(data) && data.getResources().getPowerRelease() >= data.getMaxPowerRelease();
 	}
 
 	private static boolean isChargeableForm(StatsData data, GeneralServerConfig.FrostDemonRacialConfig config) {

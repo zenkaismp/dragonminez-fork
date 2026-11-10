@@ -120,6 +120,8 @@ public class MajinAbsorption implements RacialAbility {
 	private static void applyAbsorption(ServerPlayer player, StatsData data, LivingEntity target) {
 		GeneralServerConfig.MajinRacialConfig config = ConfigManager.getServerConfig().getRacialSkills().getMajin();
 		double ratio = config.getAbsorptionStatCopy();
+		// Zenkai (P1 do pacote de passivas): ganho = min(copia x fonte, absorptionMaxOwnBaseGain x a base propria do Majin)
+		double maxOwnBaseGain = config.getAbsorptionMaxOwnBaseGain();
 		int absorptionCap = data.getConfiguredMaxTotalStats();
 		int slotIndex = data.getRacialData().getAbsorptionSlotCounter() + 1;
 		String bonusName = "Absorption_" + slotIndex;
@@ -128,14 +130,16 @@ public class MajinAbsorption implements RacialAbility {
 		if (target instanceof ServerPlayer targetPlayer) {
 			StatsProvider.get(StatsCapability.INSTANCE, targetPlayer).ifPresent(targetData -> {
 				for (String stat : config.getAbsorptionBoosts()) {
-					int bonus = RacialCapture.cappedAbsorptionBonus(RacialStatUtil.getStat(targetData, stat), ratio, absorptionCap);
+					int bonus = RacialCapture.cappedAbsorptionBonus(RacialStatUtil.getStat(targetData, stat), ratio, absorptionCap,
+							RacialStatUtil.getStat(data, stat), maxOwnBaseGain);
 					data.getBonusStats().addBonusSplit(stat, bonusName, "+", bonus, true);
 					grantedStats.put(stat, bonus);
 				}
 			});
 		} else if (target instanceof Mob) {
-			int bonus = RacialCapture.cappedAbsorptionBonus(target.getMaxHealth(), ratio, absorptionCap);
 			for (String stat : config.getAbsorptionBoosts()) {
+				int bonus = RacialCapture.cappedAbsorptionBonus(target.getMaxHealth(), ratio, absorptionCap,
+						RacialStatUtil.getStat(data, stat), maxOwnBaseGain);
 				data.getBonusStats().addBonusSplit(stat, bonusName, "+", bonus, true);
 				grantedStats.put(stat, bonus);
 			}
@@ -154,9 +158,11 @@ public class MajinAbsorption implements RacialAbility {
 		GeneralServerConfig.MajinRacialConfig config = ConfigManager.getServerConfig().getRacialSkills().getMajin();
 		int slotIndex = data.getRacialData().getAbsorptionSlotCounter() + 1;
 		String bonusName = "Absorption_" + slotIndex;
-		int bonus = RacialCapture.cappedAbsorptionBonus(sourceMaxHealth, ratio, data.getConfiguredMaxTotalStats());
 		Map<String, Integer> grantedStats = new HashMap<>();
 		for (String stat : config.getAbsorptionBoosts()) {
+			// Zenkai (P1): o mesmo teto da base propria da absorcao normal
+			int bonus = RacialCapture.cappedAbsorptionBonus(sourceMaxHealth, ratio, data.getConfiguredMaxTotalStats(),
+					RacialStatUtil.getStat(data, stat), config.getAbsorptionMaxOwnBaseGain());
 			data.getBonusStats().addBonusSplit(stat, bonusName, "+", bonus, true);
 			grantedStats.put(stat, bonus);
 		}
