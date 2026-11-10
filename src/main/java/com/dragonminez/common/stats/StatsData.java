@@ -975,15 +975,16 @@ public class StatsData {
 	 * mais forte que ele consegue usar agora. Candidatas: a forma base, cada transformacao destravada (com a maestria dela),
 	 * cada forma de stack do tipo Ultimate destravada e as duas juntas quando o DMZ deixaria empilhar (as mesmas regras do
 	 * StackFormModeHandler). Kaioken e as outras formas de stack ficam fora. Usa a liberacao maxima que ele alcanca, os
-	 * bonus, efeitos e secundarios de agora. O soco soma a arma que esta na mao na hora, do mesmo jeito que um soco de
-	 * verdade ({@link #getHeldWeaponMeleeBonus}, Parte 4 do docs/94); o ki fica como estava, e arma de ki e infusao ficam
-	 * fora. No fim o resultado sai vezes o {@link #strongestFormFactor} do ZenkaiExtra, nunca menos que 1x (Parte 5 do
-	 * docs/94). Base da Autodestruicao em NPC.
+	 * bonus, efeitos e secundarios de agora. O soco soma o que um soco de verdade soma no CombatEvent: a MAIOR entre a arma
+	 * da mao ({@link #getHeldWeaponMeleeBonus}, Parte 4 do docs/94) e a arma de ki ativa, mais a infusao de ki, as duas com
+	 * os numeros daquela forma (Parte 4 do docs/95, ver {@link PunchExtras}); o ki fica como estava. No fim o resultado sai
+	 * vezes o {@link #strongestFormFactor} do ZenkaiExtra, nunca menos que 1x (Parte 5 do docs/94). Base da Autodestruicao
+	 * em NPC.
 	 */
 	public double getStrongestFormPeakDamage() {
 		double release = Math.max(0.0, getMaxPowerRelease() / 100.0);
-		double weapon = getHeldWeaponMeleeBonus();
-		double best = peakDamageWith(1.0, 1.0, 1.0, 1.0, release, weapon);
+		PunchExtras extras = punchExtras();
+		double best = peakDamageWith(1.0, 1.0, 1.0, 1.0, 1.0, 1.0, release, extras);
 
 		String race = character.getRaceName();
 		if (race == null || race.isEmpty()) return withStrongestFormFactor(best);
@@ -996,9 +997,11 @@ public class StatsData {
 				if (stackForm == null) continue;
 				ultimateGroups.add(stackGroup);
 				ultimateForms.add(stackForm);
-				best = Math.max(best, peakDamageWith(1.0, 1.0,
-						stackFormMultiplierOf(stackGroup, stackForm.getName(), "STR", false),
-						stackFormMultiplierOf(stackGroup, stackForm.getName(), "PWR", false), release, weapon));
+				String stackName = stackForm.getName();
+				best = Math.max(best, peakDamageWith(1.0, 1.0, 1.0,
+						stackFormMultiplierOf(stackGroup, stackName, "STR", false),
+						stackFormMultiplierOf(stackGroup, stackName, "PWR", false),
+						extras.infusionOn() ? stackFormMultiplierOf(stackGroup, stackName, "ENE", false) : 1.0, release, extras));
 			}
 		}
 
@@ -1007,19 +1010,76 @@ public class StatsData {
 				if (form == null) continue;
 				double formStr = formMultiplierOf(group, form.getName(), form, "STR");
 				double formPwr = formMultiplierOf(group, form.getName(), form, "PWR");
-				best = Math.max(best, peakDamageWith(formStr, formPwr, 1.0, 1.0, release, weapon));
+				double formEne = extras.infusionOn() ? formMultiplierOf(group, form.getName(), form, "ENE") : 1.0;
+				best = Math.max(best, peakDamageWith(formStr, formPwr, formEne, 1.0, 1.0, 1.0, release, extras));
 
 				for (int i = 0; i < ultimateForms.size(); i++) {
 					String stackGroup = ultimateGroups.get(i);
 					FormConfig.FormData stackForm = ultimateForms.get(i);
 					if (!canStackWith(group, form, stackGroup, stackForm)) continue;
-					best = Math.max(best, peakDamageWith(formStr, formPwr,
-							stackFormMultiplierOf(stackGroup, stackForm.getName(), "STR", true),
-							stackFormMultiplierOf(stackGroup, stackForm.getName(), "PWR", true), release, weapon));
+					String stackName = stackForm.getName();
+					best = Math.max(best, peakDamageWith(formStr, formPwr, formEne,
+							stackFormMultiplierOf(stackGroup, stackName, "STR", true),
+							stackFormMultiplierOf(stackGroup, stackName, "PWR", true),
+							extras.infusionOn() ? stackFormMultiplierOf(stackGroup, stackName, "ENE", true) : 1.0, release, extras));
 				}
 			}
 		}
 		return withStrongestFormFactor(best);
+	}
+
+	/**
+	 * Zenkai (Parte 4 do docs/95): o que o soco de verdade (CombatEvent) soma alem do STR, lido uma vez por explosao.
+	 * <ul>
+	 *   <li>Arma: a MAIOR entre a da mao ({@link #getHeldWeaponMeleeBonus}) e a arma de ki, que so sai com a kimanipulation
+	 *   ligada e a mao principal vazia (por isso as duas nunca somam), na conta do CombatEvent: baseDamage + o ki da forma
+	 *   (com a liberacao) x kiScalingDamage x nivel x 0,1.</li>
+	 *   <li>Infusao (ki_infusion ligada, nivel acima de 0): o ki maximo da forma x kiInfusionDamagePerLevel x nivel.</li>
+	 * </ul>
+	 * Sem a checagem de ki do golpe: a explosao nao gasta ki da arma nem da infusao, e o pico ja e o da forma mais forte na
+	 * liberacao maxima. Arma de ki e infusao desligadas deixam o soco exatamente como na 2.1.3.3.
+	 */
+	private record PunchExtras(double heldWeapon, CombatConfig.KiWeaponConfig kiWeapon, float kiWeaponMult,
+							   int infusionLevel, double infusionPerLevel) {
+		boolean infusionOn() {
+			return infusionLevel > 0;
+		}
+
+		// A arma do soco na forma cujo ki (com a liberacao) e formKiDamage.
+		double weapon(double formKiDamage) {
+			if (kiWeapon == null) return heldWeapon;
+			double kiWeaponBonus = kiWeapon.getBaseDamage() + (formKiDamage * kiWeapon.getKiScalingDamage() * kiWeaponMult);
+			return Double.isFinite(kiWeaponBonus) ? Math.max(heldWeapon, kiWeaponBonus) : heldWeapon;
+		}
+
+		// A infusao na forma cujo ki maximo e formMaxEnergy (o float do getMaxEnergy, como no CombatEvent).
+		double infusion(float formMaxEnergy) {
+			if (!infusionOn()) return 0.0;
+			double bonus = formMaxEnergy * (infusionPerLevel * infusionLevel);
+			return Double.isFinite(bonus) ? Math.max(0.0, bonus) : 0.0;
+		}
+	}
+
+	private PunchExtras punchExtras() {
+		double heldWeapon = getHeldWeaponMeleeBonus();
+		CombatConfig combat = ConfigManager.getCombatConfig();
+		CombatConfig.KiWeaponConfig kiWeapon = null;
+		float kiWeaponMult = 0.0f;
+		if (combat != null && player != null && skills.isSkillActive("kimanipulation") && player.getMainHandItem().isEmpty()) {
+			kiWeapon = combat.getKiWeaponConfig(status.getKiWeaponType());
+			kiWeaponMult = skills.getSkillLevel("kimanipulation") * 0.1f;
+		}
+		int infusionLevel = 0;
+		double infusionPerLevel = 0.0;
+		int level = skills.getSkillLevel("ki_infusion");
+		if (combat != null && level > 0 && skills.isSkillActive("ki_infusion")) {
+			Double perLevel = combat.getKiInfusionDamagePerLevel();
+			if (perLevel != null && Double.isFinite(perLevel)) {
+				infusionLevel = level;
+				infusionPerLevel = perLevel;
+			}
+		}
+		return new PunchExtras(heldWeapon, kiWeapon, kiWeaponMult, infusionLevel, infusionPerLevel);
 	}
 
 	/**
@@ -1063,16 +1123,9 @@ public class StatsData {
 	}
 
 	// O getMaxMeleeDamage e o getMaxKiDamage com a forma e a forma de stack dadas e a liberacao dada; devolve o maior. O
-	// soco leva a arma da mao (meleeWeapon) por fora da forma e da liberacao, como no CombatEvent.
-	private double peakDamageWith(double formStr, double formPwr, double stackStr, double stackPwr, double release, double meleeWeapon) {
-		double strength = stats.getStrength();
-		double flatBonusStr = bonusStats.calculateBonus("STR", (int) Math.round(strength), false);
-		double multBonusStr = bonusStats.calculateBonus("STR", (int) Math.round(strength), true);
-		double strScaling = getStatScaling("STR");
-		double melee = getSecondaryAttributeValue(MainAttributes.MELEE_DAMAGE.get(), 1.0)
-				+ (((strength + multBonusStr) * strScaling * totalMultiplierWith("STR", formStr, stackStr)) + (flatBonusStr * strScaling)) * release
-				+ meleeWeapon;
-
+	// soco leva, por fora da forma e da liberacao, a arma e a infusao do PunchExtras daquela forma, como no CombatEvent.
+	private double peakDamageWith(double formStr, double formPwr, double formEne, double stackStr, double stackPwr, double stackEne,
+								  double release, PunchExtras extras) {
 		double kiPower = stats.getKiPower();
 		double flatBonusPwr = bonusStats.calculateBonus("PWR", (int) Math.round(kiPower), false);
 		double multBonusPwr = bonusStats.calculateBonus("PWR", (int) Math.round(kiPower), true);
@@ -1080,7 +1133,27 @@ public class StatsData {
 		double ki = getSecondaryAttributeValue(MainAttributes.KI_DAMAGE.get(), 0.0)
 				+ (((kiPower + multBonusPwr) * pwrScaling * totalMultiplierWith("PWR", formPwr, stackPwr)) + (flatBonusPwr * pwrScaling)) * release;
 
+		double strength = stats.getStrength();
+		double flatBonusStr = bonusStats.calculateBonus("STR", (int) Math.round(strength), false);
+		double multBonusStr = bonusStats.calculateBonus("STR", (int) Math.round(strength), true);
+		double strScaling = getStatScaling("STR");
+		double melee = getSecondaryAttributeValue(MainAttributes.MELEE_DAMAGE.get(), 1.0)
+				+ (((strength + multBonusStr) * strScaling * totalMultiplierWith("STR", formStr, stackStr)) + (flatBonusStr * strScaling)) * release
+				+ extras.weapon(ki);
+		if (extras.infusionOn()) melee += extras.infusion(maxEnergyWith(formEne, stackEne));
+
 		return Math.max(melee, ki);
+	}
+
+	// O getMaxEnergy com a forma e a forma de stack dadas: a infusao do soco usa o ki maximo daquela forma.
+	private float maxEnergyWith(double formEne, double stackEne) {
+		double energy = stats.getEnergy();
+		double eneScaling = getStatScaling("ENE");
+		double eneMult = totalMultiplierWith("ENE", formEne, stackEne);
+		double flatBonusEne = bonusStats.calculateBonus("ENE", (int) Math.round(energy), false);
+		double multBonusEne = bonusStats.calculateBonus("ENE", (int) Math.round(energy), true);
+		double secondaryMaxEnergy = getSecondaryAttributeValue(MainAttributes.MAX_ENERGY.get(), 20.0);
+		return Math.min((float) (secondaryMaxEnergy + ((energy + multBonusEne) * eneScaling * eneMult) + (flatBonusEne * eneScaling)), Float.MAX_VALUE - 1);
 	}
 
 	public double getEffectsMultiplier(String statName) {
