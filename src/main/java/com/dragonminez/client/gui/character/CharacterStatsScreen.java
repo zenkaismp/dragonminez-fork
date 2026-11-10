@@ -256,7 +256,9 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 	private double[] getDamageReductionPercentages() {
 		double baseDefense = statsData.getDefense();
 
-		int maxValue = statsData.getConfiguredMaxValue();
+		// Zenkai (Parte 3 do docs/95): a mesma regua do servidor (StatsData.calculatePostMitigationDamage), o
+		// statCostCurveMaxValue, pra o numero da tela bater com o dano de verdade.
+		int maxValue = statsData.getStatCostCurveMaxValue();
 		double expectedMaxStats = statsData.isMaxLevelValueInsteadOfStats() ? (maxValue * 6.0) / 2.0 : maxValue;
 		double expectedMaxDef = expectedMaxStats * statsData.getStatScaling("DEF");
 		double k_factor = Math.max(12.0, expectedMaxDef * ConfigManager.getCombatConfig().getDefenseReductionScale());

@@ -553,7 +553,9 @@ public class StatsData {
 		double flatMitigation = Math.min(rawFlatMitigation, flatAbsorbCap);
 		double postFlatDamage = Math.max(0.0, incomingDamage - flatMitigation);
 
-		int maxValue = getConfiguredMaxValue();
+		// Zenkai (Parte 3 do docs/95): a regua da reducao mede contra o statCostCurveMaxValue (4M), nao contra o maxValue;
+		// a copia da tela (CharacterStatsScreen.getDamageReductionPercentages) usa o mesmo valor.
+		int maxValue = getStatCostCurveMaxValue();
 		double expectedMaxStats = isMaxLevelValueInsteadOfStats() ? (maxValue * 6.0) / 2.0 : maxValue;
 		double expectedMaxDef = expectedMaxStats * getStatScaling("DEF");
 		double k_factor = Math.max(12.0, expectedMaxDef * ConfigManager.getCombatConfig().getDefenseReductionScale());
@@ -1452,6 +1454,12 @@ public class StatsData {
 	public int getStatCostCurveMaxTotalStats() {
 		long raw = ConfigManager.getServerConfig().getGameplay().getStatCostCurveMaxValue() * 6L;
 		return raw > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) raw;
+	}
+
+	// Zenkai (Parte 3 do docs/95): o mesmo teto por stat (gameplay.statCostCurveMaxValue, padrao 4M) como regua da reducao
+	// de dano da defesa, aqui e na tela. O maxValue fica so como teto do stat.
+	public int getStatCostCurveMaxValue() {
+		return ConfigManager.getServerConfig().getGameplay().getStatCostCurveMaxValue();
 	}
 
 	public boolean isHumanRacialActive() {

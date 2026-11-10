@@ -74,10 +74,13 @@ public class GravityLogic {
 		) / 6.0;
 	}
 
+	// Zenkai (Parte 3 do docs/95): a resistencia e o alivio da sala de gravidade medem contra o
+	// gameplay.statCostCurveMaxValue (4M), como o custo de TP, e nao contra o maxValue: subir o teto do stat pra 10M nao
+	// deixa ninguem mais lento nem devolve o bonus de treino a quem ja era imune.
 	private static double getResistance(Player player) {
 		GeneralServerConfig.GravityConfig config = cfg();
 		return StatsProvider.get(StatsCapability.INSTANCE, player).map(data -> {
-			int maxStats = ConfigManager.getServerConfig().getGameplay().getMaxValue();
+			int maxStats = ConfigManager.getServerConfig().getGameplay().getStatCostCurveMaxValue();
 			double div = Math.max(1.0, maxStats * config.getResistanceStatDivisorRatio());
 			return (avgEffectiveStats(data) / div) * config.getResistanceScale();
 		}).orElse(0.0);
@@ -101,7 +104,7 @@ public class GravityLogic {
 		if (base <= 0.0) return 0.0;
 
 		double powerNorm = StatsProvider.get(StatsCapability.INSTANCE, player).map(data -> {
-			double div = Math.max(1.0, ConfigManager.getServerConfig().getGameplay().getMaxValue());
+			double div = Math.max(1.0, ConfigManager.getServerConfig().getGameplay().getStatCostCurveMaxValue());
 			return Math.max(0.0, avgEffectiveStats(data) / div);
 		}).orElse(0.0);
 
