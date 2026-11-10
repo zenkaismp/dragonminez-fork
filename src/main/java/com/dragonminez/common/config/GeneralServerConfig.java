@@ -159,6 +159,9 @@ public class GeneralServerConfig {
 		private Double HTCTpMultiplier = 1.75;
 		private Boolean maxLevelValueInsteadOfStats = true;
 		private Integer maxValue = 10000;
+		// Zenkai (docs/91, Parte 7): teto que a curva de custo de TP e o bonus de progresso usam no lugar do maxValue
+		// (o teto total dessas contas e 6 x esta chave). O maxValue segue so como teto do stat.
+		private Integer statCostCurveMaxValue = 4000000;
 		private CapsulesConfig capsules = new CapsulesConfig();
 		private Boolean storyModeEnabled = true;
 		private Boolean createDefaultSagas = true;
@@ -284,6 +287,11 @@ public class GeneralServerConfig {
 
 		public Integer getMaxValue() {
 			return Math.max(1000, Math.min(maxValue, Integer.MAX_VALUE));
+		}
+
+		public Integer getStatCostCurveMaxValue() {
+			int value = statCostCurveMaxValue != null ? statCostCurveMaxValue : 4000000;
+			return Math.max(1000, value);
 		}
 
 		public Boolean getMaxLevelValueInsteadOfStats() {

@@ -1398,6 +1398,14 @@ public class StatsData {
 		return getConfiguredMaxValue() * 6L;
 	}
 
+	// Zenkai (docs/91, Parte 7): o teto TOTAL que a curva de custo de TP e o bonus de progresso usam. Fica no
+	// gameplay.statCostCurveMaxValue (padrao 4M) e nao anda mais com o maxValue: subir o teto do stat nao encarece
+	// nada abaixo dele. O teto de compra continua o getConfiguredMaxTotalStats (6 x maxValue).
+	public int getStatCostCurveMaxTotalStats() {
+		long raw = ConfigManager.getServerConfig().getGameplay().getStatCostCurveMaxValue() * 6L;
+		return raw > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) raw;
+	}
+
 	public boolean isHumanRacialActive() {
 		return ConfigManager.getServerConfig().getRacialSkills().getEnableRacialSkills()
 				&& ConfigManager.getServerConfig().getRacialSkills().getHumanRacialSkill()
@@ -1590,7 +1598,7 @@ public class StatsData {
 		if (strength <= 0.0) return 1.0;
 		if (!ConfigManager.getServerConfig().getDynamicGrowth().isManualTpPurchasesEnabled()) return 1.0;
 
-		int maxCost = getSingleStatCost(getConfiguredMaxTotalStats());
+		int maxCost = getSingleStatCost(getStatCostCurveMaxTotalStats());
 		if (maxCost <= 0) return 1.0;
 		int currentCost = getSingleStatCost(stats.getTotalStats());
 
@@ -1600,7 +1608,7 @@ public class StatsData {
 
 	private double statCostVariableComponent(int simulatedTotalStats) {
 		double totalStats = Math.max(0.0, simulatedTotalStats);
-		double knee = getConfiguredMaxTotalStats() * STAT_COST_LATE_KNEE_FRACTION;
+		double knee = getStatCostCurveMaxTotalStats() * STAT_COST_LATE_KNEE_FRACTION;
 		if (knee <= 0.0 || totalStats <= knee) return totalStats * STAT_COST_PER_POINT;
 
 		double kneeCost = knee * STAT_COST_PER_POINT;
