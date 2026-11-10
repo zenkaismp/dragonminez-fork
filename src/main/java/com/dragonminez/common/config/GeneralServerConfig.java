@@ -547,9 +547,17 @@ public class GeneralServerConfig {
 		private Integer regenCooldownSeconds = 45;
 		private Double waterRegenBonus = 0.25;
 		private Integer waterRegenSeconds = 5;
+		// Zenkai (Parte 8 do docs/95): reset unico das assimilacoes, no molde do saiyan.zenkaiResetVersion (P10). 0 =
+		// desligado (ninguem e resetado e nenhuma marca e gravada). Subir pra 1 tira todas as assimilacoes de cada Namek uma
+		// vez, no proximo login ou carga dos dados.
+		private Integer assimilationResetVersion = 0;
 
 		public Integer getAssimilationAmount() {
 			return Math.max(0, Math.min(assimilationAmount, Integer.MAX_VALUE));
+		}
+
+		public Integer getAssimilationResetVersion() {
+			return assimilationResetVersion != null ? Math.max(0, assimilationResetVersion) : 0;
 		}
 
 		public Double getAssimilationHealthRegen() {
@@ -585,9 +593,17 @@ public class GeneralServerConfig {
 		private Double kiHealDealtBonus = 0.25;
 		private Double healTechniqueCooldownReduction = 0.10;
 		private Double healTechniqueCostReduction = 0.10;
+		// Zenkai (Parte 8 do docs/95): reset unico das absorcoes, no molde do saiyan.zenkaiResetVersion (P10). 0 = desligado
+		// (ninguem e resetado e nenhuma marca e gravada). Subir pra 1 tira todas as absorcoes de cada Majin uma vez, no
+		// proximo login ou carga dos dados.
+		private Integer absorptionResetVersion = 0;
 
 		public Integer getAbsorptionAmount() {
 			return Math.max(0, Math.min(absorptionAmount, Integer.MAX_VALUE));
+		}
+
+		public Integer getAbsorptionResetVersion() {
+			return absorptionResetVersion != null ? Math.max(0, absorptionResetVersion) : 0;
 		}
 
 		public Double getAbsorptionHealthRegen() {

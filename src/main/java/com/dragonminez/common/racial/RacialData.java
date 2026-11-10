@@ -28,6 +28,10 @@ public class RacialData {
 	// Zenkai (P10 do pacote de passivas): ultima versao do reset unico dos Zenkais que este jogador ja levou
 	// (saiyan.zenkaiResetVersion). Vai junto com a ficha pro banco: relogar ou trocar de backend nao repete o reset.
 	private int zenkaiResetVersion;
+	// Zenkai (Parte 8 do docs/95): o mesmo pros resets unicos das assimilacoes (namekian.assimilationResetVersion) e das
+	// absorcoes (majin.absorptionResetVersion). Vao com a ficha pro banco, como a marca do P10.
+	private int assimilationResetVersion;
+	private int absorptionResetVersion;
 
 	private String tempZenkaiBuffName = "";
 
@@ -89,6 +93,8 @@ public class RacialData {
 		tag.putFloat("PeakRawHitWindow", peakRawHitWindow);
 		tag.putInt("PeakRawHitTicksLeft", peakRawHitTicksLeft);
 		if (zenkaiResetVersion > 0) tag.putInt("ZenkaiResetVersion", zenkaiResetVersion);
+		if (assimilationResetVersion > 0) tag.putInt("AssimilationResetVersion", assimilationResetVersion);
+		if (absorptionResetVersion > 0) tag.putInt("AbsorptionResetVersion", absorptionResetVersion);
 		tag.putString("TempZenkaiBuffName", tempZenkaiBuffName);
 		tag.put("Assimilations", saveSlots(assimilations));
 		tag.put("Absorptions", saveSlots(absorptions));
@@ -116,6 +122,8 @@ public class RacialData {
 		peakRawHitWindow = tag.getFloat("PeakRawHitWindow");
 		peakRawHitTicksLeft = tag.getInt("PeakRawHitTicksLeft");
 		zenkaiResetVersion = tag.getInt("ZenkaiResetVersion");
+		assimilationResetVersion = tag.getInt("AssimilationResetVersion");
+		absorptionResetVersion = tag.getInt("AbsorptionResetVersion");
 		tempZenkaiBuffName = tag.getString("TempZenkaiBuffName");
 		assimilations.clear();
 		assimilations.addAll(loadSlots(tag.getList("Assimilations", Tag.TAG_COMPOUND), AssimilationSlot::fromNbt));
@@ -230,6 +238,8 @@ public class RacialData {
 		this.peakRawHitWindow = other.peakRawHitWindow;
 		this.peakRawHitTicksLeft = other.peakRawHitTicksLeft;
 		this.zenkaiResetVersion = other.zenkaiResetVersion;
+		this.assimilationResetVersion = other.assimilationResetVersion;
+		this.absorptionResetVersion = other.absorptionResetVersion;
 		this.tempZenkaiBuffName = other.tempZenkaiBuffName;
 		this.assimilations.clear();
 		this.assimilations.addAll(other.assimilations);

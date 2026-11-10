@@ -3393,6 +3393,8 @@
   "message.dragonminez.racial.bioandroid.explode_reverting": "§eYour body is still settling down...",
   "message.dragonminez.racial.bioandroid.drain_immune": "§cThis target was drained recently and is immune for %s §cmore seconds.",
   "message.dragonminez.racial.majin.eject_confirm": "§eClick again within 5 seconds to eject this slot.",
+  "message.dragonminez.racial.namek.reset": "§eYour old assimilations were cleared. The slots are free again, with the new values.",
+  "message.dragonminez.racial.majin.reset": "§eYour old absorptions were cleared. The slots are free again, with the new values.",
   "effect.dragonminez.bioandroid_explode_cd": "Explosion CD",
   "effect.dragonminez.adrenaline": "Adrenaline",
   "entity.dragonminez.bio_cell_jr": "Cell Jr",
