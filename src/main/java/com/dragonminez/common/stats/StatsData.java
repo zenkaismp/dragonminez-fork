@@ -1,5 +1,7 @@
 package com.dragonminez.common.stats;
 
+import com.dragonminez.Env;
+import com.dragonminez.LogUtil;
 import com.dragonminez.common.config.CombatConfig;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.hair.CustomHair;
@@ -958,19 +960,31 @@ public class StatsData {
 		return form != null && !form.isEmpty() && !form.equals("base") && group != null && !group.isEmpty();
 	}
 
+	/** ZenkaiExtra: fator extra da forma mais forte da Autodestruicao (o Ritual Divino ativo da 1,5). 1 = sem efeito. */
+	public static volatile java.util.function.ToDoubleFunction<net.minecraft.world.entity.player.Player> strongestFormFactor = p -> 1.0;
+
+	// Zenkai (Parte 4 do docs/94): o NBT {MinLevel, Tier} das espadas de crate do ZenkaiExtra, o mesmo que o SwordGate dele le.
+	public static final String ZENKAI_SWORD_TAG = "ZenkaiSword";
+	// O soco vazio que o CombatEvent desconta do dano vanilla do golpe (VANILLA_UNARMED_ATTACK_DAMAGE la).
+	private static final double UNARMED_ATTACK_DAMAGE = 1.0;
+
 	/**
 	 * Zenkai (P5 do pacote de passivas): o maior dano bruto, soco (STR) ou ki (PWR), que o jogador consegue tirar na forma
 	 * mais forte que ele consegue usar agora. Candidatas: a forma base, cada transformacao destravada (com a maestria dela),
 	 * cada forma de stack do tipo Ultimate destravada e as duas juntas quando o DMZ deixaria empilhar (as mesmas regras do
 	 * StackFormModeHandler). Kaioken e as outras formas de stack ficam fora. Usa a liberacao maxima que ele alcanca, os
-	 * bonus, efeitos e secundarios de agora; nao conta espada, arma de ki nem infusao. Base da Autodestruicao em NPC.
+	 * bonus, efeitos e secundarios de agora. O soco soma a arma que esta na mao na hora, do mesmo jeito que um soco de
+	 * verdade ({@link #getHeldWeaponMeleeBonus}, Parte 4 do docs/94); o ki fica como estava, e arma de ki e infusao ficam
+	 * fora. No fim o resultado sai vezes o {@link #strongestFormFactor} do ZenkaiExtra, nunca menos que 1x (Parte 5 do
+	 * docs/94). Base da Autodestruicao em NPC.
 	 */
 	public double getStrongestFormPeakDamage() {
 		double release = Math.max(0.0, getMaxPowerRelease() / 100.0);
-		double best = peakDamageWith(1.0, 1.0, 1.0, 1.0, release);
+		double weapon = getHeldWeaponMeleeBonus();
+		double best = peakDamageWith(1.0, 1.0, 1.0, 1.0, release, weapon);
 
 		String race = character.getRaceName();
-		if (race == null || race.isEmpty()) return best;
+		if (race == null || race.isEmpty()) return withStrongestFormFactor(best);
 
 		List<String> ultimateGroups = new ArrayList<>();
 		List<FormConfig.FormData> ultimateForms = new ArrayList<>();
@@ -982,7 +996,7 @@ public class StatsData {
 				ultimateForms.add(stackForm);
 				best = Math.max(best, peakDamageWith(1.0, 1.0,
 						stackFormMultiplierOf(stackGroup, stackForm.getName(), "STR", false),
-						stackFormMultiplierOf(stackGroup, stackForm.getName(), "PWR", false), release));
+						stackFormMultiplierOf(stackGroup, stackForm.getName(), "PWR", false), release, weapon));
 			}
 		}
 
@@ -991,7 +1005,7 @@ public class StatsData {
 				if (form == null) continue;
 				double formStr = formMultiplierOf(group, form.getName(), form, "STR");
 				double formPwr = formMultiplierOf(group, form.getName(), form, "PWR");
-				best = Math.max(best, peakDamageWith(formStr, formPwr, 1.0, 1.0, release));
+				best = Math.max(best, peakDamageWith(formStr, formPwr, 1.0, 1.0, release, weapon));
 
 				for (int i = 0; i < ultimateForms.size(); i++) {
 					String stackGroup = ultimateGroups.get(i);
@@ -999,11 +1013,43 @@ public class StatsData {
 					if (!canStackWith(group, form, stackGroup, stackForm)) continue;
 					best = Math.max(best, peakDamageWith(formStr, formPwr,
 							stackFormMultiplierOf(stackGroup, stackForm.getName(), "STR", true),
-							stackFormMultiplierOf(stackGroup, stackForm.getName(), "PWR", true), release));
+							stackFormMultiplierOf(stackGroup, stackForm.getName(), "PWR", true), release, weapon));
 				}
 			}
 		}
-		return Double.isFinite(best) ? Math.max(0.0, best) : 0.0;
+		return withStrongestFormFactor(best);
+	}
+
+	/**
+	 * Zenkai (Parte 4 do docs/94): o que a arma na mao principal soma num soco de verdade agora. E a conta do CombatEvent:
+	 * o ATTACK_DAMAGE total do jogador (arma, armadura, curios e pocoes) menos o 1 do soco vazio, num golpe cheio, sem
+	 * combo, critico ou encantamento; de mao vazia quase sempre da 0. A espada de crate do ZenkaiExtra acima do nivel do
+	 * jogador (MinLevel no {@link #ZENKAI_SWORD_TAG}) nao bate, porque o SwordGate dele cancela o golpe, entao aqui da 0.
+	 */
+	public double getHeldWeaponMeleeBonus() {
+		if (player == null) return 0.0;
+		CompoundTag tag = player.getMainHandItem().getTag();
+		int minLevel = tag == null ? 0 : tag.getCompound(ZENKAI_SWORD_TAG).getInt("MinLevel");
+		if (minLevel > 0 && getLevel() < minLevel) return 0.0;
+		double bonus = getSecondaryAttributeValue(Attributes.ATTACK_DAMAGE, UNARMED_ATTACK_DAMAGE) - UNARMED_ATTACK_DAMAGE;
+		return Double.isFinite(bonus) ? Math.max(0.0, bonus) : 0.0;
+	}
+
+	// Zenkai (Parte 5 do docs/94): o pico vezes o strongestFormFactor do jogador. Fator que nao e finito, fator abaixo de 1
+	// e gancho que lanca valem 1: a explosao nunca cai por causa do gancho.
+	private double withStrongestFormFactor(double peak) {
+		double base = Double.isFinite(peak) ? Math.max(0.0, peak) : 0.0;
+		if (player == null) return base;
+		double factor = 1.0;
+		try {
+			double hook = strongestFormFactor.applyAsDouble(player);
+			if (Double.isFinite(hook)) factor = Math.max(1.0, hook);
+		} catch (Throwable t) {
+			LogUtil.warn(Env.SERVER, "[Zenkai] strongestFormFactor failed for {}; Self-Destruct uses factor 1",
+					player.getGameProfile().getName(), t);
+		}
+		double boosted = base * factor;
+		return Double.isFinite(boosted) ? boosted : base;
 	}
 
 	private boolean canStackWith(String formGroup, FormConfig.FormData form, String stackGroup, FormConfig.FormData stackForm) {
@@ -1014,14 +1060,16 @@ public class StatsData {
 		return formMastery >= form.getStackOnMastery() && stackMastery >= stackForm.getStackOnMastery();
 	}
 
-	// O getMaxMeleeDamage e o getMaxKiDamage com a forma e a forma de stack dadas e a liberacao dada; devolve o maior.
-	private double peakDamageWith(double formStr, double formPwr, double stackStr, double stackPwr, double release) {
+	// O getMaxMeleeDamage e o getMaxKiDamage com a forma e a forma de stack dadas e a liberacao dada; devolve o maior. O
+	// soco leva a arma da mao (meleeWeapon) por fora da forma e da liberacao, como no CombatEvent.
+	private double peakDamageWith(double formStr, double formPwr, double stackStr, double stackPwr, double release, double meleeWeapon) {
 		double strength = stats.getStrength();
 		double flatBonusStr = bonusStats.calculateBonus("STR", (int) Math.round(strength), false);
 		double multBonusStr = bonusStats.calculateBonus("STR", (int) Math.round(strength), true);
 		double strScaling = getStatScaling("STR");
 		double melee = getSecondaryAttributeValue(MainAttributes.MELEE_DAMAGE.get(), 1.0)
-				+ (((strength + multBonusStr) * strScaling * totalMultiplierWith("STR", formStr, stackStr)) + (flatBonusStr * strScaling)) * release;
+				+ (((strength + multBonusStr) * strScaling * totalMultiplierWith("STR", formStr, stackStr)) + (flatBonusStr * strScaling)) * release
+				+ meleeWeapon;
 
 		double kiPower = stats.getKiPower();
 		double flatBonusPwr = bonusStats.calculateBonus("PWR", (int) Math.round(kiPower), false);
